@@ -1,0 +1,270 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  /* Paleta Verde Azulado - Modo Claro */
+  --background: oklch(98% 0.003 250);
+  /* Casi blanco con ligero tinte azulado frío */
+  --foreground: oklch(15% 0.01 250);
+  /* Gris oscuro frío */
+  --card: oklch(100% 0 0);
+  /* white */
+  --card-foreground: oklch(15% 0.01 250);
+  /* Gris oscuro frío */
+  --popover: oklch(100% 0 0);
+  /* white */
+  --popover-foreground: oklch(15% 0.01 250);
+  /* Gris oscuro frío */
+  --primary: oklch(0.78 0.12 165);
+  /* #4ECCA3 */
+  --primary-foreground: oklch(100% 0 0);
+  /* white */
+  --secondary: oklch(0.58 0.11 165);
+  /* #169976 */
+  --secondary-foreground: oklch(100% 0 0);
+  /* white */
+  --muted: oklch(0.96 0.003 250);
+  /* Gris muy claro frío */
+  --muted-foreground: oklch(0.45 0.01 250);
+  /* Gris medio frío */
+  --accent: oklch(0.96 0.003 250);
+  /* Gris muy claro frío */
+  --accent-foreground: oklch(0.25 0.01 250);
+  /* Gris oscuro frío */
+  --border: oklch(0.88 0.005 250);
+  /* Gris para bordes frío */
+  --input: oklch(0.88 0.005 250);
+  /* Gris para inputs frío */
+  --ring: oklch(0.68 0.10 165);
+  /* teal-500 */
+
+  /* Colores funcionales (se mantienen los originales para alertas) */
+  --destructive: oklch(63.652% 0.22579 24.441);
+
+  /* Gráficos y Sidebar (adaptados a la paleta verde azulado) */
+  --chart-1: oklch(0.78 0.12 165);
+  /* teal-500 - primary */
+  --chart-2: oklch(0.85 0.08 165);
+  /* teal-300 */
+  --chart-3: oklch(0.58 0.11 165);
+  /* teal-700 - secondary */
+  --chart-4: oklch(0.72 0.10 165);
+  /* teal-400 */
+  --chart-5: oklch(0.45 0.09 165);
+  /* teal-800 */
+  --sidebar: oklch(98% 0.003 250);
+  /* Casi blanco con tinte azulado frío para sidebar */
+  --sidebar-foreground: oklch(0.25 0.01 250);
+  /* Gris oscuro frío */
+  --sidebar-primary: oklch(0.58 0.11 165);
+  /* teal-600 - secondary */
+  --sidebar-primary-foreground: oklch(98% 0.003 250);
+  /* Casi blanco frío */
+  --sidebar-accent: oklch(0.96 0.005 250);
+  /* Gris claro frío para hover */
+  --sidebar-accent-foreground: oklch(0.25 0.01 250);
+  /* Gris oscuro frío */
+  --sidebar-border: oklch(0.88 0.005 250);
+  /* Gris para bordes frío */
+  --sidebar-ring: oklch(0.78 0.12 165);
+  /* teal-500 - primary */
+}
+
+.dark {
+  /* Paleta Verde Azulado - Modo Oscuro */
+  --background: oklch(12% 0.02 165);
+  /* Verde oscuro profundo - fondo principal */
+  --foreground: oklch(98% 0.005 165);
+  /* Blanco con ligero tinte verde azulado */
+  --card: oklch(16% 0.025 165);
+  /* Verde grisáceo para tarjetas - más claro que el fondo */
+  --card-foreground: oklch(95% 0.005 165);
+  /* Blanco */
+  --popover: oklch(18% 0.025 165);
+  /* Verde grisáceo para popovers */
+  --popover-foreground: oklch(95% 0.005 165);
+  /* Blanco */
+  --primary: oklch(0.78 0.12 165);
+  /* Verde azulado - color de acento principal (#4ECCA3) */
+  --primary-foreground: oklch(98% 0.005 165);
+  /* Blanco */
+  --secondary: oklch(0.58 0.11 165);
+  /* Verde oscuro para headers/secciones secundarias (#169976) */
+  --secondary-foreground: oklch(98% 0.005 165);
+  /* Blanco */
+  --muted: oklch(20% 0.02 165);
+  /* Grisáceo oscuro apagado con tinte verde */
+  --muted-foreground: oklch(65% 0.005 165);
+  /* Gris medio con tinte verde */
+  --accent: oklch(0.78 0.12 165);
+  /* Verde azulado para acentos */
+  --accent-foreground: oklch(98% 0.005 165);
+  /* Blanco */
+  --border: oklch(30% 0.02 165);
+  /* Gris verdoso para bordes visibles */
+  --input: oklch(22% 0.03 165);
+  /* Verde oscuro para inputs */
+  --ring: oklch(0.78 0.12 165);
+  /* Verde azulado para ring/focus */
+
+  /* Colores funcionales (se mantienen los originales para alertas) */
+  --destructive: oklch(0.704 0.191 22.216);
+
+  /* Gráficos y Sidebar (adaptados a la paleta verde azulado) */
+  --chart-1: oklch(0.78 0.12 165);
+  /* teal-500 - primary */
+  --chart-2: oklch(0.85 0.08 165);
+  /* teal-300 */
+  --chart-3: oklch(0.58 0.11 165);
+  /* teal-700 - secondary */
+  --chart-4: oklch(0.72 0.10 165);
+  /* teal-400 */
+  --chart-5: oklch(0.45 0.09 165);
+  /* teal-800 */
+  --sidebar: oklch(14% 0.02 165);
+  /* Verde grisáceo oscuro profundo para sidebar */
+  --sidebar-foreground: oklch(92% 0.005 165);
+  /* Blanco/Gris claro - textos normales del sidebar */
+  --sidebar-primary: oklch(0.78 0.12 165);
+  /* Verde azulado para items - primary */
+  --sidebar-primary-foreground: oklch(12% 0.02 165);
+  /* Oscuro */
+  --sidebar-accent: oklch(20% 0.02 165);
+  /* Grisáceo oscuro para hover */
+  --sidebar-accent-foreground: oklch(98% 0.005 165);
+  /* Blanco más brillante al hacer hover */
+  --sidebar-border: oklch(30% 0.02 165);
+  /* Gris verdoso para bordes visibles */
+  --sidebar-ring: oklch(0.78 0.12 165);
+  /* Verde azulado para focus */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Scroll Bar */
+
+/* width */
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+/* Track - Light Mode */
+::-webkit-scrollbar-track {
+  background: #fafafa;
+}
+
+/* Handle - Light Mode */
+::-webkit-scrollbar-thumb {
+  background: rgb(216, 216, 216);
+  border-radius: 10px;
+}
+
+/* Handle on hover - Light Mode */
+::-webkit-scrollbar-thumb:hover {
+  background: #373c9e49;
+}
+
+/* Dark Mode Scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: oklch(18% 0.03 265);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(28% 0.035 265);
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(35% 0.04 265);
+}
+
+.subtitle {
+  @apply text-lg font-semibold;
+}
+
+.btn-trigger-popover {
+  @apply h-8 border-dashed hover:bg-primary/10 hover:border-primary/30 transition-colors;
+}
+
+.checkbox-selected {
+  @apply border border-gray-600;
+}
+
+.checkbox-unselected {
+  @apply opacity-20 border border-foreground;
+}
+
+.command-item-hover {
+  @apply hover:bg-accent/30 hover:text-accent-foreground transition-colors duration-200;
+}
+
+.command-item-selected {
+  @apply bg-accent/20 text-accent-foreground;
+}
+
+/* Animation: Slide in from left */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out;
+}
