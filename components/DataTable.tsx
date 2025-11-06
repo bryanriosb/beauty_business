@@ -75,7 +75,7 @@ export interface DataTableRef {
 export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(function DataTable<TData, TValue>({
   columns,
   service,
-  defaultQueryParams = {},
+  defaultQueryParams,
   filters,
   searchConfig,
   data: externalData,
@@ -87,6 +87,12 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(func
 }: DataTableProps<TData, TValue>, ref: React.Ref<DataTableRef>) {
   // Determinar si usar estado interno o externo
   const isAutonomous = !!service
+
+  // Estabilizar defaultQueryParams para evitar recreaciones
+  const stableDefaultQueryParams = React.useMemo(
+    () => defaultQueryParams || {},
+    [defaultQueryParams]
+  )
 
   // Estado interno para manejo autónomo
   const [internalData, setInternalData] = useState<TData[]>([])
@@ -120,19 +126,27 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(func
   const pagination = isAutonomous ? internalPagination : externalPagination
   const filterState = isAutonomous ? internalFilterState : (externalFilterState || [])
 
+  // Serializar filtros para uso en dependencias
+  const serializedFilters = React.useMemo(
+    () => JSON.stringify(internalFilters),
+    [internalFilters]
+  )
+
   // Función para fetch de datos
   const fetchData = useCallback(async () => {
     if (!service) return
 
     setLoading(true)
     try {
+      const filters = JSON.parse(serializedFilters)
+
       // Convertir filtros a arrays para QueryParser de Fiber v2
       const arrayFilters: Record<string, string[]> = {}
-      Object.entries(internalFilters).forEach(([key, value]) => {
+      Object.entries(filters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           arrayFilters[key] = value
         } else if (value) {
-          arrayFilters[key] = [value]
+          arrayFilters[key] = [String(value)]
         }
       })
 
@@ -142,7 +156,7 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(func
       }
 
       // Combinar parámetros por defecto con filtros
-      let queryParams: Record<string, any> = { ...baseParams, ...defaultQueryParams }
+      let queryParams: Record<string, any> = { ...baseParams, ...stableDefaultQueryParams }
 
       if (Object.keys(arrayFilters).length > 0) {
         queryParams = { ...queryParams, ...arrayFilters }
@@ -161,7 +175,7 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(func
     } finally {
       setLoading(false)
     }
-  }, [service, internalPagination.pageIndex, internalPagination.pageSize, internalFilters, defaultQueryParams])
+  }, [service, internalPagination.pageIndex, internalPagination.pageSize, serializedFilters, stableDefaultQueryParams])
 
   // Efectos para fetch automático
   useEffect(() => {

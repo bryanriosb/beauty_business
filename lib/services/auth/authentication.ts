@@ -1,28 +1,35 @@
 'use server'
 
+import { authenticateWithSupabase } from './supabase-auth'
+
 export async function authenticate(
   credentials: Record<'username' | 'password', string> | undefined
 ) {
   try {
     if (!credentials) return null
 
-    const USERNAME = process.env.AUTH_USERNAME
-    const PASSWORD = process.env.AUTH_PASSWORD
-    const username = credentials.username
-    const password = credentials.password
+    // Convert username to email for Supabase Auth
+    const { username, password } = credentials
 
+    // Authenticate with Supabase
+    const user = await authenticateWithSupabase({
+      email: username, // In case username is actually an email
+      password,
+    })
 
-    if (USERNAME !== username) return null
-    if (PASSWORD !== password) return null
+    if (!user) return null
 
+    // Return user session data in the format expected by NextAuth
     const userSessionData = {
-      id: '81261a8e-49b3-47cd-934d-71ef09c0e4d9',
-      username: username,
-      name: 'Administrador',
-      role: 'admin',
+      id: user.id,
+      username: user.email,
+      name: user.name || 'Admin',
+      role: user.role,
     }
+
     return userSessionData
   } catch (err) {
-    console.error('Cannot singn in:', err)
+    console.error('Cannot sign in:', err)
+    return null
   }
 }

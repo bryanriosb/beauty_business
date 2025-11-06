@@ -1,22 +1,73 @@
-import { BrainCircuit, FileText, LayoutDashboard, Settings } from 'lucide-react'
+import {
+  Building2,
+  Calendar,
+  FileText,
+  LayoutDashboard,
+  Settings,
+  Users,
+  Scissors,
+  UserCircle,
+  BarChart3,
+} from 'lucide-react'
+import { USER_ROLES, type UserRole } from './roles'
 
-export const SIDE_APP_MENU_ITEMS = [
+export interface MenuItem {
+  title: string
+  url: string
+  icon: any
+  allowedRoles: UserRole[]
+}
+
+export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
   {
-    title: 'Tablero',
-    url: '/admin',
+    title: 'Dashboard',
+    url: '/admin/dashboard',
     icon: LayoutDashboard,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  },
+  {
+    title: 'Citas',
+    url: '/admin',
+    icon: Calendar,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  },
+  {
+    title: 'Negocios',
+    url: '/admin/businesses',
+    icon: Building2,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN], // Solo company admin
+  },
+  {
+    title: 'Servicios',
+    url: '/admin/services',
+    icon: Scissors,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  },
+  {
+    title: 'Especialistas',
+    url: '/admin/specialists',
+    icon: UserCircle,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  },
+  {
+    title: 'Clientes',
+    url: '/admin/customers',
+    icon: Users,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
   {
     title: 'Reportes',
     url: '/admin/reports',
-    icon: FileText,
+    icon: BarChart3,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
 ]
 
-export const SIDE_SYSTEM_MENU_ITEMS = [
+export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
   {
     title: 'Configuración',
     url: '/admin/settings',
     icon: Settings,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
 ]

@@ -96,7 +96,7 @@
   --chart-5: oklch(0.45 0.09 165);
   /* teal-800 */
   --sidebar: oklch(98% 0.003 250);
-  /* Casi blanco con tinte azulado frío para sidebar */
+  /* Mismo color que background */
   --sidebar-foreground: oklch(0.25 0.01 250);
   /* Gris oscuro frío */
   --sidebar-primary: oklch(0.58 0.11 165);
@@ -114,39 +114,39 @@
 }
 
 .dark {
-  /* Paleta Verde Azulado - Modo Oscuro */
-  --background: oklch(12% 0.02 165);
-  /* Verde oscuro profundo - fondo principal */
-  --foreground: oklch(98% 0.005 165);
-  /* Blanco con ligero tinte verde azulado */
-  --card: oklch(16% 0.025 165);
-  /* Verde grisáceo para tarjetas - más claro que el fondo */
-  --card-foreground: oklch(95% 0.005 165);
+  /* Modo Oscuro - Fondo azul oscuro con acentos verde azulado */
+  --background: oklch(12% 0.02 265);
+  /* Azul oscuro profundo - fondo principal */
+  --foreground: oklch(98% 0.005 265);
+  /* Blanco con ligero tinte azul */
+  --card: oklch(16% 0.025 265);
+  /* Azul grisáceo para tarjetas - más claro que el fondo */
+  --card-foreground: oklch(95% 0.005 265);
   /* Blanco */
-  --popover: oklch(18% 0.025 165);
-  /* Verde grisáceo para popovers */
-  --popover-foreground: oklch(95% 0.005 165);
+  --popover: oklch(18% 0.025 265);
+  /* Azul grisáceo para popovers */
+  --popover-foreground: oklch(95% 0.005 265);
   /* Blanco */
   --primary: oklch(0.78 0.12 165);
   /* Verde azulado - color de acento principal (#4ECCA3) */
-  --primary-foreground: oklch(98% 0.005 165);
+  --primary-foreground: oklch(98% 0.005 265);
   /* Blanco */
   --secondary: oklch(0.58 0.11 165);
   /* Verde oscuro para headers/secciones secundarias (#169976) */
-  --secondary-foreground: oklch(98% 0.005 165);
+  --secondary-foreground: oklch(98% 0.005 265);
   /* Blanco */
-  --muted: oklch(20% 0.02 165);
-  /* Grisáceo oscuro apagado con tinte verde */
-  --muted-foreground: oklch(65% 0.005 165);
-  /* Gris medio con tinte verde */
+  --muted: oklch(20% 0.02 265);
+  /* Grisáceo oscuro apagado */
+  --muted-foreground: oklch(65% 0.005 265);
+  /* Gris medio */
   --accent: oklch(0.78 0.12 165);
   /* Verde azulado para acentos */
-  --accent-foreground: oklch(98% 0.005 165);
+  --accent-foreground: oklch(98% 0.005 265);
   /* Blanco */
-  --border: oklch(30% 0.02 165);
-  /* Gris verdoso para bordes visibles */
-  --input: oklch(22% 0.03 165);
-  /* Verde oscuro para inputs */
+  --border: oklch(30% 0.02 265);
+  /* Gris para bordes visibles */
+  --input: oklch(22% 0.03 265);
+  /* Azul oscuro para inputs */
   --ring: oklch(0.78 0.12 165);
   /* Verde azulado para ring/focus */
 
@@ -164,20 +164,20 @@
   /* teal-400 */
   --chart-5: oklch(0.45 0.09 165);
   /* teal-800 */
-  --sidebar: oklch(14% 0.02 165);
-  /* Verde grisáceo oscuro profundo para sidebar */
-  --sidebar-foreground: oklch(92% 0.005 165);
+  --sidebar: oklch(12% 0.02 265);
+  /* Mismo color que background */
+  --sidebar-foreground: oklch(92% 0.005 265);
   /* Blanco/Gris claro - textos normales del sidebar */
   --sidebar-primary: oklch(0.78 0.12 165);
   /* Verde azulado para items - primary */
-  --sidebar-primary-foreground: oklch(12% 0.02 165);
+  --sidebar-primary-foreground: oklch(12% 0.02 265);
   /* Oscuro */
-  --sidebar-accent: oklch(20% 0.02 165);
+  --sidebar-accent: oklch(20% 0.02 265);
   /* Grisáceo oscuro para hover */
-  --sidebar-accent-foreground: oklch(98% 0.005 165);
+  --sidebar-accent-foreground: oklch(98% 0.005 265);
   /* Blanco más brillante al hacer hover */
-  --sidebar-border: oklch(30% 0.02 165);
-  /* Gris verdoso para bordes visibles */
+  --sidebar-border: oklch(30% 0.02 265);
+  /* Gris para bordes visibles */
   --sidebar-ring: oklch(0.78 0.12 165);
   /* Verde azulado para focus */
 }
@@ -252,6 +252,17 @@
 .command-item-selected {
   @apply bg-accent/20 text-accent-foreground;
 }
+
+/* Sidebar icon size adjustment */
+/* [data-sidebar="menu-button"] svg {
+  height: 1.5rem !important;
+  width: 1.5rem !important;
+}
+
+[data-sidebar="menu-button"].group-data-[collapsible=icon]\:size-8 svg {
+  height: 1.5rem !important;
+  width: 1.5rem !important;
+} */
 
 /* Animation: Slide in from left */
 @keyframes slide-in-left {

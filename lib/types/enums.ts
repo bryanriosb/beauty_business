@@ -1,0 +1,39 @@
+// Database enums matching Supabase schema
+
+export type BusinessType = 'SALON' | 'INDEPENDENT' | 'BEAUTY_STUDIO'
+
+export type DayOfWeek = '0' | '1' | '2' | '3' | '4' | '5' | '6'
+
+export type UserGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY'
+
+export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED'
+
+export type PaymentMethod = 'AT_VENUE' | 'CREDIT_CARD' | 'PAYPAL' | 'NEQUI'
+
+export type AppointmentStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'NO_SHOW'
+
+export type PromotionType =
+  | 'PERCENTAGE_OFF'
+  | 'FIXED_AMOUNT_OFF'
+  | 'SPECIAL_COMBO'
+
+export type MessageSenderType = 'USER' | 'BUSINESS'
+
+export type NotificationType =
+  | 'BOOKING_CONFIRMED'
+  | 'BOOKING_REMINDER'
+  | 'BOOKING_UPDATED'
+  | 'BOOKING_CANCELLED'
+  | 'REVIEW_REQUEST'
+  | 'NEW_CHAT_MESSAGE'
+  | 'PROMOTIONAL_OFFER'
+  | 'NEWSLETTER_UPDATE'
+  | 'ACCOUNT_UPDATE'
+  | 'GENERAL_INFO'
+
+export type NotificationSource = 'push' | 'local' | 'internal'
