@@ -29,7 +29,10 @@ const statusLabels: Record<string, string> = {
   trial: 'Prueba',
 }
 
-const statusVariants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+const statusVariants: Record<
+  string,
+  'default' | 'secondary' | 'destructive' | 'outline'
+> = {
   active: 'default',
   trial: 'secondary',
   suspended: 'outline',
@@ -73,9 +76,7 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
     cell: ({ row }) => {
       const plan = row.getValue('subscription_plan') as string
       return (
-        <Badge variant="outline">
-          {subscriptionPlanLabels[plan] || plan}
-        </Badge>
+        <Badge variant="outline">{subscriptionPlanLabels[plan] || plan}</Badge>
       )
     },
     filterFn: (row, id, value) => {
@@ -88,7 +89,10 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
     cell: ({ row }) => {
       const status = row.getValue('status') as string
       return (
-        <Badge variant={statusVariants[status] || 'default'}>
+        <Badge
+          className="bg-primary"
+          variant={statusVariants[status] || 'default'}
+        >
           {statusLabels[status] || status}
         </Badge>
       )
@@ -109,7 +113,9 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
       return (
         <div className="text-sm">
           {city}
-          {state && <div className="text-xs text-muted-foreground">{state}</div>}
+          {state && (
+            <div className="text-xs text-muted-foreground">{state}</div>
+          )}
         </div>
       )
     },
@@ -129,57 +135,7 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
   {
     id: 'actions',
     header: 'Acciones',
-    cell: ({ row }) => {
-      const account = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                console.log('Ver detalles:', account.id)
-              }}
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              Ver detalles
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                console.log('Gestionar miembros:', account.id)
-              }}
-            >
-              <Users className="mr-2 h-4 w-4" />
-              Gestionar miembros
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                console.log('Editar:', account.id)
-              }}
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => {
-                console.log('Eliminar:', account.id)
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
+    // La celda de acciones se define dinámicamente en la página
+    // para evitar problemas de serialización con callbacks
   },
 ]

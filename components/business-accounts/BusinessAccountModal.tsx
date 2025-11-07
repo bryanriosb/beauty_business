@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -22,13 +22,23 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type {
   BusinessAccount,
   BusinessAccountInsert,
   BusinessAccountUpdate,
+  SubscriptionPlan,
 } from '@/lib/models/business-account/business-account'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
+import { useCurrentUser } from '@/hooks/use-current-user'
+import { USER_ROLES } from '@/const/roles'
 
 const formSchema = z.object({
   company_name: z.string().min(1, 'El nombre de la empresa es requerido'),
@@ -45,10 +55,16 @@ const formSchema = z.object({
     .min(1, 'El email es requerido')
     .email({ message: 'Ingresa un correo electrónico válido' }),
   contact_phone: z.string().optional().or(z.literal('')),
+  subscription_plan: z.enum(['trial', 'free', 'basic', 'pro', 'enterprise']),
   created_by: z.string(),
 })
 
 type BusinessAccountFormValues = z.infer<typeof formSchema>
+
+interface SettingEntry {
+  key: string
+  value: string
+}
 
 interface BusinessAccountModalProps {
   open: boolean
@@ -64,7 +80,14 @@ export function BusinessAccountModal({
   onSave,
 }: BusinessAccountModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [settings, setSettings] = useState<SettingEntry[]>([])
+  const [initialValues, setInitialValues] = useState<BusinessAccountFormValues | null>(null)
   const isEdit = !!account
+  const { role } = useCurrentUser()
+
+  // business_admin solo puede editar datos de contacto
+  const isBusinessAdmin = role === USER_ROLES.BUSINESS_ADMIN
+  const canEditFullAccount = role === USER_ROLES.COMPANY_ADMIN
 
   const form = useForm<BusinessAccountFormValues>({
     resolver: zodResolver(formSchema),
@@ -80,13 +103,14 @@ export function BusinessAccountModal({
       contact_name: '',
       contact_email: '',
       contact_phone: '',
+      subscription_plan: 'trial' as SubscriptionPlan,
       created_by: '',
     },
   })
 
   useEffect(() => {
     if (account) {
-      form.reset({
+      const values = {
         company_name: account.company_name,
         tax_id: account.tax_id || '',
         legal_name: account.legal_name || '',
@@ -98,10 +122,26 @@ export function BusinessAccountModal({
         contact_name: account.contact_name,
         contact_email: account.contact_email,
         contact_phone: account.contact_phone || '',
+        subscription_plan: account.subscription_plan,
         created_by: account.created_by,
-      })
+      }
+      form.reset(values)
+      setInitialValues(values)
+
+      // Convertir settings de objeto a array de key-value pairs
+      if (account.settings) {
+        const settingsArray = Object.entries(account.settings).map(
+          ([key, value]) => ({
+            key,
+            value: String(value),
+          })
+        )
+        setSettings(settingsArray)
+      } else {
+        setSettings([])
+      }
     } else {
-      form.reset({
+      const emptyValues = {
         company_name: '',
         tax_id: '',
         legal_name: '',
@@ -113,17 +153,107 @@ export function BusinessAccountModal({
         contact_name: '',
         contact_email: '',
         contact_phone: '',
+        subscription_plan: 'trial' as SubscriptionPlan,
         created_by: '',
-      })
+      }
+      form.reset(emptyValues)
+      setInitialValues(null)
+      setSettings([])
     }
   }, [account, form])
+
+  const addSetting = () => {
+    setSettings([...settings, { key: '', value: '' }])
+  }
+
+  const removeSetting = (index: number) => {
+    setSettings(settings.filter((_, i) => i !== index))
+  }
+
+  const updateSetting = (
+    index: number,
+    field: 'key' | 'value',
+    value: string
+  ) => {
+    const newSettings = [...settings]
+    newSettings[index][field] = value
+    setSettings(newSettings)
+  }
+
+  // Observar cambios en el formulario
+  const formValues = form.watch()
+
+  // Detectar si hay cambios en los campos editables
+  const hasChanges = useMemo(() => {
+    if (!isEdit || !initialValues) return true // En modo creación, siempre permitir guardar si es válido
+
+    // Si es business_admin, solo revisar campos de contacto
+    if (isBusinessAdmin) {
+      return (
+        formValues.contact_name !== initialValues.contact_name ||
+        formValues.contact_email !== initialValues.contact_email ||
+        formValues.contact_phone !== initialValues.contact_phone
+      )
+    }
+
+    // Si es company_admin, revisar todos los campos
+    return (
+      formValues.company_name !== initialValues.company_name ||
+      formValues.tax_id !== initialValues.tax_id ||
+      formValues.legal_name !== initialValues.legal_name ||
+      formValues.billing_address !== initialValues.billing_address ||
+      formValues.billing_city !== initialValues.billing_city ||
+      formValues.billing_state !== initialValues.billing_state ||
+      formValues.billing_postal_code !== initialValues.billing_postal_code ||
+      formValues.billing_country !== initialValues.billing_country ||
+      formValues.contact_name !== initialValues.contact_name ||
+      formValues.contact_email !== initialValues.contact_email ||
+      formValues.contact_phone !== initialValues.contact_phone ||
+      formValues.subscription_plan !== initialValues.subscription_plan
+    )
+  }, [formValues, initialValues, isBusinessAdmin, isEdit])
+
+  // En modo creación: validar campos obligatorios
+  // En modo edición: validar que haya cambios
+  const canSubmit = useMemo(() => {
+    if (isEdit) {
+      return hasChanges
+    }
+
+    // En modo creación, validar campos obligatorios
+    const requiredFields = [
+      'company_name',
+      'contact_name',
+      'contact_email',
+      'billing_country',
+      'subscription_plan',
+    ] as const
+
+    return requiredFields.every(field => {
+      const value = formValues[field]
+      return value && value.toString().trim() !== ''
+    })
+  }, [isEdit, hasChanges, formValues])
 
   const onSubmit = async (data: BusinessAccountFormValues) => {
     setIsSubmitting(true)
     try {
-      await onSave(data)
+      // Convertir settings array a objeto
+      const settingsObject = settings
+        .filter((s) => s.key.trim() !== '')
+        .reduce((acc, { key, value }) => {
+          acc[key] = value
+          return acc
+        }, {} as Record<string, unknown>)
+
+      await onSave({
+        ...data,
+        settings:
+          Object.keys(settingsObject).length > 0 ? settingsObject : null,
+      })
       onOpenChange(false)
       form.reset()
+      setSettings([])
     } catch (error) {
       console.error('Error saving account:', error)
     } finally {
@@ -164,7 +294,7 @@ export function BusinessAccountModal({
                       <FormControl>
                         <Input
                           placeholder="Salón de Belleza XYZ"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isBusinessAdmin}
                           {...field}
                         />
                       </FormControl>
@@ -182,7 +312,7 @@ export function BusinessAccountModal({
                       <FormControl>
                         <Input
                           placeholder="900123456-7"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isBusinessAdmin}
                           {...field}
                         />
                       </FormControl>
@@ -201,7 +331,7 @@ export function BusinessAccountModal({
                     <FormControl>
                       <Input
                         placeholder="Salón de Belleza XYZ S.A.S"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isBusinessAdmin}
                         {...field}
                       />
                     </FormControl>
@@ -293,7 +423,7 @@ export function BusinessAccountModal({
                       <Textarea
                         placeholder="Calle 123 #45-67"
                         rows={2}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isBusinessAdmin}
                         {...field}
                       />
                     </FormControl>
@@ -312,7 +442,7 @@ export function BusinessAccountModal({
                       <FormControl>
                         <Input
                           placeholder="Bogotá"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isBusinessAdmin}
                           {...field}
                         />
                       </FormControl>
@@ -330,7 +460,7 @@ export function BusinessAccountModal({
                       <FormControl>
                         <Input
                           placeholder="Cundinamarca"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isBusinessAdmin}
                           {...field}
                         />
                       </FormControl>
@@ -348,7 +478,7 @@ export function BusinessAccountModal({
                       <FormControl>
                         <Input
                           placeholder="110111"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isBusinessAdmin}
                           {...field}
                         />
                       </FormControl>
@@ -359,6 +489,102 @@ export function BusinessAccountModal({
               </div>
             </div>
 
+            {/* Plan de Suscripción */}
+            <div className="space-y-4">
+              <h3 className="font-bold">Plan de Suscripción</h3>
+
+              <FormField
+                control={form.control}
+                name="subscription_plan"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Plan <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={isSubmitting || isBusinessAdmin}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecciona un plan" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="trial">Trial</SelectItem>
+                        <SelectItem value="free">Free</SelectItem>
+                        <SelectItem value="basic">Basic</SelectItem>
+                        <SelectItem value="pro">Pro</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Configuración Personalizada (Settings) - Solo company_admin */}
+            {canEditFullAccount && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold">Configuración Personalizada</h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addSetting}
+                    disabled={isSubmitting}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Agregar
+                  </Button>
+                </div>
+
+                {settings.length > 0 ? (
+                  <div className="space-y-2">
+                    {settings.map((setting, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <Input
+                          placeholder="Clave"
+                          value={setting.key}
+                          onChange={(e) =>
+                            updateSetting(index, 'key', e.target.value)
+                          }
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        />
+                        <Input
+                          placeholder="Valor"
+                          value={setting.value}
+                          onChange={(e) =>
+                            updateSetting(index, 'value', e.target.value)
+                          }
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeSetting(index)}
+                          disabled={isSubmitting}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No hay configuraciones personalizadas. Haz clic en "Agregar"
+                    para añadir valores.
+                  </p>
+                )}
+              </div>
+            )}
+
             <DialogFooter>
               <Button
                 type="button"
@@ -368,7 +594,7 @@ export function BusinessAccountModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || !canSubmit}>
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

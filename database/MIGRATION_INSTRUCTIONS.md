@@ -6,11 +6,12 @@ Este documento explica cómo aplicar las migraciones para implementar el sistema
 
 Las migraciones deben aplicarse en el siguiente orden:
 
-1. `001_create_business_accounts.sql` - Crea tabla de cuentas con políticas RLS básicas
-2. `002_create_business_account_members.sql` - Crea tabla de membresías
-3. `005_update_rls_policies.sql` - Actualiza políticas RLS con validación de membresías
-4. `003_alter_businesses_add_account.sql` - Agrega business_account_id a businesses
-5. `004_create_helper_functions.sql` - Crea funciones auxiliares
+1. `001_create_business_accounts.sql` - Crea tabla de cuentas (RLS deshabilitado temporalmente)
+2. `002_create_business_account_members.sql` - Crea tabla de membresías (RLS deshabilitado temporalmente)
+3. `003_alter_businesses_add_account.sql` - Agrega business_account_id a businesses
+4. `004_create_helper_functions.sql` - Crea funciones auxiliares
+
+**Nota**: Las políticas RLS están deshabilitadas temporalmente en los scripts para simplificar el desarrollo. Se habilitarán y configurarán correctamente cuando el sistema esté estable.
 
 ## Métodos de Aplicación
 
@@ -33,7 +34,6 @@ supabase db push
 # O aplicar manualmente cada archivo EN ORDEN
 psql "postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres" -f database/migrations/001_create_business_accounts.sql
 psql "postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres" -f database/migrations/002_create_business_account_members.sql
-psql "postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres" -f database/migrations/005_update_rls_policies.sql
 psql "postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres" -f database/migrations/003_alter_businesses_add_account.sql
 psql "postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres" -f database/migrations/004_create_helper_functions.sql
 ```
@@ -47,7 +47,6 @@ psql -h [HOST] -U postgres -d postgres
 # Ejecutar cada migración EN ORDEN
 \i database/migrations/001_create_business_accounts.sql
 \i database/migrations/002_create_business_account_members.sql
-\i database/migrations/005_update_rls_policies.sql
 \i database/migrations/003_alter_businesses_add_account.sql
 \i database/migrations/004_create_helper_functions.sql
 ```

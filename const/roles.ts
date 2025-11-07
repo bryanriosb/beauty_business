@@ -1,7 +1,7 @@
 export const USER_ROLES = {
   COMPANY_ADMIN: 'company_admin', // Admin de la empresa (crea negocios/salones)
   BUSINESS_ADMIN: 'business_admin', // Admin de un negocio/salón específico
-  EMPLOYEE: 'employee', // Empleado/Especialista
+  EMPLOYEE: 'business_monitor', // Empleado/Especialista
   CUSTOMER: 'customer', // Cliente
 } as const
 
@@ -16,6 +16,11 @@ export const ROLE_PERMISSIONS = {
     canManageSettings: true,
     canManageBusinessAccounts: true,
     canCreateBusinessAccounts: true,
+    canCreateBusinessAccount: true,
+    canEditBusinessAccount: true,
+    canEditAccountContactInfo: true,
+    canDeleteBusinessAccount: true,
+    canAddAccountMembers: true,
   },
   [USER_ROLES.BUSINESS_ADMIN]: {
     canManageBusinesses: false,
@@ -28,6 +33,11 @@ export const ROLE_PERMISSIONS = {
     canManageAppointments: true,
     canViewOwnBusinessAccount: true,
     canManageBusinessesInAccount: true,
+    canCreateBusinessAccount: false,
+    canEditBusinessAccount: false, // No puede editar cuenta completa
+    canEditAccountContactInfo: true, // Pero sí puede editar datos de contacto
+    canDeleteBusinessAccount: false,
+    canAddAccountMembers: true,
   },
   [USER_ROLES.EMPLOYEE]: {
     canManageBusinesses: false,
@@ -57,10 +67,7 @@ export const ROLE_PERMISSIONS = {
   },
 }
 
-export function hasPermission(
-  role: UserRole,
-  permission: keyof (typeof ROLE_PERMISSIONS)[UserRole]
-): boolean {
+export function hasPermission(role: UserRole, permission: string): boolean {
   const permissions = ROLE_PERMISSIONS[role] as Record<string, boolean>
   return permissions[permission] ?? false
 }
@@ -77,7 +84,12 @@ export const SIDEBAR_ACCESS = {
   settings: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
 } as const
 
-export function canAccessRoute(role: UserRole, route: keyof typeof SIDEBAR_ACCESS): boolean {
+export function canAccessRoute(
+  role: UserRole,
+  route: keyof typeof SIDEBAR_ACCESS
+): boolean {
   const allowedRoles = SIDEBAR_ACCESS[route]
-  return allowedRoles ? (allowedRoles as readonly UserRole[]).includes(role) : false
+  return allowedRoles
+    ? (allowedRoles as readonly UserRole[]).includes(role)
+    : false
 }

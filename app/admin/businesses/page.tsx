@@ -6,8 +6,10 @@ import BusinessService from '@/lib/services/business/business-service'
 import { BUSINESSES_COLUMNS } from '@/lib/models/business/const/data-table/businesses-columns'
 import { useRef, useMemo } from 'react'
 import { Plus } from 'lucide-react'
+import { useCurrentUser } from '@/hooks/use-current-user'
 
 export default function BusinessesPage() {
+  const { user, role } = useCurrentUser()
   const businessService = useMemo(() => new BusinessService(), [])
   const dataTableRef = useRef<DataTableRef>(null)
 
@@ -19,6 +21,16 @@ export default function BusinessesPage() {
     }),
     []
   )
+
+  // Determinar si debe filtrar por cuenta
+  // Solo business_admin y business_monitor (employee) ven negocios de su cuenta
+  const shouldFilterByAccount = role === 'business_admin' || role === 'business_monitor'
+  const businessAccountId = shouldFilterByAccount ? user?.business_account_id : undefined
+
+  // Parámetros adicionales para el servicio
+  const serviceParams = useMemo(() => {
+    return businessAccountId ? { business_account_id: businessAccountId } : {}
+  }, [businessAccountId])
 
   return (
     <div className="grid gap-6 w-full">
@@ -40,6 +52,7 @@ export default function BusinessesPage() {
         columns={BUSINESSES_COLUMNS}
         service={businessService}
         searchConfig={searchConfig}
+        defaultQueryParams={serviceParams}
       />
     </div>
   )

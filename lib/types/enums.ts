@@ -37,3 +37,10 @@ export type NotificationType =
   | 'GENERAL_INFO'
 
 export type NotificationSource = 'push' | 'local' | 'internal'
+
+export type userRoles =
+  | 'company_admin'
+  | 'business_admin'
+  | 'business_monitor'
+  | 'specialist'
+  | 'customer'

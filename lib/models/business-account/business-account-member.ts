@@ -1,5 +1,5 @@
 export type MemberRole = 'owner' | 'admin' | 'member'
-export type MemberStatus = 'active' | 'inactive' | 'pending'
+export type MemberStatus = 'active' | 'inactive'
 
 export interface BusinessAccountMember {
   id: string
@@ -7,9 +7,6 @@ export interface BusinessAccountMember {
   user_profile_id: string
   role: MemberRole
   status: MemberStatus
-  invited_by: string | null
-  invited_at: string
-  accepted_at: string | null
   created_at: string
   updated_at: string
 }
@@ -20,9 +17,6 @@ export class BusinessAccountMember implements BusinessAccountMember {
   user_profile_id: string
   role: MemberRole
   status: MemberStatus
-  invited_by: string | null
-  invited_at: string
-  accepted_at: string | null
   created_at: string
   updated_at: string
 
@@ -32,9 +26,6 @@ export class BusinessAccountMember implements BusinessAccountMember {
     this.user_profile_id = data.user_profile_id
     this.role = data.role
     this.status = data.status
-    this.invited_by = data.invited_by
-    this.invited_at = data.invited_at
-    this.accepted_at = data.accepted_at
     this.created_at = data.created_at
     this.updated_at = data.updated_at
   }
@@ -50,10 +41,6 @@ export class BusinessAccountMember implements BusinessAccountMember {
   isActive(): boolean {
     return this.status === 'active'
   }
-
-  isPending(): boolean {
-    return this.status === 'pending'
-  }
 }
 
 export interface BusinessAccountMemberInsert {
@@ -61,13 +48,9 @@ export interface BusinessAccountMemberInsert {
   user_profile_id: string
   role?: MemberRole
   status?: MemberStatus
-  invited_by?: string | null
-  invited_at?: string
-  accepted_at?: string | null
 }
 
 export interface BusinessAccountMemberUpdate {
   role?: MemberRole
   status?: MemberStatus
-  accepted_at?: string | null
 }

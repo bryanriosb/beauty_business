@@ -25,6 +25,7 @@ export default class BusinessService {
     page?: number
     page_size?: number
     name?: string[]
+    business_account_id?: string
   }): Promise<BusinessListResponse> {
     try {
       return await fetchBusinessesAction(params)

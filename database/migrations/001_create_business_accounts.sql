@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS business_accounts (
   contact_name VARCHAR(255) NOT NULL,
   contact_email VARCHAR(255) NOT NULL,
   contact_phone VARCHAR(50),
-  subscription_plan VARCHAR(20) NOT NULL DEFAULT 'trial' CHECK (subscription_plan IN ('free', 'basic', 'pro', 'enterprise')),
+  subscription_plan VARCHAR(20) NOT NULL DEFAULT 'trial' CHECK (subscription_plan IN ('trial', 'free', 'basic', 'pro', 'enterprise')),
   status VARCHAR(20) NOT NULL DEFAULT 'trial' CHECK (status IN ('active', 'suspended', 'cancelled', 'trial')),
   trial_ends_at TIMESTAMP WITH TIME ZONE,
   subscription_started_at TIMESTAMP WITH TIME ZONE,
@@ -43,28 +43,9 @@ CREATE TRIGGER trigger_update_business_accounts_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_business_accounts_updated_at();
 
--- RLS (Row Level Security)
-ALTER TABLE business_accounts ENABLE ROW LEVEL SECURITY;
-
--- Política RLS básica: Los usuarios pueden ver las cuentas que crearon
--- Esta política será actualizada después de crear business_account_members
-CREATE POLICY "Users can view their created business accounts"
-  ON business_accounts
-  FOR SELECT
-  USING (created_by = auth.uid());
-
--- Política RLS básica: Solo el creador puede actualizar
--- Esta política será actualizada después de crear business_account_members
-CREATE POLICY "Creators can update business accounts"
-  ON business_accounts
-  FOR UPDATE
-  USING (created_by = auth.uid());
-
--- Políticas RLS: Los usuarios autenticados pueden crear cuentas
-CREATE POLICY "Authenticated users can create business accounts"
-  ON business_accounts
-  FOR INSERT
-  WITH CHECK (auth.uid() = created_by);
+-- RLS (Row Level Security) - DESHABILITADO TEMPORALMENTE
+-- TODO: Habilitar y configurar correctamente cuando el sistema esté estable
+-- ALTER TABLE business_accounts ENABLE ROW LEVEL SECURITY;
 
 -- Comentarios
 COMMENT ON TABLE business_accounts IS 'Cuentas de negocio (empresas matrices) que agrupan uno o más negocios/sucursales';

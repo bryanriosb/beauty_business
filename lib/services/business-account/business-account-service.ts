@@ -2,6 +2,7 @@ import {
   fetchBusinessAccountsAction,
   createBusinessAccountAction,
   updateBusinessAccountAction,
+  deleteBusinessAccountAction,
   getBusinessAccountByIdAction,
   getUserBusinessAccountsAction,
   addAccountMemberAction,
@@ -11,7 +12,6 @@ import {
   isAccountAdminAction,
   canCreateBusinessInAccountAction,
 } from '@/lib/actions/business-account'
-import { getSupabaseClient } from '@/lib/actions/supabase'
 import type {
   BusinessAccount,
   BusinessAccountInsert,
@@ -74,14 +74,10 @@ export default class BusinessAccountService {
 
   async deleteAccount(id: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const client = await getSupabaseClient()
-      const { error } = await client
-        .from('business_accounts')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-
+      const result = await deleteBusinessAccountAction(id)
+      if (result.error) {
+        return { success: false, error: result.error }
+      }
       return { success: true }
     } catch (error: any) {
       console.error('Error deleting business account:', error)
@@ -198,8 +194,6 @@ export default class BusinessAccountService {
         user_profile_id: userProfileId,
         role: 'owner',
         status: 'active',
-        invited_by: accountData.created_by,
-        accepted_at: new Date().toISOString(),
       }
 
       const memberResult = await this.addMember(memberData)

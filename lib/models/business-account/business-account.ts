@@ -1,4 +1,4 @@
-export type SubscriptionPlan = 'free' | 'basic' | 'pro' | 'enterprise'
+export type SubscriptionPlan = 'trial' | 'free' | 'basic' | 'pro' | 'enterprise'
 export type AccountStatus = 'active' | 'suspended' | 'cancelled' | 'trial'
 
 export interface BusinessAccount {
@@ -80,6 +80,7 @@ export class BusinessAccount implements BusinessAccount {
 
   canCreateBusiness(): boolean {
     const limits = {
+      trial: 1,
       free: 1,
       basic: 3,
       pro: 10,

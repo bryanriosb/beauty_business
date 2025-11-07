@@ -12,6 +12,39 @@ export interface AuthUser {
   business_id?: string | null
   business_account_id?: string | null
   user_profile_id?: string | null
+  businesses?: Array<{
+    id: string
+    name: string
+    business_account_id: string
+  }> | null
+}
+
+/**
+ * Get businesses associated with a business account
+ * @param businessAccountId - The business account ID
+ * @returns Array of businesses or null
+ */
+async function getAccountBusinesses(
+  businessAccountId: string
+): Promise<Array<{ id: string; name: string; business_account_id: string }> | null> {
+  try {
+    const supabase = await getSupabaseAdminClient()
+    const { data: businesses, error } = await supabase
+      .from('businesses')
+      .select('id, name, business_account_id')
+      .eq('business_account_id', businessAccountId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching account businesses:', error.message)
+      return null
+    }
+
+    return businesses || []
+  } catch (err) {
+    console.error('Error in getAccountBusinesses:', err)
+    return null
+  }
 }
 
 /**
@@ -28,6 +61,8 @@ export async function authenticateWithSupabase(
     const supabase = await getSupabaseAdminClient()
     const { email, password } = credentials
 
+    console.log('Attempting authentication for:', email)
+
     // Sign in with Supabase Auth
     const { data: authData, error: authError } =
       await supabase.auth.signInWithPassword({
@@ -36,67 +71,62 @@ export async function authenticateWithSupabase(
       })
 
     if (authError || !authData.user) {
-      console.error('Authentication error:', authError?.message)
+      console.error('Authentication error:', authError?.message, authError)
       return null
     }
 
-    // Get user profile with business account membership
+    console.log('Auth successful, user ID:', authData.user.id)
+
+    // Primero obtener el user_profile básico usando user_id de Supabase Auth
     const { data: userProfile, error: profileError } = await supabase
       .from('users_profile')
-      .select(`
-        id,
-        user_id,
-        role,
-        business_id,
-        business_account_members!inner (
-          business_account_id,
-          role,
-          status
-        )
-      `)
+      .select('id, user_id, role')
       .eq('user_id', authData.user.id)
-      .eq('business_account_members.status', 'active')
-      .limit(1)
       .single()
 
-    // Si el error es por columna inexistente, intentar sin business_id
-    if (profileError?.message?.includes('business_id does not exist')) {
-      const { data: userProfileWithoutBusinessId, error: retryError } =
-        await supabase
-          .from('users_profile')
-          .select('id, user_id, role')
-          .eq('user_id', authData.user.id)
-          .single()
-
-      if (retryError || !userProfileWithoutBusinessId) {
-        console.error('Error fetching user profile:', retryError?.message)
-        return null
-      }
-
-      return {
-        id: authData.user.id,
-        email: authData.user.email || email,
-        name: authData.user.user_metadata?.name || userProfileWithoutBusinessId.role || 'User',
-        role: (userProfileWithoutBusinessId.role as UserRole) || 'customer',
-        business_id: null,
-      }
-    }
-
     if (profileError || !userProfile) {
-      console.error('Error fetching user profile:', profileError?.message)
+      console.error('Error fetching user profile:', profileError?.message, profileError)
+      console.error('Attempted to find profile with user_id:', authData.user.id)
       return null
     }
 
-    const membership = (userProfile as any).business_account_members?.[0]
+    console.log('User profile found:', userProfile.id)
+
+    // Bloquear acceso a usuarios con rol customer
+    if (userProfile.role === 'customer') {
+      console.log('Customer role detected - access denied')
+      return null // Retornar null simula credenciales inválidas
+    }
+
+    // Luego intentar obtener las membresías (puede que no tenga ninguna)
+    const { data: memberships } = await supabase
+      .from('business_account_members')
+      .select('business_account_id, role, status')
+      .eq('user_profile_id', userProfile.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const membership = memberships?.[0] || null
+    console.log('Membership found:', membership ? 'Yes' : 'No')
+
+    // Si el usuario es business_admin y tiene una cuenta asociada, obtener sus negocios
+    let businesses = null
+    if (userProfile.role === 'business_admin' && membership?.business_account_id) {
+      console.log('Fetching businesses for business_admin...')
+      businesses = await getAccountBusinesses(membership.business_account_id)
+      console.log('Businesses found:', businesses?.length || 0)
+    }
 
     return {
       id: authData.user.id,
       email: authData.user.email || email,
       name: authData.user.user_metadata?.name || userProfile.role || 'User',
       role: (userProfile.role as UserRole) || 'customer',
-      business_id: (userProfile as any).business_id || null,
+      business_id: null, // business_id no existe en users_profile
       business_account_id: membership?.business_account_id || null,
       user_profile_id: userProfile.id,
+      businesses,
     }
   } catch (err) {
     console.error('Cannot sign in:', err)
@@ -133,37 +163,32 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     }
 
     // Get user profile
-    // Intentar obtener business_id, pero si no existe la columna, ignorar el error
     const { data: userProfile, error: profileError } = await supabase
       .from('users_profile')
-      .select('id, user_id, role, business_id')
+      .select('id, user_id, role')
       .eq('user_id', user.id)
       .single()
 
-    // Si el error es por columna inexistente, intentar sin business_id
-    if (profileError?.message?.includes('business_id does not exist')) {
-      const { data: userProfileWithoutBusinessId, error: retryError } =
-        await supabase
-          .from('users_profile')
-          .select('id, user_id, role')
-          .eq('user_id', user.id)
-          .single()
-
-      if (retryError || !userProfileWithoutBusinessId) {
-        return null
-      }
-
-      return {
-        id: user.id,
-        email: user.email || '',
-        name: user.user_metadata?.name || userProfileWithoutBusinessId.role || 'User',
-        role: (userProfileWithoutBusinessId.role as UserRole) || 'customer',
-        business_id: null,
-      }
+    if (profileError || !userProfile) {
+      console.error('Error fetching user profile:', profileError?.message)
+      return null
     }
 
-    if (profileError || !userProfile) {
-      return null
+    // Intentar obtener las membresías (puede que no tenga ninguna)
+    const { data: memberships } = await supabase
+      .from('business_account_members')
+      .select('business_account_id, role, status')
+      .eq('user_profile_id', userProfile.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const membership = memberships?.[0] || null
+
+    // Si el usuario es business_admin y tiene una cuenta asociada, obtener sus negocios
+    let businesses = null
+    if (userProfile.role === 'business_admin' && membership?.business_account_id) {
+      businesses = await getAccountBusinesses(membership.business_account_id)
     }
 
     return {
@@ -171,7 +196,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       email: user.email || '',
       name: user.user_metadata?.name || userProfile.role || 'User',
       role: (userProfile.role as UserRole) || 'customer',
-      business_id: (userProfile as any).business_id || null,
+      business_id: null, // business_id no existe en users_profile
+      business_account_id: membership?.business_account_id || null,
+      user_profile_id: userProfile.id,
+      businesses,
     }
   } catch (err) {
     console.error('Error getting current user:', err)

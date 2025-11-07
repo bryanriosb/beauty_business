@@ -22,18 +22,26 @@ export async function fetchBusinessesAction(params?: {
   page?: number
   page_size?: number
   name?: string[]
+  business_account_id?: string
 }): Promise<BusinessListResponse> {
   try {
     const businesses = await getAllRecords<Business>('businesses', {
       order: { column: 'created_at', ascending: false },
     })
 
-    // Filtrar por nombre si se proporciona
+    // Filtrar por business_account_id si se proporciona
     let filteredBusinesses = businesses
 
+    if (params?.business_account_id) {
+      filteredBusinesses = filteredBusinesses.filter(
+        (business) => business.business_account_id === params.business_account_id
+      )
+    }
+
+    // Filtrar por nombre si se proporciona
     if (params?.name && params.name.length > 0) {
       const searchTerm = params.name[0].toLowerCase()
-      filteredBusinesses = businesses.filter((business) =>
+      filteredBusinesses = filteredBusinesses.filter((business) =>
         business.name.toLowerCase().includes(searchTerm)
       )
     }

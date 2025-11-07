@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -26,19 +26,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, UserPlus, Trash2, Shield, ShieldCheck, User } from 'lucide-react'
+import {
+  MoreHorizontal,
+  UserPlus,
+  Trash2,
+  Shield,
+  ShieldCheck,
+  User,
+} from 'lucide-react'
 import type { BusinessAccountMember } from '@/lib/models/business-account/business-account-member'
 import BusinessAccountService from '@/lib/services/business-account/business-account-service'
 import Loading from '@/components/ui/loading'
 import { toast } from 'sonner'
-import { InviteMemberModal } from './InviteMemberModal'
+import { CreateMemberModal } from './CreateMemberModal'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import { USER_ROLES } from '@/const/roles'
 
 interface BusinessAccountMembersModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   accountId: string
   accountName: string
+  contactName?: string
+  contactEmail?: string
 }
 
 const roleLabels = {
@@ -56,12 +66,10 @@ const roleIcons = {
 const statusLabels = {
   active: 'Activo',
   inactive: 'Inactivo',
-  pending: 'Pendiente',
 }
 
 const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
   active: 'default',
-  pending: 'secondary',
   inactive: 'outline',
 }
 
@@ -70,11 +78,20 @@ export function BusinessAccountMembersModal({
   onOpenChange,
   accountId,
   accountName,
+  contactName,
+  contactEmail,
 }: BusinessAccountMembersModalProps) {
   const [members, setMembers] = useState<BusinessAccountMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [inviteModalOpen, setInviteModalOpen] = useState(false)
-  const { user } = useCurrentUser()
+  const [createMemberModalOpen, setCreateMemberModalOpen] = useState(false)
+  const { role } = useCurrentUser()
+
+  // Contar administradores activos
+  const adminCount = useMemo(() => {
+    return members.filter(
+      (m) => (m.role === 'owner' || m.role === 'admin') && m.status === 'active'
+    ).length
+  }, [members])
 
   useEffect(() => {
     if (open && accountId) {
@@ -95,7 +112,10 @@ export function BusinessAccountMembersModal({
     }
   }
 
-  const handleUpdateRole = async (memberId: string, newRole: 'owner' | 'admin' | 'member') => {
+  const handleUpdateRole = async (
+    memberId: string,
+    newRole: 'owner' | 'admin' | 'member'
+  ) => {
     try {
       const service = new BusinessAccountService()
       const result = await service.updateMember(memberId, { role: newRole })
@@ -129,17 +149,17 @@ export function BusinessAccountMembersModal({
     }
   }
 
-  const handleInviteMember = () => {
-    setInviteModalOpen(true)
+  const handleCreateMember = () => {
+    setCreateMemberModalOpen(true)
   }
 
-  const handleMemberInvited = () => {
+  const handleMemberCreated = () => {
     loadMembers()
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg md:max-w-2xl lg:max-w-3xl xl:max-w-4xl !max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Miembros del Equipo</DialogTitle>
           <DialogDescription>
@@ -147,23 +167,23 @@ export function BusinessAccountMembersModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={handleInviteMember} size="sm">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Invitar Miembro
-            </Button>
-          </div>
+        <div className="flex justify-end">
+          <Button onClick={handleCreateMember} size="sm">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Crear Miembro
+          </Button>
+        </div>
 
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loading />
-            </div>
-          ) : members.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay miembros en esta cuenta
-            </div>
-          ) : (
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loading />
+          </div>
+        ) : members.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No hay miembros en esta cuenta
+          </div>
+        ) : (
+          <div className="overflow-x-auto -mx-6 px-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -177,17 +197,51 @@ export function BusinessAccountMembersModal({
               <TableBody>
                 {members.map((member) => {
                   const RoleIcon = roleIcons[member.role]
+                  const isAdmin =
+                    member.role === 'owner' || member.role === 'admin'
+                  const isLastAdmin = isAdmin && adminCount === 1
+
+                  // Determinar si se puede eliminar este miembro
+                  const canDelete = (() => {
+                    // Los owners nunca se pueden eliminar desde aquí
+                    if (member.role === 'owner') return false
+
+                    // Si es el último admin, solo company_admin puede eliminar
+                    if (isLastAdmin) {
+                      return role === USER_ROLES.COMPANY_ADMIN
+                    }
+
+                    // Si es admin pero no es el último, business_admin también puede
+                    if (isAdmin) {
+                      return true
+                    }
+
+                    // Los members normales siempre se pueden eliminar
+                    return true
+                  })()
+
+                  const deleteTooltip = (() => {
+                    if (member.role === 'owner') {
+                      return 'No se puede eliminar al propietario'
+                    }
+                    if (isLastAdmin && role !== USER_ROLES.COMPANY_ADMIN) {
+                      return 'Solo un administrador de la compañía puede eliminar al único administrador'
+                    }
+                    return undefined
+                  })()
+
                   return (
                     <TableRow key={member.id}>
                       <TableCell>
                         <div>
                           <div className="font-medium">
                             {(member as any).users_profile?.full_name ||
-                             (member as any).users_profile?.email ||
-                             'Usuario sin nombre'}
+                              (member as any).users_profile?.email ||
+                              'Usuario sin nombre'}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {(member as any).users_profile?.email || member.user_profile_id}
+                            {(member as any).users_profile?.email ||
+                              member.user_profile_id}
                           </div>
                         </div>
                       </TableCell>
@@ -203,9 +257,9 @@ export function BusinessAccountMembersModal({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {member.accepted_at
-                          ? new Date(member.accepted_at).toLocaleDateString('es-CO')
-                          : '-'}
+                        {new Date(member.created_at).toLocaleDateString(
+                          'es-CO'
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -221,14 +275,18 @@ export function BusinessAccountMembersModal({
                             {member.role !== 'owner' && (
                               <>
                                 <DropdownMenuItem
-                                  onClick={() => handleUpdateRole(member.id, 'admin')}
+                                  onClick={() =>
+                                    handleUpdateRole(member.id, 'admin')
+                                  }
                                   disabled={member.role === 'admin'}
                                 >
                                   <Shield className="mr-2 h-4 w-4" />
                                   Hacer Administrador
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => handleUpdateRole(member.id, 'member')}
+                                  onClick={() =>
+                                    handleUpdateRole(member.id, 'member')
+                                  }
                                   disabled={member.role === 'member'}
                                 >
                                   <User className="mr-2 h-4 w-4" />
@@ -237,15 +295,20 @@ export function BusinessAccountMembersModal({
                                 <DropdownMenuSeparator />
                               </>
                             )}
-                            {member.role !== 'owner' && (
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => handleRemoveMember(member.id)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Eliminar
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => handleRemoveMember(member.id)}
+                              disabled={!canDelete}
+                              title={deleteTooltip}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                              {isLastAdmin && (
+                                <span className="ml-2 text-xs">
+                                  (Único admin)
+                                </span>
+                              )}
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -254,15 +317,16 @@ export function BusinessAccountMembersModal({
                 })}
               </TableBody>
             </Table>
-          )}
-        </div>
+          </div>
+        )}
 
-        <InviteMemberModal
-          open={inviteModalOpen}
-          onOpenChange={setInviteModalOpen}
+        <CreateMemberModal
+          open={createMemberModalOpen}
+          onOpenChange={setCreateMemberModalOpen}
           accountId={accountId}
-          onMemberInvited={handleMemberInvited}
-          currentUserId={user?.user_profile_id || ''}
+          onMemberCreated={handleMemberCreated}
+          contactName={contactName}
+          contactEmail={contactEmail}
         />
       </DialogContent>
     </Dialog>
