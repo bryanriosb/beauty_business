@@ -10,20 +10,24 @@ export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES]
 // Permisos por rol
 export const ROLE_PERMISSIONS = {
   [USER_ROLES.COMPANY_ADMIN]: {
-    canManageBusinesses: true, // Crear, editar, eliminar negocios
-    canManageUsers: true, // Gestionar usuarios de la empresa
-    canViewAllBusinesses: true, // Ver todos los negocios
-    canManageSettings: true, // Configuración global
+    canManageBusinesses: true,
+    canManageUsers: true,
+    canViewAllBusinesses: true,
+    canManageSettings: true,
+    canManageBusinessAccounts: true,
+    canCreateBusinessAccounts: true,
   },
   [USER_ROLES.BUSINESS_ADMIN]: {
     canManageBusinesses: false,
     canManageUsers: false,
     canViewAllBusinesses: false,
     canManageSettings: false,
-    canManageOwnBusiness: true, // Gestionar su propio negocio
-    canManageEmployees: true, // Gestionar empleados de su negocio
-    canManageServices: true, // Gestionar servicios
-    canManageAppointments: true, // Gestionar citas
+    canManageOwnBusiness: true,
+    canManageEmployees: true,
+    canManageServices: true,
+    canManageAppointments: true,
+    canViewOwnBusinessAccount: true,
+    canManageBusinessesInAccount: true,
   },
   [USER_ROLES.EMPLOYEE]: {
     canManageBusinesses: false,
@@ -74,5 +78,6 @@ export const SIDEBAR_ACCESS = {
 } as const
 
 export function canAccessRoute(role: UserRole, route: keyof typeof SIDEBAR_ACCESS): boolean {
-  return SIDEBAR_ACCESS[route]?.includes(role) ?? false
+  const allowedRoles = SIDEBAR_ACCESS[route]
+  return allowedRoles ? (allowedRoles as readonly UserRole[]).includes(role) : false
 }

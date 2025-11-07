@@ -1,0 +1,228 @@
+'use client'
+
+import * as React from 'react'
+import { ChevronRight, type LucideIcon } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import * as TooltipPrimitive from '@radix-ui/react-tooltip'
+
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  useSidebar,
+} from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
+
+export interface NavItem {
+  title: string
+  url: string
+  icon?: LucideIcon
+  isActive?: boolean
+  items?: {
+    title: string
+    url: string
+  }[]
+}
+
+function CollapsedMenuItem({
+  item,
+  pathname,
+  isMobile,
+}: {
+  item: NavItem
+  pathname: string
+  isMobile: boolean
+}) {
+  const [dropdownOpen, setDropdownOpen] = React.useState(false)
+
+  const hasActiveSubItem = item.items?.some(
+    (subItem) => pathname === subItem.url || (subItem.url !== '/admin' && pathname.startsWith(subItem.url + '/'))
+  ) ?? false
+
+  if (isMobile) {
+    return (
+      <SidebarMenuItem>
+        <DropdownMenu modal={false} open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          <DropdownMenuTrigger
+            className={cn(
+              "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 h-8",
+              hasActiveSubItem && "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+            )}
+            data-active={hasActiveSubItem}
+          >
+            {item.icon && <item.icon />}
+            <span className="sr-only">{item.title}</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="bottom"
+            align="end"
+            sideOffset={4}
+            className="min-w-56 rounded-lg"
+          >
+            {item.items?.map((subItem) => (
+              <DropdownMenuItem key={subItem.title} asChild>
+                <Link href={subItem.url}>
+                  {subItem.title}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    )
+  }
+
+  return (
+    <SidebarMenuItem>
+      <DropdownMenu modal={false} open={dropdownOpen} onOpenChange={setDropdownOpen}>
+        <TooltipPrimitive.Root delayDuration={0} open={dropdownOpen ? false : undefined}>
+          <DropdownMenuTrigger asChild>
+            <TooltipPrimitive.Trigger asChild>
+              <button
+                className={cn(
+                  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 h-8",
+                  hasActiveSubItem && "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                )}
+                data-active={hasActiveSubItem}
+              >
+                {item.icon && <item.icon />}
+                <span className="sr-only">{item.title}</span>
+              </button>
+            </TooltipPrimitive.Trigger>
+          </DropdownMenuTrigger>
+          <TooltipPrimitive.Portal>
+            <TooltipPrimitive.Content
+              side="right"
+              align="center"
+              sideOffset={4}
+              className={cn(
+                "bg-foreground text-background animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance"
+              )}
+            >
+              {item.title}
+            </TooltipPrimitive.Content>
+          </TooltipPrimitive.Portal>
+        </TooltipPrimitive.Root>
+        <DropdownMenuContent
+          side="right"
+          align="start"
+          sideOffset={4}
+          className="min-w-56 rounded-lg"
+        >
+          {item.items?.map((subItem) => (
+            <DropdownMenuItem key={subItem.title} asChild>
+              <Link href={subItem.url}>
+                {subItem.title}
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </SidebarMenuItem>
+  )
+}
+
+export function NavMain({
+  items,
+  label,
+}: {
+  items: NavItem[]
+  label?: string
+}) {
+  const pathname = usePathname()
+  const { isMobile, open } = useSidebar()
+  const isCollapsed = !open
+
+  return (
+    <SidebarGroup>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+      <SidebarMenu>
+        {items.map((item) => {
+          const hasSubItems = item.items && item.items.length > 0
+
+          // Para items con subítems, solo es activo si coincide exactamente con algún sub-item
+          // Para items sin subítems, es activo si coincide exactamente o es una sub-ruta
+          const isActive = hasSubItems
+            ? false // Los items con subítems nunca son activos directamente
+            : pathname === item.url || (item.url !== '/admin' && pathname.startsWith(item.url + '/'))
+
+          // Sin subítems: renderizar link simple
+          if (!hasSubItems) {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                  <Link href={item.url}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          }
+
+          const hasActiveSubItem = item.items?.some(
+            (subItem) => pathname === subItem.url || (subItem.url !== '/admin' && pathname.startsWith(subItem.url + '/'))
+          )
+
+          // Con subítems y sidebar colapsado: usar DropdownMenu
+          if (isCollapsed) {
+            return <CollapsedMenuItem key={item.title} item={item} pathname={pathname} isMobile={isMobile} />
+          }
+
+          // Con subítems y sidebar expandido: usar Collapsible
+          return (
+            <Collapsible
+              key={item.title}
+              asChild
+              open={isActive || hasActiveSubItem}
+              className="group/collapsible"
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton tooltip={item.title}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    {item.items?.map((subItem) => {
+                      const isSubItemActive = pathname === subItem.url
+                      return (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton asChild isActive={isSubItemActive}>
+                            <Link href={subItem.url}>
+                              <span>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )
+                    })}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          )
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  )
+}

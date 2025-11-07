@@ -135,7 +135,7 @@
   /* Verde oscuro para headers/secciones secundarias (#169976) */
   --secondary-foreground: oklch(98% 0.005 265);
   /* Blanco */
-  --muted: oklch(20% 0.02 265);
+  --muted: oklch(56.856% 0.02469 265.653);
   /* Grisáceo oscuro apagado */
   --muted-foreground: oklch(65% 0.005 265);
   /* Gris medio */

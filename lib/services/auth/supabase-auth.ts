@@ -9,7 +9,9 @@ export interface AuthUser {
   email: string
   name: string | null
   role: UserRole
-  business_id?: string | null // Para business_admin, el ID del negocio que administra
+  business_id?: string | null
+  business_account_id?: string | null
+  user_profile_id?: string | null
 }
 
 /**
@@ -38,12 +40,23 @@ export async function authenticateWithSupabase(
       return null
     }
 
-    // Get user profile from users_profile table with role
-    // Intentar obtener business_id, pero si no existe la columna, ignorar el error
+    // Get user profile with business account membership
     const { data: userProfile, error: profileError } = await supabase
       .from('users_profile')
-      .select('id, user_id, role, business_id')
+      .select(`
+        id,
+        user_id,
+        role,
+        business_id,
+        business_account_members!inner (
+          business_account_id,
+          role,
+          status
+        )
+      `)
       .eq('user_id', authData.user.id)
+      .eq('business_account_members.status', 'active')
+      .limit(1)
       .single()
 
     // Si el error es por columna inexistente, intentar sin business_id
@@ -74,12 +87,16 @@ export async function authenticateWithSupabase(
       return null
     }
 
+    const membership = (userProfile as any).business_account_members?.[0]
+
     return {
       id: authData.user.id,
       email: authData.user.email || email,
       name: authData.user.user_metadata?.name || userProfile.role || 'User',
       role: (userProfile.role as UserRole) || 'customer',
       business_id: (userProfile as any).business_id || null,
+      business_account_id: membership?.business_account_id || null,
+      user_profile_id: userProfile.id,
     }
   } catch (err) {
     console.error('Cannot sign in:', err)

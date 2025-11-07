@@ -2,6 +2,7 @@ import type { BusinessType } from '@/lib/types/enums'
 
 export interface Business {
   id: string
+  business_account_id: string
   name: string
   description: string | null
   address: string
@@ -20,6 +21,7 @@ export interface Business {
 
 export class Business implements Business {
   id: string
+  business_account_id: string
   name: string
   description: string | null
   address: string
@@ -37,6 +39,7 @@ export class Business implements Business {
 
   constructor(data: Business) {
     this.id = data.id
+    this.business_account_id = data.business_account_id
     this.name = data.name
     this.description = data.description
     this.address = data.address
@@ -55,6 +58,7 @@ export class Business implements Business {
 }
 
 export interface BusinessInsert {
+  business_account_id: string
   name: string
   description?: string | null
   address: string

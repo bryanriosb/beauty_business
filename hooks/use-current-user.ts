@@ -14,6 +14,8 @@ export function useCurrentUser() {
         name: session.user.name || null,
         role: ((session.user as any).role as UserRole) || 'customer',
         business_id: (session.user as any).business_id,
+        business_account_id: (session.user as any).business_account_id,
+        user_profile_id: (session.user as any).user_profile_id,
       }
     : null
 
@@ -23,5 +25,7 @@ export function useCurrentUser() {
     isAuthenticated: status === 'authenticated',
     role: user?.role || null,
     businessId: user?.business_id || null,
+    businessAccountId: user?.business_account_id || null,
+    userProfileId: user?.user_profile_id || null,
   }
 }

@@ -29,7 +29,7 @@ export default function BigCalendar({
   onSelectSlot,
 }: BigCalendarProps) {
   return (
-    <div className="h-[calc(100vh-12rem)] w-full">
+    <div className="h-[calc(100vh-12rem)] w-full [&_.rbc-toolbar]:dark:text-white [&_.rbc-toolbar_button]:dark:text-white [&_.rbc-toolbar_button]:dark:border-white/20 [&_.rbc-toolbar_button:hover]:!bg-primary/90 [&_.rbc-toolbar_button:hover]:!text-primary-foreground [&_.rbc-toolbar_button.rbc-active]:!bg-primary [&_.rbc-toolbar_button.rbc-active]:!text-primary-foreground [&_.rbc-toolbar_button.rbc-active]:!border-primary">
       <Calendar
         localizer={localizer}
         events={events}

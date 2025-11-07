@@ -8,14 +8,21 @@ import {
   Scissors,
   UserCircle,
   BarChart3,
+  Briefcase,
 } from 'lucide-react'
 import { USER_ROLES, type UserRole } from './roles'
+
+export interface MenuSubItem {
+  title: string
+  url: string
+}
 
 export interface MenuItem {
   title: string
   url: string
   icon: any
   allowedRoles: UserRole[]
+  items?: MenuSubItem[]
 }
 
 export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
@@ -32,10 +39,20 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
   {
-    title: 'Negocios',
+    title: 'Sucursales',
     url: '/admin/businesses',
     icon: Building2,
-    allowedRoles: [USER_ROLES.COMPANY_ADMIN], // Solo company admin
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+    items: [
+      {
+        title: 'Cuentas',
+        url: '/admin/business-accounts',
+      },
+      {
+        title: 'Sucursales',
+        url: '/admin/businesses',
+      },
+    ],
   },
   {
     title: 'Servicios',

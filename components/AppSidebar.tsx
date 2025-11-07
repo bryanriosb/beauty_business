@@ -1,17 +1,10 @@
 'use client'
 
-import Link from 'next/link'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
 import SidebarCustomFooter from './SidebarCustomFooter'
@@ -21,6 +14,7 @@ import {
 } from '@/const/sidebar-menu'
 import Logo from './Logo'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import { NavMain } from './NavMain'
 
 export function AppSidebar() {
   const { role } = useCurrentUser()
@@ -41,42 +35,10 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         {filteredAppItems.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Aplicación</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredAppItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
-                      <Link href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          <NavMain items={filteredAppItems} label="Aplicación" />
         )}
         {filteredSystemItems.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredSystemItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
-                      <Link href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          <NavMain items={filteredSystemItems} label="Sistema" />
         )}
       </SidebarContent>
       <SidebarFooter>
