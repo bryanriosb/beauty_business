@@ -7,16 +7,13 @@ export async function middleware(req: NextRequest) {
   const session: any = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === 'production',
+    secureCookie: process.env.ENVIRONTMENT === 'production',
   })
 
   const { pathname } = req.nextUrl
 
   // Si intenta acceder al login o raíz y ya tiene sesión, redirigir a /admin
-  if (
-    (pathname === '/auth/sign-in' || pathname === '/') &&
-    session
-  ) {
+  if ((pathname === '/auth/sign-in' || pathname === '/') && session) {
     return NextResponse.redirect(new URL('/admin', req.url))
   }
 
@@ -29,9 +26,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/',
-    '/auth/sign-in',
-    '/admin/:path*',
-  ],
+  matcher: ['/', '/auth/sign-in', '/admin/:path*'],
 }

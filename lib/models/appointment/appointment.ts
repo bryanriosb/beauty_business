@@ -106,7 +106,6 @@ export interface AppointmentUpdate {
   payment_method?: PaymentMethod
 }
 
-// Extended interface with relations
 export interface AppointmentWithDetails extends Appointment {
   specialist?: {
     id: string
@@ -124,8 +123,13 @@ export interface AppointmentWithDetails extends Appointment {
     id: string
     user_id: string
     profile_picture_url: string | null
+    user?: {
+      email?: string
+      name?: string
+      phone?: string
+    } | null
   }
-  services?: Array<{
+  appointment_services?: Array<{
     id: string
     service_id: string
     price_at_booking_cents: number
@@ -134,6 +138,12 @@ export interface AppointmentWithDetails extends Appointment {
       id: string
       name: string
       description: string | null
+      category_id: string | null
+      service_category?: {
+        id: string
+        name: string
+        icon_key: string | null
+      } | null
     }
   }>
 }

@@ -12,7 +12,6 @@ import type {
   AppointmentInsert,
   AppointmentUpdate,
 } from '@/lib/models/appointment/appointment'
-import type { UserRole } from '@/const/roles'
 
 export interface AppointmentListResponse {
   data: Appointment[]
@@ -24,41 +23,62 @@ export async function fetchAppointmentsAction(params?: {
   page?: number
   page_size?: number
   business_id?: string
+  business_ids?: string[]
   specialist_id?: string
   users_profile_id?: string
   status?: string[]
   start_date?: string
   end_date?: string
-  user_role?: UserRole
-  business_account_id?: string
 }): Promise<AppointmentListResponse> {
   try {
     const supabase = await getSupabaseAdminClient()
     let query = supabase
       .from('appointments')
-      .select('*')
+      .select(`
+        *,
+        specialist:specialists(
+          id,
+          first_name,
+          last_name,
+          specialty,
+          profile_picture_url
+        ),
+        business:businesses(
+          id,
+          name,
+          logo_url
+        ),
+        user_profile:users_profile!appointments_users_profile_id_fkey(
+          id,
+          user_id,
+          profile_picture_url
+        ),
+        appointment_services(
+          id,
+          service_id,
+          price_at_booking_cents,
+          duration_minutes,
+          service:services(
+            id,
+            name,
+            description,
+            category_id,
+            service_category:service_categories(
+              id,
+              name,
+              icon_key
+            )
+          )
+        )
+      `)
       .order('start_time', { ascending: true })
-
-    if (params?.user_role === 'business_admin' && params?.business_account_id) {
-      const { data: businesses } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('business_account_id', params.business_account_id)
-
-      if (businesses && businesses.length > 0) {
-        const businessIds = businesses.map((b) => b.id)
-        query = query.in('business_id', businessIds)
-      } else {
-        return {
-          data: [],
-          total: 0,
-          total_pages: 0,
-        }
-      }
-    }
 
     if (params?.business_id) {
       query = query.eq('business_id', params.business_id)
+    }
+
+    if (params?.business_ids && params.business_ids.length > 0) {
+      query = query.in('business_id', params.business_ids)
     }
 
     if (params?.specialist_id) {
@@ -94,17 +114,39 @@ export async function fetchAppointmentsAction(params?: {
 
     const filteredAppointments = appointments || []
 
+    const appointmentsWithUserData = await Promise.all(
+      filteredAppointments.map(async (appointment: any) => {
+        if (appointment.user_profile?.user_id) {
+          const { data: authUser } = await supabase.auth.admin.getUserById(
+            appointment.user_profile.user_id
+          )
+          return {
+            ...appointment,
+            user_profile: {
+              ...appointment.user_profile,
+              user: authUser?.user ? {
+                email: authUser.user.email,
+                name: authUser.user.user_metadata?.name,
+                phone: authUser.user.phone,
+              } : null,
+            },
+          }
+        }
+        return appointment
+      })
+    )
+
     const page = params?.page || 1
     const pageSize = params?.page_size || 20
     const start = (page - 1) * pageSize
     const end = start + pageSize
 
-    const paginatedData = filteredAppointments.slice(start, end)
-    const totalPages = Math.ceil(filteredAppointments.length / pageSize)
+    const paginatedData = appointmentsWithUserData.slice(start, end)
+    const totalPages = Math.ceil(appointmentsWithUserData.length / pageSize)
 
     return {
       data: paginatedData,
-      total: filteredAppointments.length,
+      total: appointmentsWithUserData.length,
       total_pages: totalPages,
     }
   } catch (error) {
@@ -118,10 +160,82 @@ export async function fetchAppointmentsAction(params?: {
 }
 
 export async function getAppointmentByIdAction(
-  id: string
+  id: string,
+  withDetails = false
 ): Promise<Appointment | null> {
   try {
-    return await getRecordById<Appointment>('appointments', id)
+    if (!withDetails) {
+      return await getRecordById<Appointment>('appointments', id)
+    }
+
+    const supabase = await getSupabaseAdminClient()
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(
+        `
+        *,
+        specialist:specialists(
+          id,
+          first_name,
+          last_name,
+          specialty,
+          profile_picture_url
+        ),
+        business:businesses(
+          id,
+          name,
+          logo_url
+        ),
+        user_profile:users_profile!appointments_users_profile_id_fkey(
+          id,
+          user_id,
+          profile_picture_url
+        ),
+        appointment_services(
+          id,
+          service_id,
+          price_at_booking_cents,
+          duration_minutes,
+          service:services(
+            id,
+            name,
+            description,
+            category_id,
+            service_category:service_categories(
+              id,
+              name,
+              icon_key
+            )
+          )
+        )
+      `
+      )
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      console.error('Error fetching appointment with details:', error)
+      return null
+    }
+
+    if (data?.user_profile?.user_id) {
+      const { data: authUser } = await supabase.auth.admin.getUserById(
+        data.user_profile.user_id
+      )
+      return {
+        ...data,
+        user_profile: {
+          ...data.user_profile,
+          user: authUser?.user ? {
+            email: authUser.user.email,
+            name: authUser.user.user_metadata?.name,
+            phone: authUser.user.phone,
+          } : null,
+        },
+      } as any
+    }
+
+    return data as any
   } catch (error) {
     console.error('Error fetching appointment:', error)
     return null

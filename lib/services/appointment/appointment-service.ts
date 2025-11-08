@@ -39,9 +39,9 @@ export default class AppointmentService {
     }
   }
 
-  async getById(id: string): Promise<Appointment | null> {
+  async getById(id: string, withDetails = true): Promise<Appointment | null> {
     try {
-      return await getAppointmentByIdAction(id)
+      return await getAppointmentByIdAction(id, withDetails)
     } catch (error) {
       console.error('Error fetching appointment by ID:', error)
       throw error

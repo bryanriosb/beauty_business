@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
 import { SidebarTrigger } from './ui/sidebar'
-import { Bell, BrainCircuit, MessageCircle, Moon, Sun, X } from 'lucide-react'
+import { BrainCircuit, MessageCircle, Moon, Sun, X } from 'lucide-react'
 import { Button } from './ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from './ui/drawer'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import { AIAssistantWithHistory } from './AIAssistantWithHistory'
 import { environment } from '@/environment/dev'
+import NotificationPanel from './notifications/NotificationPanel'
 
 export default function AdminHeader() {
   const [open, setOpen] = useState(false)
@@ -39,15 +40,9 @@ export default function AdminHeader() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                data-slot="notifications-trigger"
-                variant="ghost"
-                size="icon"
-                onClick={() => setOpen(true)}
-              >
-                <Bell />
-                <span className="sr-only">Notificaciones</span>
-              </Button>
+              <div>
+                <NotificationPanel />
+              </div>
             </TooltipTrigger>
             <TooltipContent>
               <p>Notificaciones</p>

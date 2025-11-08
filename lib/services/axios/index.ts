@@ -4,7 +4,7 @@ import { environment as proEnvironment } from '@/environment/pro'
 
 // Función para obtener el nombre de la rama (simulada o desde una variable de entorno)
 const getNodeEnvName = (): string => {
-  return process.env.NODE_ENV || 'production'
+  return process.env.ENVIRONTMENT || 'production'
 }
 
 // Seleccionar el entorno basado en la rama
