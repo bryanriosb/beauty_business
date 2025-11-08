@@ -67,7 +67,7 @@ export default function SignInPage() {
       setTimeout(() => {
         router.push('/admin')
         router.refresh()
-      }, 100)
+      }, 200)
     } catch (error) {
       toast.error('Ocurrió un error. Por favor, intenta de nuevo.')
       setIsLoading(false)
