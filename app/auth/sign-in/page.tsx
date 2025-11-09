@@ -53,21 +53,18 @@ export default function SignInPage() {
       const result = await signIn('credentials', {
         username: values.username,
         password: values.password,
-        redirect: false,
+        redirect: "/admin",
       })
 
       if (!result?.ok) {
         toast.error('Credenciales inválidas.')
         setIsLoading(false)
         return
-      }
+      } else {
+          toast.success('Auténticacion exitosa')
 
-      toast.success('Autenticación exitosa')
+									} 
 
-      setTimeout(() => {
-        router.push('/admin')
-        router.refresh()
-      }, 200)
     } catch (error) {
       toast.error('Ocurrió un error. Por favor, intenta de nuevo.')
       setIsLoading(false)
