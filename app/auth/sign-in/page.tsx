@@ -62,6 +62,10 @@ export default function SignInPage() {
         return
       } else {
           toast.success('Auténticacion exitosa')
+          setTimeout(() => {
+        console.log('Redirecting to /admin')
+        router.push('/admin')
+      }, 100)
 
 									} 
 
