@@ -53,7 +53,7 @@ export default function SignInPage() {
       const result = await signIn('credentials', {
         username: values.username,
         password: values.password,
-        redirect: true,
+        redirect: false,
       })
 
       if (!result?.ok) {
