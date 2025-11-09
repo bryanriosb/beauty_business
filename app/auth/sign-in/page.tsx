@@ -60,14 +60,13 @@ export default function SignInPage() {
         toast.error('Credenciales inválidas.')
         setIsLoading(false)
         return
-      } else {
-          toast.success('Auténticacion exitosa')
+      }
+
+        toast.success('Auténticacion exitosa')
           setTimeout(() => {
         console.log('Redirecting to /admin')
         router.push('/admin')
-      }, 100)
-
-									} 
+      }, 2000)
 
     } catch (error) {
       toast.error('Ocurrió un error. Por favor, intenta de nuevo.')
