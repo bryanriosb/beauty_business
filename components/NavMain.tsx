@@ -68,7 +68,7 @@ function CollapsedMenuItem({
             data-active={hasActiveSubItem}
           >
             {item.icon && <item.icon />}
-            <span className="sr-only">{item.title}</span>
+            <span>{item.title}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             side="bottom"
@@ -103,7 +103,7 @@ function CollapsedMenuItem({
                 data-active={hasActiveSubItem}
               >
                 {item.icon && <item.icon />}
-                <span className="sr-only">{item.title}</span>
+                <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
               </button>
             </TooltipPrimitive.Trigger>
           </DropdownMenuTrigger>

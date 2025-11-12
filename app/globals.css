@@ -279,3 +279,23 @@
 .animate-slide-in-left {
   animation: slide-in-left 0.3s ease-out;
 }
+
+/* React Big Calendar - Custom Styles */
+.rbc-month-view,
+.rbc-time-view,
+.rbc-agenda-view {
+  border-color: #fdfdfd !important;
+}
+
+.rbc-day-bg,
+.rbc-month-row,
+.rbc-time-content,
+.rbc-time-column,
+.rbc-time-header-content,
+.rbc-header {
+  border-color: #F5F5F5 !important;
+}
+
+.rbc-day-bg.rbc-off-range-bg {
+  background-color: #F5F5F5 !important;
+}

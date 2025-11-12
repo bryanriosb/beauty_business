@@ -16,7 +16,10 @@ export default function SidebarFooter() {
 
   if (isCollapsed) {
     return (
-      <footer className="flex items-center justify-center p-2">
+      <footer
+        className="flex items-center justify-center p-2"
+        data-darkreader-ignore
+      >
         <Button
           variant="ghost"
           size="icon"

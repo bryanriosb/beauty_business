@@ -1,6 +1,13 @@
 'use client'
 
-import { Calendar, dateFnsLocalizer, Event, Components } from 'react-big-calendar'
+import {
+  Calendar,
+  dateFnsLocalizer,
+  Event,
+  Components,
+  View,
+  NavigateAction,
+} from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -10,6 +17,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const locales = {
   es: es,
@@ -34,7 +44,72 @@ interface BigCalendarProps {
   defaultDate?: Date
 }
 
-const CustomDateHeader = ({ date, label, drilldownView, onDrillDown }: any) => {
+const CustomToolbar = (toolbar: any) => {
+  const goToBack = () => {
+    toolbar.onNavigate('PREV')
+  }
+
+  const goToNext = () => {
+    toolbar.onNavigate('NEXT')
+  }
+
+  const label = () => {
+    const date = toolbar.date
+    return (
+      format(date, 'MMMM yyyy', { locale: es }).charAt(0).toUpperCase() +
+      format(date, 'MMMM yyyy', { locale: es }).slice(1)
+    )
+  }
+
+  return (
+    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 mb-4">
+      <div className="flex items-center justify-between md:justify-start gap-2">
+        <Button variant="outline" size="sm" onClick={goToBack} className="h-9">
+          <ChevronLeft className="h-4 w-4 md:mr-1" />
+          <span className="hidden md:inline">Anterior</span>
+        </Button>
+
+        <p className="font-semibold text-sm md:text-base min-w-[180px] text-center">
+          {label()}
+        </p>
+
+        <Button variant="outline" size="sm" onClick={goToNext} className="h-9">
+          <span className="hidden md:inline">Siguiente</span>
+          <ChevronRight className="h-4 w-4 md:ml-1" />
+        </Button>
+      </div>
+
+      <ButtonGroup>
+        <Button
+          variant={toolbar.view === 'day' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => toolbar.onView('day')}
+          title="Vista por día"
+        >
+          Día
+        </Button>
+        <Button
+          variant={toolbar.view === 'week' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => toolbar.onView('week')}
+          title="Vista por semana"
+        >
+          Semana
+        </Button>
+        <Button
+          variant={toolbar.view === 'month' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => toolbar.onView('month')}
+          title="Vista por mes"
+        >
+          Mes
+        </Button>
+      </ButtonGroup>
+    </div>
+  )
+}
+
+const CustomDateHeader = ({ date, label, onDrillDown }: any) => {
   return (
     <TooltipProvider>
       <Tooltip delayDuration={200}>
@@ -70,8 +145,8 @@ const CustomEvent = ({ event }: { event: Event }) => {
   const totalServices = appointment?.appointment_services?.length || 0
 
   return (
-    <div className="flex gap-2 h-full overflow-hidden p-0.5">
-      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[0.6rem] font-semibold overflow-hidden">
+    <div className="flex gap-1.5 md:gap-2 h-full overflow-hidden p-0.5">
+      <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-white/20 flex items-center justify-center text-[0.55rem] md:text-[0.6rem] font-semibold overflow-hidden">
         {specialistPhoto ? (
           <img
             src={specialistPhoto}
@@ -83,13 +158,15 @@ const CustomEvent = ({ event }: { event: Event }) => {
         )}
       </div>
       <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-        <div className="font-semibold truncate text-xs leading-tight">{specialistName}</div>
-        <div className="flex items-center justify-between gap-2">
-          <div className="truncate text-[0.7rem] leading-tight opacity-90">
+        <div className="font-semibold truncate text-[0.65rem] md:text-xs leading-tight">
+          {specialistName}
+        </div>
+        <div className="flex items-center justify-between gap-1">
+          <div className="truncate text-[0.6rem] md:text-[0.7rem] leading-tight opacity-90">
             {formatTime(event.start as Date)}
           </div>
           {totalServices > 0 && (
-            <div className="flex-shrink-0 text-[0.65rem] leading-tight opacity-75 font-medium">
+            <div className="hidden md:flex flex-shrink-0 text-[0.65rem] leading-tight opacity-75 font-medium">
               {totalServices}/{totalServices}
             </div>
           )}
@@ -157,6 +234,7 @@ export default function BigCalendar({
 
   const components: Components<Event> = {
     event: CustomEvent,
+    toolbar: CustomToolbar,
     month: {
       dateHeader: (props: any) => (
         <CustomDateHeader {...props} onDrillDown={onDrillDown} />
@@ -165,7 +243,7 @@ export default function BigCalendar({
   }
 
   return (
-    <div className="h-[calc(100vh-12rem)] w-full [&_.rbc-toolbar]:dark:text-white [&_.rbc-toolbar_button]:dark:text-white [&_.rbc-toolbar_button]:dark:border-white/20 [&_.rbc-toolbar_button:hover]:!bg-primary/90 [&_.rbc-toolbar_button:hover]:!text-primary-foreground [&_.rbc-toolbar_button.rbc-active]:!bg-primary [&_.rbc-toolbar_button.rbc-active]:!text-primary-foreground [&_.rbc-toolbar_button.rbc-active]:!border-primary [&_.rbc-event]:!p-1 [&_.rbc-show-more]:!text-primary [&_.rbc-show-more]:!font-bold [&_.rbc-show-more:hover]:!underline [&_.rbc-date-cell]:cursor-pointer [&_.rbc-date-cell:hover]:bg-accent [&_.rbc-date-cell]:transition-colors [&_.rbc-date-cell]:rounded-sm [&_.rbc-button-link]:font-semibold [&_.rbc-button-link:hover]:text-primary [&_.rbc-button-link]:transition-colors">
+    <div className="h-[calc(100vh-12rem)] w-full [&_.rbc-event]:!p-1 [&_.rbc-event]:min-h-[2.5rem] [&_.rbc-event]:md:min-h-[3rem] [&_.rbc-show-more]:!text-primary [&_.rbc-show-more]:!font-bold [&_.rbc-show-more]:text-xs [&_.rbc-show-more]:md:text-sm [&_.rbc-show-more:hover]:!underline [&_.rbc-date-cell]:cursor-pointer [&_.rbc-date-cell:hover]:bg-accent [&_.rbc-date-cell]:transition-colors [&_.rbc-date-cell]:rounded-sm [&_.rbc-button-link]:font-semibold [&_.rbc-button-link]:text-xs [&_.rbc-button-link]:md:text-sm [&_.rbc-button-link:hover]:text-primary [&_.rbc-button-link]:transition-colors [&_.rbc-header]:text-xs [&_.rbc-header]:md:text-sm [&_.rbc-header]:font-semibold [&_.rbc-header]:py-2 [&_.rbc-month-view]:text-xs [&_.rbc-month-view]:md:text-sm [&_.rbc-time-header-content]:text-xs [&_.rbc-time-header-content]:md:text-sm [&_.rbc-time-slot]:text-xs [&_.rbc-time-slot]:md:text-sm [&_.rbc-time-content]:overflow-x-auto [&_.rbc-off-range]:!bg-[#F5F5F5] [&_.rbc-off-range_.rbc-button-link]:!text-[#F5F5F5] [&_.rbc-today]:!bg-primary/10 [&_.rbc-today_.rbc-button-link]:!text-primary [&_.rbc-today_.rbc-button-link]:!font-bold">
       <Calendar
         localizer={localizer}
         events={events}
@@ -187,18 +265,11 @@ export default function BigCalendar({
         eventPropGetter={eventStyleGetter}
         components={components}
         messages={{
-          next: 'Siguiente',
-          previous: 'Anterior',
-          today: 'Hoy',
-          month: 'Mes',
-          week: 'Semana',
-          day: 'Día',
-          agenda: 'Agenda',
           date: 'Fecha',
           time: 'Hora',
           event: 'Cita',
           noEventsInRange: 'No hay citas en este rango',
-          showMore: (total) => `+ Ver más (${total})`,
+          showMore: (total) => `+ ${total}`,
         }}
       />
     </div>

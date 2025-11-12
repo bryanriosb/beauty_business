@@ -70,7 +70,7 @@ BEGIN
     WHEN 'free' THEN 1
     WHEN 'basic' THEN 3
     WHEN 'pro' THEN 10
-    WHEN 'enterprise' THEN 999999
+    WHEN 'enterprise' THEN F5F5F5
     ELSE 0
   END;
 
@@ -99,7 +99,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Comentarios
 COMMENT ON FUNCTION get_user_business_accounts IS 'Obtiene todas las cuentas de negocio a las que pertenece un usuario';
+
 COMMENT ON FUNCTION is_account_admin IS 'Verifica si un usuario es admin u owner de una cuenta';
+
 COMMENT ON FUNCTION count_account_businesses IS 'Cuenta el número de negocios asociados a una cuenta';
+
 COMMENT ON FUNCTION can_create_business_in_account IS 'Verifica si se pueden crear más negocios según el plan de suscripción';
+
 COMMENT ON FUNCTION get_account_businesses IS 'Obtiene todos los negocios asociados a una cuenta de negocio';

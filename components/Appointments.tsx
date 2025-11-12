@@ -2,24 +2,33 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import BigCalendar from './BigCalendar'
+import MobileAppointmentsList from './appointments/MobileAppointmentsList'
+import AppointmentsTableView from './appointments/AppointmentsTableView'
 import { Event } from 'react-big-calendar'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import AppointmentService from '@/lib/services/appointment/appointment-service'
 import type { Appointment } from '@/lib/models/appointment/appointment'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { ButtonGroup } from '@/components/ui/button-group'
+import { Plus, Calendar, List, Table } from 'lucide-react'
 import AppointmentDetailsModal from './appointments/AppointmentDetailsModal'
 import AppointmentFormModal from './appointments/AppointmentFormModal'
 import DayAppointmentsModal from './appointments/DayAppointmentsModal'
 import Loading from '@/components/ui/loading'
 
 type ViewMode = 'day' | 'week' | 'month'
+type DisplayMode = 'calendar' | 'list' | 'table'
 
 export default function Appointments() {
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('month')
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('calendar')
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    return now
+  })
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
@@ -118,7 +127,7 @@ export default function Appointments() {
     setIsDetailsModalOpen(true)
   }
 
-  const handleSelectSlot = (slotInfo: { start: Date; end: Date }) => {
+  const handleSelectSlot = (_slotInfo: { start: Date; end: Date }) => {
     // Deshabilitado: no hacer nada al seleccionar un slot vacío
   }
 
@@ -197,9 +206,9 @@ export default function Appointments() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 h-[calc(100vh-120px)]">
+      <div className="flex flex-col gap-4 md:gap-6 h-[calc(100vh-120px)]">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Citas</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Citas</h1>
         </div>
         <div className="bg-card rounded-lg border p-4 flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
@@ -212,26 +221,90 @@ export default function Appointments() {
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Citas</h1>
-        <Button size="sm" className="gap-2" onClick={handleCreateAppointment}>
-          <Plus className="h-4 w-4" />
-          Nueva Cita
-        </Button>
+    <div className="grid gap-4 md:gap-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="text-2xl md:text-3xl font-bold">Citas</h1>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <ButtonGroup className="w-full sm:w-auto">
+            <Button
+              variant={displayMode === 'calendar' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDisplayMode('calendar')}
+              title="Vista de calendario"
+              className="flex-1 sm:flex-none gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Calendario</span>
+            </Button>
+            <Button
+              variant={displayMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDisplayMode('list')}
+              title="Vista de lista"
+              className="flex-1 sm:flex-none gap-2"
+            >
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">Lista</span>
+            </Button>
+            <Button
+              variant={displayMode === 'table' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDisplayMode('table')}
+              title="Vista de tabla"
+              className="flex-1 sm:flex-none gap-2"
+            >
+              <Table className="h-4 w-4" />
+              <span className="hidden sm:inline">Tabla</span>
+            </Button>
+          </ButtonGroup>
+          <Button size="sm" className="gap-2" onClick={handleCreateAppointment}>
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nueva Cita</span>
+            <span className="sm:hidden">Nueva</span>
+          </Button>
+        </div>
       </div>
-      <div className="bg-card rounded-lg border p-4">
-        <BigCalendar
-          events={events}
-          onSelectEvent={handleSelectEvent}
-          onSelectSlot={handleSelectSlot}
+
+      {displayMode === 'calendar' && (
+        <div className="bg-card rounded-lg border p-2 md:p-4">
+          <BigCalendar
+            events={events}
+            onSelectEvent={handleSelectEvent}
+            onSelectSlot={handleSelectSlot}
+            onNavigate={handleNavigate}
+            onView={handleViewChange}
+            onDrillDown={handleDrillDown}
+            defaultView={viewMode}
+            defaultDate={currentDate}
+          />
+        </div>
+      )}
+
+      {displayMode === 'list' && (
+        <MobileAppointmentsList
+          appointments={allAppointments}
+          currentDate={currentDate}
           onNavigate={handleNavigate}
-          onView={handleViewChange}
-          onDrillDown={handleDrillDown}
-          defaultView={viewMode}
-          defaultDate={currentDate}
+          onSelectAppointment={(id: string) => {
+            setSelectedAppointmentId(id)
+            setIsDetailsModalOpen(true)
+          }}
         />
-      </div>
+      )}
+
+      {displayMode === 'table' && (
+        <AppointmentsTableView
+          appointments={allAppointments}
+          currentDate={currentDate}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onNavigate={handleNavigate}
+          onSelectAppointment={(id: string) => {
+            setSelectedAppointmentId(id)
+            setIsDetailsModalOpen(true)
+          }}
+        />
+      )}
 
       <DayAppointmentsModal
         open={isDayModalOpen}

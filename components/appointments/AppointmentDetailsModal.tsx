@@ -11,7 +11,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { AppointmentWithDetails } from '@/lib/models/appointment/appointment'
 import AppointmentService from '@/lib/services/appointment/appointment-service'
-import { Calendar, Clock, User, DollarSign, Package, Mail, Phone } from 'lucide-react'
+import {
+  Calendar,
+  Clock,
+  User,
+  DollarSign,
+  Package,
+  Mail,
+  Phone,
+} from 'lucide-react'
 import Loading from '@/components/ui/loading'
 
 interface AppointmentDetailsModalProps {
@@ -25,7 +33,9 @@ export default function AppointmentDetailsModal({
   open,
   onOpenChange,
 }: AppointmentDetailsModalProps) {
-  const [appointment, setAppointment] = useState<AppointmentWithDetails | null>(null)
+  const [appointment, setAppointment] = useState<AppointmentWithDetails | null>(
+    null
+  )
   const [isLoading, setIsLoading] = useState(false)
   const appointmentService = new AppointmentService()
 
@@ -109,23 +119,34 @@ export default function AppointmentDetailsModal({
   }
 
   const statusStyle = getStatusStyles(appointment.status)
-  const statusText = statusTranslations[appointment.status] || appointment.status
-  const paymentStatusText = paymentStatusTranslations[appointment.payment_status] || appointment.payment_status
+  const statusText =
+    statusTranslations[appointment.status] || appointment.status
+  const paymentStatusText =
+    paymentStatusTranslations[appointment.payment_status] ||
+    appointment.payment_status
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Detalles de la Cita</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <span className={`px-3 py-1.5 rounded-md font-medium text-sm ${statusStyle.bg} ${statusStyle.text}`}>
-              {statusText}
-            </span>
-            <Badge variant={appointment.payment_status === 'PAID' ? 'default' : 'secondary'}>
+          <DialogTitle className="flex items-center gap-2">
+            <span>Detalles de la Cita</span>
+            <Badge
+              variant={
+                appointment.payment_status === 'PAID' ? 'default' : 'secondary'
+              }
+            >
               {paymentStatusText}
             </Badge>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="flex justify-end gap-2">
+            <span
+              className={`px-3 py-1.5 rounded-md font-medium text-sm ${statusStyle.bg} ${statusStyle.text}`}
+            >
+              {statusText}
+            </span>
           </div>
 
           <div className="grid gap-4">
@@ -133,7 +154,9 @@ export default function AppointmentDetailsModal({
               <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
                 <p className="font-medium">Fecha</p>
-                <p className="text-sm text-muted-foreground">{formatDate(appointment.start_time)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(appointment.start_time)}
+                </p>
               </div>
             </div>
 
@@ -142,7 +165,8 @@ export default function AppointmentDetailsModal({
               <div>
                 <p className="font-medium">Horario</p>
                 <p className="text-sm text-muted-foreground">
-                  {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
+                  {formatTime(appointment.start_time)} -{' '}
+                  {formatTime(appointment.end_time)}
                 </p>
               </div>
             </div>
@@ -196,52 +220,72 @@ export default function AppointmentDetailsModal({
                   </div>
                   <div>
                     <p className="font-medium">
-                      {appointment.specialist.first_name} {appointment.specialist.last_name}
+                      {appointment.specialist.first_name}{' '}
+                      {appointment.specialist.last_name}
                     </p>
                     {appointment.specialist.specialty && (
-                      <p className="text-xs text-muted-foreground">{appointment.specialist.specialty}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {appointment.specialist.specialty}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
             )}
 
-            {appointment.appointment_services && appointment.appointment_services.length > 0 && (
-              <div className="flex items-start gap-3">
-                <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium mb-2">Servicios</p>
-                  <div className="space-y-2">
-                    {appointment.appointment_services.map((appointmentService) => (
-                      <div
-                        key={appointmentService.id}
-                        className="flex justify-between text-sm border-b pb-2"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">{appointmentService.service.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                            {appointmentService.service.service_category && (
-                              <Badge variant="outline" className="text-xs px-1.5 py-0">
-                                {appointmentService.service.service_category.name}
-                              </Badge>
-                            )}
-                            <span>{appointmentService.duration_minutes} min</span>
-                          </div>
-                          {appointmentService.service.description && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {appointmentService.service.description}
+            {appointment.appointment_services &&
+              appointment.appointment_services.length > 0 && (
+                <div className="flex items-start gap-3">
+                  <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium mb-2">Servicios</p>
+                    <div className="space-y-2">
+                      {appointment.appointment_services.map(
+                        (appointmentService) => (
+                          <div
+                            key={appointmentService.id}
+                            className="flex justify-between text-sm border-b pb-2"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium">
+                                {appointmentService.service.name}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                {appointmentService.service
+                                  .service_category && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs px-1.5 py-0"
+                                  >
+                                    {
+                                      appointmentService.service
+                                        .service_category.name
+                                    }
+                                  </Badge>
+                                )}
+                                <span>
+                                  {appointmentService.duration_minutes} min
+                                </span>
+                              </div>
+                              {appointmentService.service.description && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {appointmentService.service.description}
+                                </p>
+                              )}
+                            </div>
+                            <p className="font-medium ml-2">
+                              $
+                              {(
+                                appointmentService.price_at_booking_cents / 100
+                              ).toFixed(2)}
                             </p>
-                          )}
-                        </div>
-                        <p className="font-medium ml-2">
-                          ${(appointmentService.price_at_booking_cents / 100).toFixed(2)}
-                        </p>
-                      </div>
-                    ))}
+                          </div>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div className="flex items-start gap-3">
               <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -250,7 +294,9 @@ export default function AppointmentDetailsModal({
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>${(appointment.subtotal_cents / 100).toFixed(2)}</span>
+                    <span>
+                      ${(appointment.subtotal_cents / 100).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Impuesto</span>
@@ -259,12 +305,16 @@ export default function AppointmentDetailsModal({
                   {appointment.discount_cents > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Descuento</span>
-                      <span>-${(appointment.discount_cents / 100).toFixed(2)}</span>
+                      <span>
+                        -${(appointment.discount_cents / 100).toFixed(2)}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
                     <span>Total</span>
-                    <span>${(appointment.total_price_cents / 100).toFixed(2)}</span>
+                    <span>
+                      ${(appointment.total_price_cents / 100).toFixed(2)}
+                    </span>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -276,7 +326,9 @@ export default function AppointmentDetailsModal({
             {appointment.customer_note && (
               <div className="border-t pt-4">
                 <p className="font-medium mb-1">Nota del Cliente</p>
-                <p className="text-sm text-muted-foreground">{appointment.customer_note}</p>
+                <p className="text-sm text-muted-foreground">
+                  {appointment.customer_note}
+                </p>
               </div>
             )}
           </div>
