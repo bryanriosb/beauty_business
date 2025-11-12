@@ -25,9 +25,10 @@ export async function authenticate(
       username: user.email,
       name: user.name || 'Admin',
       role: user.role,
-      business_id: user.business_id,
+      business_id: user.business_id || user.businesses?.[0]?.id || null,
       business_account_id: user.business_account_id,
       user_profile_id: user.user_profile_id,
+      businesses: user.businesses,
     }
 
     return userSessionData

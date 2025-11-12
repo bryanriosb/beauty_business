@@ -3,17 +3,18 @@
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
 import { SidebarTrigger } from './ui/sidebar'
-import { BrainCircuit, MessageCircle, Moon, Sun, X } from 'lucide-react'
+import { MessageCircle, Moon, Sun } from 'lucide-react'
 import { Button } from './ui/button'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from './ui/drawer'
+import { Badge } from './ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
-import { AIAssistantWithHistory } from './AIAssistantWithHistory'
-import { environment } from '@/environment/dev'
 import NotificationPanel from './notifications/NotificationPanel'
+import ChatSheet from './chat/ChatSheet'
+import { useUnreadMessages } from '@/hooks/use-unread-messages'
 
 export default function AdminHeader() {
-  const [open, setOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const { theme, setTheme } = useTheme()
+  const unreadCount = useUnreadMessages()
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -29,8 +30,8 @@ export default function AdminHeader() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <Sun className="!h-5 !w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute !h-5 !w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Cambiar tema</span>
               </Button>
             </TooltipTrigger>
@@ -54,51 +55,29 @@ export default function AdminHeader() {
                 data-slot="chat-trigger"
                 variant="ghost"
                 size="icon"
-                onClick={() => setOpen(true)}
+                onClick={() => setChatOpen(true)}
+                className="relative"
               >
-                <MessageCircle />
+                <MessageCircle className="!h-5 !w-5" />
+                {unreadCount > 0 && (
+                  <Badge
+                    variant="default"
+                    className="absolute top-0.5 right-1 h-4 w-4 px-1 text-xs flex items-center justify-center"
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                )}
                 <span className="sr-only">Chat</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Chat</p>
+              <p>Chat {unreadCount > 0 ? `(${unreadCount} sin leer)` : ''}</p>
             </TooltipContent>
           </Tooltip>
         </div>
       </header>
 
-      <Drawer
-        open={open}
-        onOpenChange={setOpen}
-        direction="right"
-        dismissible={false}
-      >
-        <DrawerContent className="fixed inset-y-0 right-0 left-auto mt-0 w-full sm:w-[1024px] rounded-none border-l select-text focus:outline-none focus-visible:outline-none">
-          <DrawerHeader className="flex items-center justify-between border-b">
-            <DrawerTitle className="flex items-center gap-2">
-              <BrainCircuit className="size-5" />
-              Asistente
-            </DrawerTitle>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-8"
-              onClick={() => setOpen(false)}
-            >
-              <X className="size-4" />
-              <span className="sr-only">Cerrar</span>
-            </Button>
-          </DrawerHeader>
-
-          <div className="flex-1 overflow-y-auto select-text">
-            <AIAssistantWithHistory
-              userId="7"
-              showHistory
-              url={environment.LLM_WT_URL}
-            />
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <ChatSheet open={chatOpen} onOpenChange={setChatOpen} />
     </>
   )
 }

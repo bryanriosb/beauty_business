@@ -83,7 +83,7 @@ export default function NotificationPanel() {
         className="relative"
         onClick={() => setIsOpen(true)}
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="!h-5 !w-5" />
         {unreadCount > 0 && (
           <Badge
             variant="destructive"
@@ -113,7 +113,9 @@ export default function NotificationPanel() {
             </div>
             <SheetDescription>
               {unreadCount > 0
-                ? `Tienes ${unreadCount} notificación${unreadCount > 1 ? 'es' : ''} sin leer`
+                ? `Tienes ${unreadCount} notificación${
+                    unreadCount > 1 ? 'es' : ''
+                  } sin leer`
                 : 'No tienes notificaciones sin leer'}
             </SheetDescription>
           </SheetHeader>
