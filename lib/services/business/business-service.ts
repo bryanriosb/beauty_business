@@ -5,7 +5,7 @@ import {
   updateBusinessAction,
   deleteBusinessAction,
 } from '@/lib/actions/business'
-import type { Business } from '@/lib/models/business/business'
+import type { Business, BusinessInsert } from '@/lib/models/business/business'
 
 export interface BusinessListResponse {
   data: Business[]
@@ -50,17 +50,7 @@ export default class BusinessService {
   /**
    * Crea un nuevo negocio
    */
-  async createItem(data: {
-    name: string
-    type: string
-    phone?: string
-    email?: string
-    address?: string
-    city?: string
-    state?: string
-    country?: string
-    postal_code?: string
-  }): Promise<{ success: boolean; data?: Business; error?: string }> {
+  async createItem(data: BusinessInsert): Promise<{ success: boolean; data?: Business; error?: string }> {
     try {
       return await createBusinessAction(data)
     } catch (error: any) {
@@ -73,8 +63,7 @@ export default class BusinessService {
    * Actualiza un negocio
    */
   async updateItem(
-    data: Business | Partial<Business>,
-    partial = true
+    data: Business | Partial<Business>
   ): Promise<{ success: boolean; data?: Business; error?: string }> {
     try {
       if (!data.id) {

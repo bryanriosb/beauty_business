@@ -7,7 +7,7 @@ import {
   updateRecord,
   deleteRecord,
 } from '@/lib/actions/supabase'
-import type { Business } from '@/lib/models/business/business'
+import type { Business, BusinessInsert } from '@/lib/models/business/business'
 
 export interface BusinessListResponse {
   data: Business[]
@@ -25,20 +25,21 @@ export async function fetchBusinessesAction(params?: {
   business_account_id?: string
 }): Promise<BusinessListResponse> {
   try {
+    // Construir filtros para la consulta
+    const filters: Record<string, any> = {}
+
+    if (params?.business_account_id) {
+      filters.business_account_id = params.business_account_id
+    }
+
     const businesses = await getAllRecords<Business>('businesses', {
+      filters: Object.keys(filters).length > 0 ? filters : undefined,
       order: { column: 'created_at', ascending: false },
     })
 
-    // Filtrar por business_account_id si se proporciona
+    // Filtrar por nombre si se proporciona (esto se hace en memoria porque es búsqueda parcial)
     let filteredBusinesses = businesses
 
-    if (params?.business_account_id) {
-      filteredBusinesses = filteredBusinesses.filter(
-        (business) => business.business_account_id === params.business_account_id
-      )
-    }
-
-    // Filtrar por nombre si se proporciona
     if (params?.name && params.name.length > 0) {
       const searchTerm = params.name[0].toLowerCase()
       filteredBusinesses = filteredBusinesses.filter((business) =>
@@ -84,17 +85,7 @@ export async function getBusinessByIdAction(id: string): Promise<Business | null
 /**
  * Crea un nuevo negocio
  */
-export async function createBusinessAction(data: {
-  name: string
-  type: string
-  phone?: string
-  email?: string
-  address?: string
-  city?: string
-  state?: string
-  country?: string
-  postal_code?: string
-}): Promise<{ success: boolean; data?: Business; error?: string }> {
+export async function createBusinessAction(data: BusinessInsert): Promise<{ success: boolean; data?: Business; error?: string }> {
   try {
     const business = await insertRecord<Business>('businesses', data)
 

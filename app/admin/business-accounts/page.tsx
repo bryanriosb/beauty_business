@@ -220,16 +220,18 @@ export default function BusinessAccountsPage() {
     role && hasPermission(role, 'canCreateBusinessAccount')
 
   return (
-    <div className="grid gap-6 w-full">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6 w-full overflow-auto">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Cuentas</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Cuentas
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Gestiona las cuentas registradas
           </p>
         </div>
         {canCreateAccount && (
-          <Button onClick={handleCreateAccount}>
+          <Button onClick={handleCreateAccount} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Crear Cuenta
           </Button>

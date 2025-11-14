@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Search, MessageSquare, ArrowLeft } from 'lucide-react'
+import { Search, MessageSquare, ArrowLeft, Camera } from 'lucide-react'
 import ConversationService from '@/lib/services/chat/conversation-service'
 import type { ConversationWithDetails } from '@/lib/models/chat/conversation'
 import { useCurrentUser } from '@/hooks/use-current-user'
@@ -107,6 +107,13 @@ export default function ChatSheet({ open, onOpenChange }: ChatSheetProps) {
         month: '2-digit',
       })
     }
+  }
+
+  const isImageMessage = (content: string) => {
+    return (
+      content.includes('chat-media') ||
+      /\.(jpg|jpeg|png|gif|webp)$/i.test(content)
+    )
   }
 
   return (
@@ -262,10 +269,22 @@ export default function ChatSheet({ open, onOpenChange }: ChatSheetProps) {
                             </div>
 
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm text-muted-foreground truncate">
-                                {conversation.last_message?.content ||
-                                  'Sin mensajes'}
-                              </p>
+                              {conversation.last_message?.content ? (
+                                isImageMessage(conversation.last_message.content) ? (
+                                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                    <Camera className="h-4 w-4" />
+                                    <span>Foto</span>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    {conversation.last_message.content}
+                                  </p>
+                                )
+                              ) : (
+                                <p className="text-sm text-muted-foreground truncate">
+                                  Sin mensajes
+                                </p>
+                              )}
                               {conversation.unread_count &&
                                 conversation.unread_count > 0 && (
                                   <Badge

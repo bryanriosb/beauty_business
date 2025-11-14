@@ -76,7 +76,9 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
     cell: ({ row }) => {
       const plan = row.getValue('subscription_plan') as string
       return (
-        <Badge variant="outline">{subscriptionPlanLabels[plan] || plan}</Badge>
+        <Badge variant="outline">
+          {subscriptionPlanLabels[plan] || plan}
+        </Badge>
       )
     },
     filterFn: (row, id, value) => {
@@ -108,11 +110,11 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
       const city = row.getValue('billing_city') as string | null
       const state = row.original.billing_state
 
-      if (!city) return <div className="text-muted-foreground">-</div>
+      if (!city) return <span className="text-muted-foreground">-</span>
 
       return (
         <div className="text-sm">
-          {city}
+          <div>{city}</div>
           {state && (
             <div className="text-xs text-muted-foreground">{state}</div>
           )}
@@ -122,13 +124,13 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
   },
   {
     accessorKey: 'created_at',
-    header: 'Fecha de Creación',
+    header: 'Creación',
     cell: ({ row }) => {
       const date = row.getValue('created_at') as string
       return (
-        <div className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           {format(new Date(date), 'dd MMM yyyy', { locale: es })}
-        </div>
+        </span>
       )
     },
   },

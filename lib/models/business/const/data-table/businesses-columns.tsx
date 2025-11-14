@@ -1,26 +1,14 @@
 import { Business } from '@/lib/models/business/business'
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 // Mapeo de tipos de negocio a español
 const businessTypeLabels: Record<string, string> = {
-  salon: 'Salón',
-  spa: 'Spa',
-  barbershop: 'Barbería',
-  nail_salon: 'Salón de Uñas',
-  beauty_center: 'Centro de Belleza',
+  SALON: 'Salón',
+  INDEPENDENT: 'Independiente',
+  BEAUTY_STUDIO: 'Estudio de Belleza',
 }
 
 export const BUSINESSES_COLUMNS: ColumnDef<Business>[] = [
@@ -37,11 +25,7 @@ export const BUSINESSES_COLUMNS: ColumnDef<Business>[] = [
     header: 'Tipo',
     cell: ({ row }) => {
       const type = row.getValue('type') as string
-      return (
-        <Badge variant="outline">
-          {businessTypeLabels[type] || type}
-        </Badge>
-      )
+      return <Badge variant="outline">{businessTypeLabels[type] || type}</Badge>
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
@@ -74,7 +58,11 @@ export const BUSINESSES_COLUMNS: ColumnDef<Business>[] = [
       if (!address) return <div className="text-muted-foreground">-</div>
 
       const fullAddress = [address, city, state].filter(Boolean).join(', ')
-      return <div className="text-sm text-muted-foreground max-w-xs truncate">{fullAddress}</div>
+      return (
+        <div className="text-sm text-muted-foreground max-w-xs truncate">
+          {fullAddress}
+        </div>
+      )
     },
   },
   {
@@ -92,52 +80,7 @@ export const BUSINESSES_COLUMNS: ColumnDef<Business>[] = [
   {
     id: 'actions',
     header: 'Acciones',
-    cell: ({ row }) => {
-      const business = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                console.log('Ver detalles:', business.id)
-                // TODO: Implementar navegación a detalles
-              }}
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              Ver detalles
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                console.log('Editar:', business.id)
-                // TODO: Implementar modal de edición
-              }}
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => {
-                console.log('Eliminar:', business.id)
-                // TODO: Implementar confirmación y eliminación
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
+    // La celda de acciones se define dinámicamente en la página
+    // para tener acceso a los callbacks y permisos
   },
 ]

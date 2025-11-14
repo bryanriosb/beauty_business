@@ -52,12 +52,14 @@ export function DataTableToolbar<TData>({
   searchConfig,
 }: DataTableToolbarProps<TData>) {
   // Obtener el valor actual del filtro de la tabla
-  const currentFilterValue = searchConfig ?
-    (table.getColumn(searchConfig.column)?.getFilterValue() as string) ?? '' : ''
+  const currentFilterValue = searchConfig
+    ? (table.getColumn(searchConfig.column)?.getFilterValue() as string) ?? ''
+    : ''
 
   const [searchValue, setSearchValue] = useState(currentFilterValue)
   const debouncedSearchValue = useDebounce(searchValue, 300) // 300ms debounce
-  const isFiltered = table.getState().columnFilters.length > 0 || searchValue.length > 0
+  const isFiltered =
+    table.getState().columnFilters.length > 0 || searchValue.length > 0
 
   // Aplicar el filtro cuando el valor debounced cambie
   useEffect(() => {
@@ -86,7 +88,7 @@ export function DataTableToolbar<TData>({
               setSearchValue(newValue)
               // El filtro se aplicará automáticamente con debounce
             }}
-            className="h-8 w-[150px] lg:w-[250px]"
+            className="h-8 w-[200px] lg:w-[250px]"
           />
         )}
 
