@@ -103,5 +103,11 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
     url: '/admin/settings',
     icon: Settings,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+    items: [
+      {
+        title: 'Horarios',
+        url: '/admin/settings/scheduler',
+      },
+    ],
   },
 ]
