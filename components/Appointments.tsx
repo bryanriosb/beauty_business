@@ -328,8 +328,7 @@ export default function Appointments() {
       <AppointmentFormModal
         open={isFormModalOpen}
         onOpenChange={setIsFormModalOpen}
-        defaultStartTime={selectedSlot?.start}
-        defaultEndTime={selectedSlot?.end}
+        defaultDate={selectedSlot?.start}
         onSuccess={handleAppointmentSuccess}
       />
     </div>
