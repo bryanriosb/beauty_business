@@ -1,12 +1,12 @@
 'use client'
 
 import { Table } from '@tanstack/react-table'
-import { FunnelX } from 'lucide-react'
+import { FunnelX, Trash2 } from 'lucide-react'
 import { Input } from './ui/input'
 import { DataTableFacetedFilter } from './DataTableFacetedFilter'
 import { Button } from './ui/button'
 import { DataTableViewOptions } from './DataTableViewOptions'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 
 interface FilterConfig {
   column: string
@@ -27,6 +27,8 @@ interface DataTableToolbarProps<TData> {
   table: Table<TData>
   filters?: FilterConfig[]
   searchConfig?: SearchConfig
+  selectedCount?: number
+  onDeleteSelected?: () => Promise<void>
 }
 
 // Hook personalizado para debounce
@@ -50,7 +52,10 @@ export function DataTableToolbar<TData>({
   table,
   filters,
   searchConfig,
+  selectedCount = 0,
+  onDeleteSelected,
 }: DataTableToolbarProps<TData>) {
+  const [isDeleting, setIsDeleting] = useState(false)
   // Obtener el valor actual del filtro de la tabla
   const currentFilterValue = searchConfig
     ? (table.getColumn(searchConfig.column)?.getFilterValue() as string) ?? ''
@@ -61,7 +66,6 @@ export function DataTableToolbar<TData>({
   const isFiltered =
     table.getState().columnFilters.length > 0 || searchValue.length > 0
 
-  // Aplicar el filtro cuando el valor debounced cambie
   useEffect(() => {
     if (searchConfig) {
       const column = table.getColumn(searchConfig.column)
@@ -70,6 +74,16 @@ export function DataTableToolbar<TData>({
       }
     }
   }, [debouncedSearchValue, searchConfig, table])
+
+  const handleDeleteSelected = async () => {
+    if (!onDeleteSelected) return
+    setIsDeleting(true)
+    try {
+      await onDeleteSelected()
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   // Sincronizar el estado local con el filtro de la tabla cuando cambie externamente
   useEffect(() => {
@@ -86,7 +100,6 @@ export function DataTableToolbar<TData>({
             onChange={(event) => {
               const newValue = event.target.value
               setSearchValue(newValue)
-              // El filtro se aplicará automáticamente con debounce
             }}
             className="h-8 w-[200px] lg:w-[250px]"
           />
@@ -108,10 +121,8 @@ export function DataTableToolbar<TData>({
           <Button
             variant="outline"
             onClick={() => {
-              console.log('Resetting all filters')
               table.resetColumnFilters()
               setSearchValue('')
-              // También limpiar específicamente el filtro de búsqueda
               if (searchConfig) {
                 const column = table.getColumn(searchConfig.column)
                 column?.setFilterValue(undefined)
@@ -123,7 +134,26 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      <div className="flex items-center gap-2">
+        {selectedCount > 0 && onDeleteSelected && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {selectedCount} seleccionado{selectedCount > 1 ? 's' : ''}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteSelected}
+              disabled={isDeleting}
+              className="h-8 border-destructive text-destructive hover:bg-destructive hover:text-white"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {isDeleting ? 'Eliminando...' : 'Eliminar'}
+            </Button>
+          </div>
+        )}
+        <DataTableViewOptions table={table} />
+      </div>
     </div>
   )
 }

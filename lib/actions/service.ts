@@ -6,6 +6,7 @@ import {
   insertRecord,
   updateRecord,
   deleteRecord,
+  deleteRecords,
 } from '@/lib/actions/supabase'
 import type {
   Service,
@@ -29,7 +30,7 @@ export async function fetchServicesAction(params?: {
 }): Promise<ServiceListResponse> {
   try {
     const services = await getAllRecords<Service>('services', {
-      order: { column: 'name', ascending: true },
+      order: { column: 'created_at', ascending: false },
     })
 
     let filteredServices = services
@@ -139,5 +140,16 @@ export async function fetchServiceCategoriesAction(): Promise<ServiceCategory[]>
   } catch (error) {
     console.error('Error fetching service categories:', error)
     return []
+  }
+}
+
+export async function deleteServicesAction(
+  ids: string[]
+): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+  try {
+    return await deleteRecords('services', ids)
+  } catch (error: any) {
+    console.error('Error batch deleting services:', error)
+    return { success: false, deletedCount: 0, error: error.message }
   }
 }

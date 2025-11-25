@@ -21,6 +21,9 @@ export const ROLE_PERMISSIONS = {
     canEditAccountContactInfo: true,
     canDeleteBusinessAccount: true,
     canAddAccountMembers: true,
+    canCreateService: true,
+    canEditService: true,
+    canDeleteService: true,
   },
   [USER_ROLES.BUSINESS_ADMIN]: {
     canManageBusinesses: false,
@@ -34,10 +37,13 @@ export const ROLE_PERMISSIONS = {
     canViewOwnBusinessAccount: true,
     canManageBusinessesInAccount: true,
     canCreateBusinessAccount: false,
-    canEditBusinessAccount: false, // No puede editar cuenta completa
-    canEditAccountContactInfo: true, // Pero sí puede editar datos de contacto
+    canEditBusinessAccount: false,
+    canEditAccountContactInfo: true,
     canDeleteBusinessAccount: false,
     canAddAccountMembers: true,
+    canCreateService: true,
+    canEditService: true,
+    canDeleteService: true,
   },
   [USER_ROLES.EMPLOYEE]: {
     canManageBusinesses: false,

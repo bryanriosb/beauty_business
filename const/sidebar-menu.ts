@@ -9,6 +9,7 @@ import {
   UserCircle,
   BarChart3,
   Briefcase,
+  FileStack,
 } from 'lucide-react'
 import { USER_ROLES, type UserRole } from './roles'
 
@@ -39,22 +40,6 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
   {
-    title: 'Sucursales',
-    url: '/admin/businesses',
-    icon: Building2,
-    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
-    items: [
-      {
-        title: 'Cuentas',
-        url: '/admin/business-accounts',
-      },
-      {
-        title: 'Sucursales',
-        url: '/admin/businesses',
-      },
-    ],
-  },
-  {
     title: 'Servicios',
     url: '/admin/services',
     icon: Scissors,
@@ -78,9 +63,31 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     icon: BarChart3,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
+  {
+    title: 'Facturas',
+    url: '/admin/invoices',
+    icon: FileStack,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  },
 ]
 
 export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
+  {
+    title: 'Sucursales',
+    url: '/admin/businesses',
+    icon: Building2,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+    items: [
+      {
+        title: 'Cuentas',
+        url: '/admin/business-accounts',
+      },
+      {
+        title: 'Sucursales',
+        url: '/admin/businesses',
+      },
+    ],
+  },
   {
     title: 'Configuración',
     url: '/admin/settings',

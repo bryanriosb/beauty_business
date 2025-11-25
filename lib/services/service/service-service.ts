@@ -4,6 +4,7 @@ import {
   createServiceAction,
   updateServiceAction,
   deleteServiceAction,
+  deleteServicesAction,
   fetchServiceCategoriesAction,
 } from '@/lib/actions/service'
 import type {
@@ -79,6 +80,17 @@ export default class ServiceService {
     } catch (error) {
       console.error('Error deleting service:', error)
       throw new Error(`Failed to destroy service: ${error}`)
+    }
+  }
+
+  async destroyMany(
+    ids: string[]
+  ): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+    try {
+      return await deleteServicesAction(ids)
+    } catch (error: any) {
+      console.error('Error batch deleting services:', error)
+      return { success: false, deletedCount: 0, error: error.message }
     }
   }
 

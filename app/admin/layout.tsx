@@ -10,7 +10,7 @@ export default function AdminLayout({
   children: React.ReactNode
 }>) {
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <AppSidebar />
       <section className="grid gap-4 p-4 w-full h-full overflow-x-hidden">
         <AdminHeader />

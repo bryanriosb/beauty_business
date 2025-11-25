@@ -188,6 +188,33 @@ export async function deleteRecord(
 }
 
 /**
+ * Delete multiple records from a table by IDs
+ */
+export async function deleteRecords(
+  tableName: string,
+  ids: string[]
+): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+  if (!ids.length) {
+    return { success: true, deletedCount: 0 }
+  }
+
+  try {
+    const client = await getSupabaseClient()
+    const { error } = await client.from(tableName).delete().in('id', ids)
+
+    if (error) {
+      console.error(`Error batch deleting from ${tableName}:`, error)
+      throw error
+    }
+
+    return { success: true, deletedCount: ids.length }
+  } catch (error: any) {
+    console.error(`Error in deleteRecords for ${tableName}:`, error)
+    return { success: false, deletedCount: 0, error: error.message }
+  }
+}
+
+/**
  * Get a single record by ID
  */
 export async function getRecordById<T = any>(

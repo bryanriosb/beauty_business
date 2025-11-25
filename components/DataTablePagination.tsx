@@ -58,7 +58,7 @@ export default function DataTablePagination({
             <SelectValue placeholder={table.getState().pagination.pageSize} />
           </SelectTrigger>
           <SelectContent side="top">
-            {[7, 10, 20, 30, 40, 50].map((pageSize) => (
+            {[10, 20, 30, 40, 50].map((pageSize) => (
               <SelectItem key={pageSize} value={`${pageSize}`}>
                 {pageSize}
               </SelectItem>
@@ -85,7 +85,9 @@ export default function DataTablePagination({
           variant="outline"
           className="size-8"
           size="icon"
-          onClick={() => handlePageChange(table.getState().pagination.pageIndex - 1)}
+          onClick={() =>
+            handlePageChange(table.getState().pagination.pageIndex - 1)
+          }
           disabled={!table.getCanPreviousPage()}
         >
           <span className="sr-only">Ir a la página anterior</span>
@@ -95,7 +97,9 @@ export default function DataTablePagination({
           variant="outline"
           className="size-8"
           size="icon"
-          onClick={() => handlePageChange(table.getState().pagination.pageIndex + 1)}
+          onClick={() =>
+            handlePageChange(table.getState().pagination.pageIndex + 1)
+          }
           disabled={!table.getCanNextPage()}
         >
           <span className="sr-only">Siguiente página</span>
