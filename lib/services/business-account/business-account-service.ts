@@ -3,6 +3,7 @@ import {
   createBusinessAccountAction,
   updateBusinessAccountAction,
   deleteBusinessAccountAction,
+  deleteBusinessAccountsAction,
   getBusinessAccountByIdAction,
   getUserBusinessAccountsAction,
   addAccountMemberAction,
@@ -82,6 +83,21 @@ export default class BusinessAccountService {
     } catch (error: any) {
       console.error('Error deleting business account:', error)
       return { success: false, error: error.message }
+    }
+  }
+
+  async deleteAccounts(
+    ids: string[]
+  ): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+    try {
+      const result = await deleteBusinessAccountsAction(ids)
+      if (result.error) {
+        return { success: false, deletedCount: 0, error: result.error }
+      }
+      return { success: true, deletedCount: result.deletedCount }
+    } catch (error: any) {
+      console.error('Error batch deleting business accounts:', error)
+      return { success: false, deletedCount: 0, error: error.message }
     }
   }
 

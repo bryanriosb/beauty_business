@@ -4,6 +4,7 @@ import {
   createBusinessAction,
   updateBusinessAction,
   deleteBusinessAction,
+  deleteBusinessesAction,
 } from '@/lib/actions/business'
 import type { Business, BusinessInsert } from '@/lib/models/business/business'
 
@@ -88,6 +89,17 @@ export default class BusinessService {
     } catch (error) {
       console.error('Error deleting business:', error)
       throw new Error(`Failed to destroy business: ${error}`)
+    }
+  }
+
+  async destroyMany(
+    ids: string[]
+  ): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+    try {
+      return await deleteBusinessesAction(ids)
+    } catch (error: any) {
+      console.error('Error batch deleting businesses:', error)
+      return { success: false, deletedCount: 0, error: error.message }
     }
   }
 }

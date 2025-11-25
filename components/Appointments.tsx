@@ -6,8 +6,10 @@ import MobileAppointmentsList from './appointments/MobileAppointmentsList'
 import AppointmentsTableView from './appointments/AppointmentsTableView'
 import { Event } from 'react-big-calendar'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 import AppointmentService from '@/lib/services/appointment/appointment-service'
 import type { Appointment } from '@/lib/models/appointment/appointment'
+import { USER_ROLES } from '@/const/roles'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { Plus, Calendar, List, Table } from 'lucide-react'
@@ -36,10 +38,12 @@ export default function Appointments() {
   const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null)
   const [allAppointments, setAllAppointments] = useState<any[]>([])
-  const { user, role, businesses } = useCurrentUser()
+  const { user, role } = useCurrentUser()
+  const { activeBusiness } = useActiveBusinessStore()
   const appointmentService = new AppointmentService()
 
-  const businessIds = businesses?.map((b) => b.id) || []
+  const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
+  const activeBusinessId = activeBusiness?.id
 
   const dateRange = useMemo(() => {
     const start = new Date(currentDate)
@@ -70,6 +74,7 @@ export default function Appointments() {
 
   useEffect(() => {
     if (!user || !role) return
+    if (!isCompanyAdmin && !activeBusinessId) return
 
     let isMounted = true
 
@@ -82,8 +87,8 @@ export default function Appointments() {
           end_date: dateRange.end.toISOString(),
         }
 
-        if (role === 'business_admin' && businessIds.length > 0) {
-          params.business_ids = businessIds
+        if (!isCompanyAdmin && activeBusinessId) {
+          params.business_id = activeBusinessId
         }
 
         const response = await appointmentService.fetchItems(params)
@@ -119,7 +124,7 @@ export default function Appointments() {
     return () => {
       isMounted = false
     }
-  }, [role, businessIds.length, viewMode, currentDate])
+  }, [role, isCompanyAdmin, activeBusinessId, viewMode, currentDate])
 
   const handleSelectEvent = (event: Event) => {
     const appointment = event.resource as Appointment
@@ -175,8 +180,8 @@ export default function Appointments() {
           end_date: dateRange.end.toISOString(),
         }
 
-        if (role === 'business_admin' && businessIds.length > 0) {
-          params.business_ids = businessIds
+        if (!isCompanyAdmin && activeBusinessId) {
+          params.business_id = activeBusinessId
         }
 
         const response = await appointmentService.fetchItems(params)

@@ -2,16 +2,7 @@
 
 import { DataTable, DataTableRef, SearchConfig } from '@/components/DataTable'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,12 +27,14 @@ import type { Business } from '@/lib/models/business/business'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { toast } from 'sonner'
 import { hasPermission, USER_ROLES } from '@/const/roles'
+import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 
 export default function ServicesPage() {
   const serviceService = useMemo(() => new ServiceService(), [])
   const businessService = useMemo(() => new BusinessService(), [])
   const dataTableRef = useRef<DataTableRef>(null)
-  const { role, businessId } = useCurrentUser()
+  const { role } = useCurrentUser()
+  const { activeBusiness } = useActiveBusinessStore()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -237,12 +230,13 @@ export default function ServicesPage() {
       </div>
 
       <DataTable
+        key={isCompanyAdmin ? 'all' : activeBusiness?.id || 'no-business'}
         ref={dataTableRef}
         columns={columnsWithActions}
         service={serviceService}
         defaultQueryParams={
-          !isCompanyAdmin && businessId
-            ? { business_id: businessId }
+          !isCompanyAdmin && activeBusiness?.id
+            ? { business_id: activeBusiness.id }
             : undefined
         }
         searchConfig={searchConfig}
@@ -258,55 +252,24 @@ export default function ServicesPage() {
         categories={categories}
         onSave={handleSaveService}
         isCompanyAdmin={isCompanyAdmin}
-        currentBusinessId={businessId}
+        currentBusinessId={activeBusiness?.id || null}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente
-              el servicio.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        itemName="servicio"
+      />
 
-      <AlertDialog
+      <ConfirmDeleteDialog
         open={batchDeleteDialogOpen}
         onOpenChange={setBatchDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              ¿Eliminar {servicesToDelete.length} servicio(s)?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente
-              los servicios seleccionados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmBatchDelete}
-              className="border border-destructive bg-transparent text-destructive hover:text-white hover:bg-destructive/90"
-            >
-              Eliminar {servicesToDelete.length}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onConfirm={confirmBatchDelete}
+        itemName="servicio"
+        count={servicesToDelete.length}
+        variant="outline"
+      />
     </div>
   )
 }

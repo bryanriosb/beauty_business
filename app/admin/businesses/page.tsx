@@ -2,16 +2,7 @@
 
 import { DataTable, DataTableRef, SearchConfig } from '@/components/DataTable'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,8 +27,10 @@ export default function BusinessesPage() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false)
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null)
   const [businessToDelete, setBusinessToDelete] = useState<string | null>(null)
+  const [businessesToDelete, setBusinessesToDelete] = useState<string[]>([])
 
   const searchConfig: SearchConfig = useMemo(
     () => ({
@@ -105,6 +98,31 @@ export default function BusinessesPage() {
     } finally {
       setDeleteDialogOpen(false)
       setBusinessToDelete(null)
+    }
+  }
+
+  const handleBatchDelete = async (ids: string[]) => {
+    setBusinessesToDelete(ids)
+    setBatchDeleteDialogOpen(true)
+  }
+
+  const confirmBatchDelete = async () => {
+    if (!businessesToDelete.length) return
+
+    try {
+      const result = await businessService.destroyMany(businessesToDelete)
+      if (result.success) {
+        toast.success(`${result.deletedCount} sucursal(es) eliminada(s)`)
+        dataTableRef.current?.refreshData()
+        dataTableRef.current?.clearSelection()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'No se pudieron eliminar las sucursales')
+    } finally {
+      setBatchDeleteDialogOpen(false)
+      setBusinessesToDelete([])
     }
   }
 
@@ -199,6 +217,8 @@ export default function BusinessesPage() {
         service={businessService}
         searchConfig={searchConfig}
         defaultQueryParams={serviceParams || {}}
+        enableRowSelection={canDelete}
+        onDeleteSelected={handleBatchDelete}
       />
 
       <BusinessModal
@@ -208,26 +228,21 @@ export default function BusinessesPage() {
         onSave={handleSaveBusiness}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente
-              la sucursal y todos sus datos asociados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        itemName="sucursal"
+      />
+
+      <ConfirmDeleteDialog
+        open={batchDeleteDialogOpen}
+        onOpenChange={setBatchDeleteDialogOpen}
+        onConfirm={confirmBatchDelete}
+        itemName="sucursal"
+        count={businessesToDelete.length}
+        variant="outline"
+      />
     </div>
   )
 }

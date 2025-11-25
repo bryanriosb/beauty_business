@@ -2,16 +2,7 @@
 
 import { DataTable, DataTableRef, SearchConfig } from '@/components/DataTable'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,9 +35,11 @@ export default function BusinessAccountsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [membersModalOpen, setMembersModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] =
     useState<BusinessAccount | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null)
+  const [accountsToDelete, setAccountsToDelete] = useState<string[]>([])
   const [selectedAccountForMembers, setSelectedAccountForMembers] = useState<{
     id: string
     name: string
@@ -104,6 +97,31 @@ export default function BusinessAccountsPage() {
     } finally {
       setDeleteDialogOpen(false)
       setAccountToDelete(null)
+    }
+  }
+
+  const handleBatchDelete = async (ids: string[]) => {
+    setAccountsToDelete(ids)
+    setBatchDeleteDialogOpen(true)
+  }
+
+  const confirmBatchDelete = async () => {
+    if (!accountsToDelete.length) return
+
+    try {
+      const result = await businessAccountService.deleteAccounts(accountsToDelete)
+      if (result.success) {
+        toast.success(`${result.deletedCount} cuenta(s) eliminada(s)`)
+        dataTableRef.current?.refreshData()
+        dataTableRef.current?.clearSelection()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'No se pudieron eliminar las cuentas')
+    } finally {
+      setBatchDeleteDialogOpen(false)
+      setAccountsToDelete([])
     }
   }
 
@@ -218,6 +236,8 @@ export default function BusinessAccountsPage() {
 
   const canCreateAccount =
     role && hasPermission(role, 'canCreateBusinessAccount')
+  const canDeleteAccount =
+    role && hasPermission(role, 'canDeleteBusinessAccount')
 
   return (
     <div className="flex flex-col gap-6 w-full overflow-auto">
@@ -243,6 +263,8 @@ export default function BusinessAccountsPage() {
         columns={columnsWithActions}
         service={businessAccountService}
         searchConfig={searchConfig}
+        enableRowSelection={!!canDeleteAccount}
+        onDeleteSelected={handleBatchDelete}
       />
 
       <BusinessAccountModal
@@ -263,26 +285,21 @@ export default function BusinessAccountsPage() {
         />
       )}
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente
-              la cuenta de negocio y todos sus datos asociados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        itemName="cuenta"
+      />
+
+      <ConfirmDeleteDialog
+        open={batchDeleteDialogOpen}
+        onOpenChange={setBatchDeleteDialogOpen}
+        onConfirm={confirmBatchDelete}
+        itemName="cuenta"
+        count={accountsToDelete.length}
+        variant="outline"
+      />
     </div>
   )
 }

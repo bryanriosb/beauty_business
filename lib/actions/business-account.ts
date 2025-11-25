@@ -163,7 +163,6 @@ export async function deleteBusinessAccountAction(
   id: string
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    // Verificar que el usuario sea company_admin
     const currentUser = await getCurrentUser()
     if (!currentUser || currentUser.role !== USER_ROLES.COMPANY_ADMIN) {
       return { success: false, error: 'No tienes permisos para eliminar cuentas de negocio' }
@@ -180,6 +179,33 @@ export async function deleteBusinessAccountAction(
     return { success: true, error: null }
   } catch (error: any) {
     return { success: false, error: error.message }
+  }
+}
+
+export async function deleteBusinessAccountsAction(
+  ids: string[]
+): Promise<{ success: boolean; deletedCount: number; error: string | null }> {
+  if (!ids.length) {
+    return { success: true, deletedCount: 0, error: null }
+  }
+
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser || currentUser.role !== USER_ROLES.COMPANY_ADMIN) {
+      return { success: false, deletedCount: 0, error: 'No tienes permisos para eliminar cuentas de negocio' }
+    }
+
+    const client = await getSupabaseAdminClient()
+    const { error } = await client
+      .from('business_accounts')
+      .delete()
+      .in('id', ids)
+
+    if (error) throw error
+
+    return { success: true, deletedCount: ids.length, error: null }
+  } catch (error: any) {
+    return { success: false, deletedCount: 0, error: error.message }
   }
 }
 

@@ -63,6 +63,7 @@ export interface BusinessInsert {
   description?: string | null
   address: string
   city: string
+  state: string
   location?: string | null
   phone_number?: string | null
   gallery_cover_image_url?: string | null
@@ -75,6 +76,7 @@ export interface BusinessUpdate {
   description?: string | null
   address?: string
   city?: string
+  state?: string
   location?: string | null
   phone_number?: string | null
   gallery_cover_image_url?: string | null

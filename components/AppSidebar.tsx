@@ -15,11 +15,11 @@ import {
 import Logo from './Logo'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { NavMain } from './NavMain'
+import { BusinessSwitcher } from './BusinessSwitcher'
 
 export function AppSidebar() {
   const { role } = useCurrentUser()
 
-  // Filtrar items del menú según el rol del usuario
   const filteredAppItems = SIDE_APP_MENU_ITEMS.filter((item) =>
     role ? item.allowedRoles.includes(role) : false
   )
@@ -32,6 +32,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <Logo />
+        <BusinessSwitcher />
       </SidebarHeader>
       <SidebarContent>
         {filteredAppItems.length > 0 && (

@@ -4,7 +4,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Business, BusinessInsert, BusinessUpdate } from '@/lib/models/business/business'
+import {
+  Business,
+  BusinessInsert,
+  BusinessUpdate,
+} from '@/lib/models/business/business'
 import {
   Dialog,
   DialogContent,
@@ -84,15 +88,23 @@ export function BusinessModal({
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [galleryCoverFile, setGalleryCoverFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [galleryCoverPreview, setGalleryCoverPreview] = useState<string | null>(null)
+  const [galleryCoverPreview, setGalleryCoverPreview] = useState<string | null>(
+    null
+  )
 
   // Gallery images states
-  const [galleryImages, setGalleryImages] = useState<{ file: File; preview: string }[]>([])
-  const [existingGalleryImages, setExistingGalleryImages] = useState<BusinessGalleryImage[]>([])
+  const [galleryImages, setGalleryImages] = useState<
+    { file: File; preview: string }[]
+  >([])
+  const [existingGalleryImages, setExistingGalleryImages] = useState<
+    BusinessGalleryImage[]
+  >([])
   const [isUploadingGallery, setIsUploadingGallery] = useState(false)
 
   // Business accounts state
-  const [businessAccounts, setBusinessAccounts] = useState<BusinessAccount[]>([])
+  const [businessAccounts, setBusinessAccounts] = useState<BusinessAccount[]>(
+    []
+  )
   const [loadingAccounts, setLoadingAccounts] = useState(false)
 
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -147,7 +159,9 @@ export function BusinessModal({
 
         // Cargar imágenes existentes de galería
         if (business.id) {
-          const galleryImages = await getBusinessGalleryImagesAction(business.id)
+          const galleryImages = await getBusinessGalleryImagesAction(
+            business.id
+          )
           setExistingGalleryImages(galleryImages)
         }
       } else {
@@ -222,13 +236,16 @@ export function BusinessModal({
     setUploadError(null)
   }
 
-  const handleGalleryImagesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryImagesSelect = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
 
     setUploadError(null)
 
-    const totalImages = existingGalleryImages.length + galleryImages.length + files.length
+    const totalImages =
+      existingGalleryImages.length + galleryImages.length + files.length
     if (totalImages > MAX_GALLERY_IMAGES) {
       setUploadError(`Puedes subir máximo ${MAX_GALLERY_IMAGES} imágenes`)
       return
@@ -265,7 +282,10 @@ export function BusinessModal({
     setGalleryImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleRemoveExistingGalleryImage = async (imageId: string, imageUrl: string) => {
+  const handleRemoveExistingGalleryImage = async (
+    imageId: string,
+    imageUrl: string
+  ) => {
     try {
       // Eliminar de storage
       await storageService.current.deleteImage(imageUrl)
@@ -278,7 +298,9 @@ export function BusinessModal({
         return
       }
 
-      setExistingGalleryImages((prev) => prev.filter((img) => img.id !== imageId))
+      setExistingGalleryImages((prev) =>
+        prev.filter((img) => img.id !== imageId)
+      )
     } catch (error) {
       console.error('Error deleting gallery image:', error)
       setUploadError('Error al eliminar la imagen')
@@ -296,7 +318,10 @@ export function BusinessModal({
       // Solo subir imágenes si estamos editando (ya existe el business.id)
       if (business?.id) {
         if (logoFile) {
-          const uploadResult = await storageService.current.uploadLogo(logoFile, business.id)
+          const uploadResult = await storageService.current.uploadLogo(
+            logoFile,
+            business.id
+          )
           if (!uploadResult.success) {
             setUploadError(uploadResult.error || 'Error al subir el logo')
             return
@@ -322,12 +347,12 @@ export function BusinessModal({
           let sortOrder = existingGalleryImages.length
 
           for (const { file } of galleryImages) {
-            const uploadResult = await storageService.current.uploadGalleryImage(
-              file,
-              business.id
-            )
+            const uploadResult =
+              await storageService.current.uploadGalleryImage(file, business.id)
             if (!uploadResult.success) {
-              setUploadError(uploadResult.error || 'Error al subir imagen de galería')
+              setUploadError(
+                uploadResult.error || 'Error al subir imagen de galería'
+              )
               setIsUploadingGallery(false)
               return
             }
@@ -340,7 +365,9 @@ export function BusinessModal({
             })
 
             if (!createResult.success) {
-              setUploadError(createResult.error || 'Error al guardar imagen de galería')
+              setUploadError(
+                createResult.error || 'Error al guardar imagen de galería'
+              )
               setIsUploadingGallery(false)
               return
             }
@@ -393,7 +420,10 @@ export function BusinessModal({
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="general">Información General</TabsTrigger>
-                <TabsTrigger value="gallery" disabled={!isCompanyAdmin && !isBusinessAdmin}>
+                <TabsTrigger
+                  value="gallery"
+                  disabled={!isCompanyAdmin && !isBusinessAdmin}
+                >
                   Galería
                 </TabsTrigger>
               </TabsList>
@@ -411,16 +441,25 @@ export function BusinessModal({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Cuenta de Negocio <span className="text-destructive">*</span>
+                            Cuenta de Negocio{' '}
+                            <span className="text-destructive">*</span>
                           </FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
-                            disabled={isSubmitting || loadingAccounts || !!business}
+                            disabled={
+                              isSubmitting || loadingAccounts || !!business
+                            }
                           >
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={loadingAccounts ? "Cargando..." : "Selecciona una cuenta"} />
+                              <SelectTrigger className="w-full">
+                                <SelectValue
+                                  placeholder={
+                                    loadingAccounts
+                                      ? 'Cargando...'
+                                      : 'Selecciona una cuenta'
+                                  }
+                                />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -472,7 +511,7 @@ export function BusinessModal({
                             disabled={isSubmitting || isBusinessAdmin}
                           >
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="w-full">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -575,7 +614,8 @@ export function BusinessModal({
                           />
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Haz click para {logoPreview ? 'cambiar' : 'subir'} el logo. Tamaño máximo: 5MB
+                          Haz click para {logoPreview ? 'cambiar' : 'subir'} el
+                          logo. Tamaño máximo: 5MB
                         </p>
                       </div>
                     </div>
@@ -633,7 +673,8 @@ export function BusinessModal({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Departamento <span className="text-destructive">*</span>
+                            Departamento{' '}
+                            <span className="text-destructive">*</span>
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -654,7 +695,8 @@ export function BusinessModal({
                 {!business?.id ? (
                   <div className="p-4 bg-muted rounded-lg text-center">
                     <p className="text-sm text-muted-foreground">
-                      Guarda la sucursal primero para poder gestionar las imágenes
+                      Guarda la sucursal primero para poder gestionar las
+                      imágenes
                     </p>
                   </div>
                 ) : (
@@ -699,7 +741,9 @@ export function BusinessModal({
                           disabled={isSubmitting}
                         >
                           <Upload className="mr-2 h-4 w-4" />
-                          {galleryCoverPreview ? 'Cambiar Portada' : 'Subir Portada'}
+                          {galleryCoverPreview
+                            ? 'Cambiar Portada'
+                            : 'Subir Portada'}
                         </Button>
                       </div>
                     </div>
@@ -709,7 +753,8 @@ export function BusinessModal({
                       <div className="flex items-center justify-between">
                         <FormLabel>Galería de Imágenes</FormLabel>
                         <span className="text-xs text-muted-foreground">
-                          {existingGalleryImages.length + galleryImages.length}/{MAX_GALLERY_IMAGES} imágenes
+                          {existingGalleryImages.length + galleryImages.length}/
+                          {MAX_GALLERY_IMAGES} imágenes
                         </span>
                       </div>
 
@@ -717,7 +762,10 @@ export function BusinessModal({
                       <div className="grid grid-cols-3 gap-4">
                         {/* Imágenes existentes */}
                         {existingGalleryImages.map((img) => (
-                          <div key={img.id} className="relative aspect-square border rounded-lg overflow-hidden">
+                          <div
+                            key={img.id}
+                            className="relative aspect-square border rounded-lg overflow-hidden"
+                          >
                             <img
                               src={img.image_url}
                               alt={img.caption || 'Gallery image'}
@@ -728,7 +776,12 @@ export function BusinessModal({
                               variant="destructive"
                               size="icon"
                               className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                              onClick={() => handleRemoveExistingGalleryImage(img.id, img.image_url)}
+                              onClick={() =>
+                                handleRemoveExistingGalleryImage(
+                                  img.id,
+                                  img.image_url
+                                )
+                              }
                             >
                               <X className="h-3 w-3" />
                             </Button>
@@ -737,7 +790,10 @@ export function BusinessModal({
 
                         {/* Imágenes nuevas (pendientes de subir) */}
                         {galleryImages.map((img, idx) => (
-                          <div key={`new-${idx}`} className="relative aspect-square border rounded-lg overflow-hidden">
+                          <div
+                            key={`new-${idx}`}
+                            className="relative aspect-square border rounded-lg overflow-hidden"
+                          >
                             <img
                               src={img.preview}
                               alt="New gallery image"
@@ -756,8 +812,10 @@ export function BusinessModal({
                         ))}
 
                         {/* Botón para agregar más imágenes */}
-                        {(existingGalleryImages.length + galleryImages.length) < MAX_GALLERY_IMAGES && (
-                          <div className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                        {existingGalleryImages.length + galleryImages.length <
+                          MAX_GALLERY_IMAGES && (
+                          <div
+                            className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                             onClick={() => galleryInputRef.current?.click()}
                           >
                             <Images className="h-8 w-8 mb-1" />
@@ -776,7 +834,8 @@ export function BusinessModal({
                       />
 
                       <p className="text-xs text-muted-foreground">
-                        Puedes subir hasta {MAX_GALLERY_IMAGES} imágenes para la galería. Las imágenes deben ser menores a 5MB.
+                        Puedes subir hasta {MAX_GALLERY_IMAGES} imágenes para la
+                        galería. Las imágenes deben ser menores a 5MB.
                       </p>
                     </div>
                   </>
@@ -793,11 +852,19 @@ export function BusinessModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting || isUploadingGallery}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || isUploadingGallery}
+              >
                 {(isSubmitting || isUploadingGallery) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {isUploadingGallery ? 'Subiendo imágenes...' : business ? 'Actualizar' : 'Crear'} {!isUploadingGallery && 'Sucursal'}
+                {isUploadingGallery
+                  ? 'Subiendo imágenes...'
+                  : business
+                  ? 'Actualizar'
+                  : 'Crear'}{' '}
+                {!isUploadingGallery && 'Sucursal'}
               </Button>
             </DialogFooter>
           </form>

@@ -47,9 +47,19 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
   },
   {
     title: 'Especialistas',
-    url: '/admin/specialists',
+    url: '/admin/specialists/team',
     icon: UserCircle,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+    items: [
+      {
+        title: 'Equipo',
+        url: '/admin/specialists/team',
+      },
+      {
+        title: 'Metas',
+        url: '/admin/specialists/goals',
+      },
+    ],
   },
   {
     title: 'Clientes',

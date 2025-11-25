@@ -6,6 +6,7 @@ import {
   insertRecord,
   updateRecord,
   deleteRecord,
+  deleteRecords,
 } from '@/lib/actions/supabase'
 import type { Business, BusinessInsert } from '@/lib/models/business/business'
 
@@ -133,5 +134,16 @@ export async function deleteBusinessAction(
   } catch (error: any) {
     console.error('Error deleting business:', error)
     return { success: false, error: error.message || 'Error desconocido' }
+  }
+}
+
+export async function deleteBusinessesAction(
+  ids: string[]
+): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+  try {
+    return await deleteRecords('businesses', ids)
+  } catch (error: any) {
+    console.error('Error batch deleting businesses:', error)
+    return { success: false, deletedCount: 0, error: error.message }
   }
 }
