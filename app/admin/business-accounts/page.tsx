@@ -109,7 +109,9 @@ export default function BusinessAccountsPage() {
     if (!accountsToDelete.length) return
 
     try {
-      const result = await businessAccountService.deleteAccounts(accountsToDelete)
+      const result = await businessAccountService.deleteAccounts(
+        accountsToDelete
+      )
       if (result.success) {
         toast.success(`${result.deletedCount} cuenta(s) eliminada(s)`)
         dataTableRef.current?.refreshData()
@@ -209,7 +211,7 @@ export default function BusinessAccountsPage() {
                       onClick={() => handleManageMembers(account)}
                     >
                       <Users className="mr-2 h-4 w-4" />
-                      Miembros
+                      Miembros Administrativos
                     </DropdownMenuItem>
                   )}
                   {canDelete && (

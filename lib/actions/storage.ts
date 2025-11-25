@@ -2,7 +2,7 @@
 
 import { getSupabaseAdminClient } from '@/lib/actions/supabase'
 
-export type ImageType = 'logo' | 'gallery-cover' | 'gallery' | 'services'
+export type ImageType = 'logo' | 'gallery-cover' | 'gallery' | 'services' | 'specialists'
 
 export async function uploadImageAction(
   formData: FormData

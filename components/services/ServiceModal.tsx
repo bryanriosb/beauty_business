@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import { ImageUpload } from '@/components/ui/image-upload'
 import {
   Form,
@@ -374,20 +374,20 @@ export function ServiceModal({
               control={form.control}
               name="is_featured"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>Destacado</FormLabel>
+                    <FormDescription className="text-xs">
+                      Los servicios destacados aparecen primero
+                    </FormDescription>
+                  </div>
                   <FormControl>
-                    <Checkbox
+                    <Switch
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isSubmitting}
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Servicio destacado</FormLabel>
-                    <FormDescription>
-                      Los servicios destacados aparecen primero en la lista
-                    </FormDescription>
-                  </div>
                 </FormItem>
               )}
             />

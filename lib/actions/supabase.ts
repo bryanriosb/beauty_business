@@ -63,7 +63,7 @@ export async function queryTable<T = any>(
   }
 ): Promise<T | T[] | null> {
   try {
-    const client = await getSupabaseClient()
+    const client = await getSupabaseAdminClient()
     let query = client.from(tableName).select(options?.select || '*')
 
     // Apply filters
@@ -118,7 +118,7 @@ export async function insertRecord<T = any>(
   data: Record<string, any>
 ): Promise<T | null> {
   try {
-    const client = await getSupabaseClient()
+    const client = await getSupabaseAdminClient()
     const { data: result, error } = await client
       .from(tableName)
       .insert(data as any)
@@ -146,7 +146,7 @@ export async function updateRecord<T = any>(
   data: Record<string, any>
 ): Promise<T | null> {
   try {
-    const client = await getSupabaseClient()
+    const client = await getSupabaseAdminClient()
     const { data: result, error } = await client
       .from(tableName)
       .update(data as any)
@@ -174,7 +174,7 @@ export async function deleteRecord(
   id: string
 ): Promise<void> {
   try {
-    const client = await getSupabaseClient()
+    const client = await getSupabaseAdminClient()
     const { error } = await client.from(tableName).delete().eq('id', id)
 
     if (error) {
@@ -199,7 +199,7 @@ export async function deleteRecords(
   }
 
   try {
-    const client = await getSupabaseClient()
+    const client = await getSupabaseAdminClient()
     const { error } = await client.from(tableName).delete().in('id', ids)
 
     if (error) {
@@ -223,7 +223,7 @@ export async function getRecordById<T = any>(
   select?: string
 ): Promise<T | null> {
   try {
-    const client = await getSupabaseClient()
+    const client = await getSupabaseAdminClient()
     const { data, error } = await client
       .from(tableName)
       .select(select || '*')
@@ -254,7 +254,7 @@ export async function getAllRecords<T = any>(
   }
 ): Promise<T[]> {
   try {
-    const client = await getSupabaseClient()
+    const client = await getSupabaseAdminClient()
     let query = client.from(tableName).select(options?.select || '*')
 
     // Apply filters

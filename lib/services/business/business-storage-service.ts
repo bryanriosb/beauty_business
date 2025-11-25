@@ -31,6 +31,13 @@ export class BusinessStorageService {
     return this.uploadImage(file, businessId, 'services')
   }
 
+  async uploadSpecialistImage(
+    file: File,
+    businessId: string
+  ): Promise<{ success: boolean; url?: string; error?: string }> {
+    return this.uploadImage(file, businessId, 'specialists')
+  }
+
   private async uploadImage(
     file: File,
     businessId: string,

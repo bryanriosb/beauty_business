@@ -82,12 +82,18 @@ export default function AppointmentFormModal({
       specialist_id: '',
       users_profile_id: user?.user_profile_id || '',
       start_time: defaultStartTime
-        ? new Date(defaultStartTime.getTime() - defaultStartTime.getTimezoneOffset() * 60000)
+        ? new Date(
+            defaultStartTime.getTime() -
+              defaultStartTime.getTimezoneOffset() * 60000
+          )
             .toISOString()
             .slice(0, 16)
         : '',
       end_time: defaultEndTime
-        ? new Date(defaultEndTime.getTime() - defaultEndTime.getTimezoneOffset() * 60000)
+        ? new Date(
+            defaultEndTime.getTime() -
+              defaultEndTime.getTimezoneOffset() * 60000
+          )
             .toISOString()
             .slice(0, 16)
         : '',
@@ -147,7 +153,9 @@ export default function AppointmentFormModal({
 
       if (result.success) {
         toast.success(
-          appointment ? 'Cita actualizada exitosamente' : 'Cita creada exitosamente'
+          appointment
+            ? 'Cita actualizada exitosamente'
+            : 'Cita creada exitosamente'
         )
         onOpenChange(false)
         form.reset()
@@ -186,7 +194,7 @@ export default function AppointmentFormModal({
                     disabled={isSubmitting}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecciona un negocio" />
                       </SelectTrigger>
                     </FormControl>
@@ -211,13 +219,15 @@ export default function AppointmentFormModal({
                     disabled={isSubmitting}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecciona un especialista" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {specialists.length === 0 ? (
-                        <SelectItem value="temp">No hay especialistas disponibles</SelectItem>
+                        <SelectItem value="temp">
+                          No hay especialistas disponibles
+                        </SelectItem>
                       ) : (
                         specialists.map((specialist) => (
                           <SelectItem key={specialist.id} value={specialist.id}>
@@ -282,7 +292,7 @@ export default function AppointmentFormModal({
                     disabled={isSubmitting}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecciona un estado" />
                       </SelectTrigger>
                     </FormControl>
@@ -312,13 +322,15 @@ export default function AppointmentFormModal({
                       disabled={isSubmitting}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecciona método de pago" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="AT_VENUE">En el local</SelectItem>
-                        <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
+                        <SelectItem value="CREDIT_CARD">
+                          Tarjeta de Crédito
+                        </SelectItem>
                         <SelectItem value="PAYPAL">PayPal</SelectItem>
                         <SelectItem value="NEQUI">Nequi</SelectItem>
                       </SelectContent>
@@ -340,7 +352,7 @@ export default function AppointmentFormModal({
                       disabled={isSubmitting}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecciona estado de pago" />
                         </SelectTrigger>
                       </FormControl>
