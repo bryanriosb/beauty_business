@@ -28,7 +28,7 @@ export interface MenuItem {
 
 export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
   {
-    title: 'Dashboard',
+    title: 'Tablero',
     url: '/admin/dashboard',
     icon: LayoutDashboard,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],

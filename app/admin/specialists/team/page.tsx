@@ -21,7 +21,13 @@ import type {
   SpecialistAvailability,
 } from '@/lib/models/specialist/specialist'
 import type { BusinessHours } from '@/lib/models/business/business-hours'
+import type { ServiceCategory } from '@/lib/models/service/service'
 import { fetchBusinessHoursAction } from '@/lib/actions/business-hours'
+import { fetchServiceCategoriesAction } from '@/lib/actions/service'
+import {
+  fetchSpecialistServiceCategoriesAction,
+  updateSpecialistServiceCategoriesAction,
+} from '@/lib/actions/specialist'
 import { calculateGoalProgress } from '@/lib/models/specialist/specialist-goal'
 import type {
   CurrentAppointment,
@@ -41,6 +47,8 @@ export default function SpecialistsTeamPage() {
   const [selectedAvailability, setSelectedAvailability] = useState<
     SpecialistAvailability[]
   >([])
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([])
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>([])
   const [detailSpecialistId, setDetailSpecialistId] = useState<string | null>(
     null
@@ -76,7 +84,7 @@ export default function SpecialistsTeamPage() {
         params.business_id = activeBusinessId
       }
 
-      const [result, hours, appointments, goals] = await Promise.all([
+      const [result, hours, appointments, goals, categories] = await Promise.all([
         specialistService.fetchItems(params),
         activeBusinessId
           ? fetchBusinessHoursAction(activeBusinessId)
@@ -89,10 +97,12 @@ export default function SpecialistsTeamPage() {
         activeBusinessId
           ? goalService.getActiveGoalsForBusiness(activeBusinessId)
           : Promise.resolve([]),
+        fetchServiceCategoriesAction(),
       ])
 
       setSpecialists(result.data)
       setBusinessHours(hours)
+      setServiceCategories(categories)
 
       const appointmentsMap = new Map<string, CurrentAppointment>()
       appointments.forEach((apt) => {
@@ -163,19 +173,23 @@ export default function SpecialistsTeamPage() {
   const handleCreateSpecialist = () => {
     setSelectedSpecialist(null)
     setSelectedAvailability([])
+    setSelectedCategoryIds([])
     setModalOpen(true)
   }
 
   const handleEditSpecialist = async (specialist: Specialist) => {
     setSelectedSpecialist(specialist)
     try {
-      const availability = await specialistService.getAvailability(
-        specialist.id
-      )
+      const [availability, categoryIds] = await Promise.all([
+        specialistService.getAvailability(specialist.id),
+        fetchSpecialistServiceCategoriesAction(specialist.id),
+      ])
       setSelectedAvailability(availability)
+      setSelectedCategoryIds(categoryIds)
     } catch (error) {
-      console.error('Error loading availability:', error)
+      console.error('Error loading specialist data:', error)
       setSelectedAvailability([])
+      setSelectedCategoryIds([])
     }
     setModalOpen(true)
   }
@@ -186,7 +200,8 @@ export default function SpecialistsTeamPage() {
 
   const handleSaveSpecialist = async (
     data: SpecialistInsert | SpecialistUpdate,
-    availability: Omit<SpecialistAvailability, 'id' | 'specialist_id'>[]
+    availability: Omit<SpecialistAvailability, 'id' | 'specialist_id'>[],
+    categoryIds: string[]
   ) => {
     try {
       let specialistId: string
@@ -212,13 +227,16 @@ export default function SpecialistsTeamPage() {
         toast.success('Especialista creado correctamente')
       }
 
-      const availResult = await specialistService.updateAvailability(
-        specialistId,
-        availability
-      )
+      const [availResult, catResult] = await Promise.all([
+        specialistService.updateAvailability(specialistId, availability),
+        updateSpecialistServiceCategoriesAction(specialistId, categoryIds),
+      ])
+
       if (!availResult.success) {
         console.error('Error saving availability:', availResult.error)
-        toast.error('Error al guardar el horario')
+      }
+      if (!catResult.success) {
+        console.error('Error saving categories:', catResult.error)
       }
 
       loadSpecialists()
@@ -323,6 +341,8 @@ export default function SpecialistsTeamPage() {
         businessId={activeBusinessId || null}
         onSave={handleSaveSpecialist}
         initialAvailability={selectedAvailability}
+        initialCategoryIds={selectedCategoryIds}
+        serviceCategories={serviceCategories}
         businessHours={businessHours}
       />
 

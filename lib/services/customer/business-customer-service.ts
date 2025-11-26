@@ -6,6 +6,7 @@ import {
   createFullCustomerAction,
   updateBusinessCustomerAction,
   deleteBusinessCustomerAction,
+  deleteBusinessCustomersAction,
   searchBusinessCustomersAction,
   incrementCustomerVisitAction,
 } from '@/lib/actions/business-customer'
@@ -127,6 +128,17 @@ export default class BusinessCustomerService {
     } catch (error: any) {
       console.error('Error incrementing customer visit:', error)
       return { success: false, error: error.message }
+    }
+  }
+
+  async destroyMany(
+    ids: string[]
+  ): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+    try {
+      return await deleteBusinessCustomersAction(ids)
+    } catch (error: any) {
+      console.error('Error batch deleting business customers:', error)
+      return { success: false, deletedCount: 0, error: error.message }
     }
   }
 }

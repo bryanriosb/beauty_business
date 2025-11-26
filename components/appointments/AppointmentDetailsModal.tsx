@@ -26,12 +26,16 @@ interface AppointmentDetailsModalProps {
   appointmentId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onEdit?: (appointment: AppointmentWithDetails) => void
+  onCancel?: (appointmentId: string) => void
 }
 
 export default function AppointmentDetailsModal({
   appointmentId,
   open,
   onOpenChange,
+  onEdit,
+  onCancel,
 }: AppointmentDetailsModalProps) {
   const [appointment, setAppointment] = useState<AppointmentWithDetails | null>(
     null
@@ -334,11 +338,29 @@ export default function AppointmentDetailsModal({
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button variant="outline" className="flex-1">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                if (appointment && onEdit) {
+                  onOpenChange(false)
+                  onEdit(appointment)
+                }
+              }}
+            >
               Editar
             </Button>
-            <Button variant="outline" className="flex-1">
-              Cancelar Cita
+            <Button
+              variant="outline"
+              className="flex-1 text-destructive hover:text-destructive"
+              onClick={() => {
+                if (appointment && onCancel) {
+                  onCancel(appointment.id)
+                }
+              }}
+              disabled={appointment?.status === 'CANCELLED'}
+            >
+              {appointment?.status === 'CANCELLED' ? 'Cancelada' : 'Cancelar Cita'}
             </Button>
           </div>
         </div>

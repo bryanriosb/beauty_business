@@ -26,11 +26,11 @@ export function SpecialistGrid({
 }: SpecialistGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="flex flex-wrap gap-4 p-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="h-[180px] rounded-lg bg-muted animate-pulse"
+            className="h-[180px] w-[280px] rounded-lg bg-muted animate-pulse"
           />
         ))}
       </div>
@@ -49,24 +49,25 @@ export function SpecialistGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+    <div className="flex flex-wrap gap-4 p-4">
       {specialists.map((specialist) => {
         const appointment = currentAppointments?.get(specialist.id)
         const goal = goalProgress?.get(specialist.id)
         const isOnline = !!appointment
 
         return (
-          <SpecialistCard
-            key={specialist.id}
-            specialist={specialist}
-            isSelected={selectedId === specialist.id}
-            onClick={() => onSelect(specialist)}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            currentAppointment={appointment}
-            goalProgress={goal}
-            isOnline={isOnline}
-          />
+          <div key={specialist.id} className="w-[280px]">
+            <SpecialistCard
+              specialist={specialist}
+              isSelected={selectedId === specialist.id}
+              onClick={() => onSelect(specialist)}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              currentAppointment={appointment}
+              goalProgress={goal}
+              isOnline={isOnline}
+            />
+          </div>
         )
       })}
     </div>

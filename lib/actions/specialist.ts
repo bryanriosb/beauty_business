@@ -272,6 +272,56 @@ export interface CurrentAppointmentData {
   services: string[]
 }
 
+export async function fetchSpecialistServiceCategoriesAction(
+  specialistId: string
+): Promise<string[]> {
+  try {
+    const supabase = await getSupabaseAdminClient()
+    const { data, error } = await supabase
+      .from('specialist_service_categories')
+      .select('service_category_id')
+      .eq('specialist_id', specialistId)
+
+    if (error) throw error
+    return (data || []).map((item) => item.service_category_id)
+  } catch (error) {
+    console.error('Error fetching specialist categories:', error)
+    return []
+  }
+}
+
+export async function updateSpecialistServiceCategoriesAction(
+  specialistId: string,
+  categoryIds: string[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await getSupabaseAdminClient()
+
+    await supabase
+      .from('specialist_service_categories')
+      .delete()
+      .eq('specialist_id', specialistId)
+
+    if (categoryIds.length > 0) {
+      const dataToInsert = categoryIds.map((categoryId) => ({
+        specialist_id: specialistId,
+        service_category_id: categoryId,
+      }))
+
+      const { error } = await supabase
+        .from('specialist_service_categories')
+        .insert(dataToInsert)
+
+      if (error) throw error
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error updating specialist categories:', error)
+    return { success: false, error: error.message }
+  }
+}
+
 export async function getCurrentAppointmentsForBusinessAction(
   businessId: string
 ): Promise<CurrentAppointmentData[]> {

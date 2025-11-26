@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { ImageUpload } from '@/components/ui/image-upload'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import {
   Form,
@@ -28,7 +27,12 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form'
-import { Loader2, Clock } from 'lucide-react'
+import { Loader2, Clock, Briefcase, ChevronDown } from 'lucide-react'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { BusinessStorageService } from '@/lib/services/business/business-storage-service'
 import { toast } from 'sonner'
 import type {
@@ -38,7 +42,9 @@ import type {
   SpecialistAvailability,
 } from '@/lib/models/specialist/specialist'
 import type { BusinessHours } from '@/lib/models/business/business-hours'
+import type { ServiceCategory } from '@/lib/models/service/service'
 import type { DayOfWeek } from '@/lib/types/enums'
+import { ServiceCategorySelector } from './ServiceCategorySelector'
 
 const formSchema = z.object({
   first_name: z.string().min(1, 'El nombre es requerido'),
@@ -86,9 +92,12 @@ interface SpecialistModalProps {
   businessId: string | null
   onSave: (
     data: SpecialistInsert | SpecialistUpdate,
-    availability: Omit<SpecialistAvailability, 'id' | 'specialist_id'>[]
+    availability: Omit<SpecialistAvailability, 'id' | 'specialist_id'>[],
+    categoryIds: string[]
   ) => Promise<void>
   initialAvailability?: SpecialistAvailability[]
+  initialCategoryIds?: string[]
+  serviceCategories?: ServiceCategory[]
   businessHours?: BusinessHours[]
 }
 
@@ -99,11 +108,16 @@ export function SpecialistModal({
   businessId,
   onSave,
   initialAvailability,
+  initialCategoryIds,
+  serviceCategories = [],
   businessHours,
 }: SpecialistModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [storageService] = useState(() => new BusinessStorageService())
   const [schedule, setSchedule] = useState<WeekSchedule>(DEFAULT_SCHEDULE)
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
+  const [servicesOpen, setServicesOpen] = useState(true)
+  const [scheduleOpen, setScheduleOpen] = useState(false)
 
   const form = useForm<SpecialistFormValues>({
     resolver: zodResolver(formSchema),
@@ -127,6 +141,8 @@ export function SpecialistModal({
         profile_picture_url: specialist.profile_picture_url || '',
         is_featured: specialist.is_featured,
       })
+
+      setSelectedCategoryIds(initialCategoryIds || [])
 
       if (initialAvailability && initialAvailability.length > 0) {
         const newSchedule = { ...DEFAULT_SCHEDULE }
@@ -158,8 +174,9 @@ export function SpecialistModal({
         is_featured: false,
       })
       setSchedule(DEFAULT_SCHEDULE)
+      setSelectedCategoryIds([])
     }
-  }, [specialist, form, open, initialAvailability])
+  }, [specialist, form, open, initialAvailability, initialCategoryIds])
 
   const handleImageUpload = useCallback(
     async (file: File) => {
@@ -197,10 +214,17 @@ export function SpecialistModal({
   const onSubmit = async (data: SpecialistFormValues) => {
     setIsSubmitting(true)
     try {
+      const specialtyFromCategories = selectedCategoryIds.length > 0
+        ? serviceCategories
+            .filter((c) => selectedCategoryIds.includes(c.id))
+            .map((c) => c.name)
+            .join(', ')
+        : data.specialty || null
+
       const saveData: SpecialistInsert | SpecialistUpdate = {
         ...data,
         last_name: data.last_name || null,
-        specialty: data.specialty || null,
+        specialty: specialtyFromCategories,
         bio: data.bio || null,
         profile_picture_url: data.profile_picture_url || null,
         business_id: businessId,
@@ -214,7 +238,7 @@ export function SpecialistModal({
           is_available: config.enabled,
         }))
 
-      await onSave(saveData, availabilityData)
+      await onSave(saveData, availabilityData, selectedCategoryIds)
       onOpenChange(false)
     } catch (error) {
       console.error('Error saving specialist:', error)
@@ -271,23 +295,39 @@ export function SpecialistModal({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="specialty"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Especialidad</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ej: Colorista, Estilista, Barbero"
-                      disabled={isSubmitting}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Service Categories - Collapsible */}
+            <Collapsible open={servicesOpen} onOpenChange={setServicesOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Servicios que realiza</span>
+                    {selectedCategoryIds.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        ({selectedCategoryIds.length} seleccionados)
+                      </span>
+                    )}
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${
+                      servicesOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <ServiceCategorySelector
+                  categories={serviceCategories}
+                  selectedCategoryIds={selectedCategoryIds}
+                  onChange={setSelectedCategoryIds}
+                  disabled={isSubmitting}
+                />
+              </CollapsibleContent>
+            </Collapsible>
 
             <FormField
               control={form.control}
@@ -351,14 +391,29 @@ export function SpecialistModal({
 
             <Separator />
 
-            {/* Schedule Section */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm font-medium">Horario de trabajo</Label>
-              </div>
-
-              <div className="space-y-2">
+            {/* Schedule Section - Collapsible */}
+            <Collapsible open={scheduleOpen} onOpenChange={setScheduleOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Horario de trabajo</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({Object.values(schedule).filter((d) => d.enabled).length} días activos)
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${
+                      scheduleOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2 space-y-2">
                 {DAYS_CONFIG.map(({ key, label }) => {
                   const businessDay = getBusinessHoursForDay(key)
                   const businessIsOpen = isBusinessOpenOnDay(key)
@@ -416,8 +471,8 @@ export function SpecialistModal({
                     </div>
                   )
                 })}
-              </div>
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <DialogFooter>
               <Button

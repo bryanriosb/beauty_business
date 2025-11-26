@@ -4,6 +4,7 @@ import {
   createAppointmentAction,
   updateAppointmentAction,
   deleteAppointmentAction,
+  type AppointmentServiceInput,
 } from '@/lib/actions/appointment'
 import type {
   Appointment,
@@ -49,10 +50,11 @@ export default class AppointmentService {
   }
 
   async createItem(
-    data: AppointmentInsert
+    data: AppointmentInsert,
+    services?: AppointmentServiceInput[]
   ): Promise<{ success: boolean; data?: Appointment; error?: string }> {
     try {
-      return await createAppointmentAction(data)
+      return await createAppointmentAction(data, services)
     } catch (error: any) {
       console.error('Error creating appointment:', error)
       throw error

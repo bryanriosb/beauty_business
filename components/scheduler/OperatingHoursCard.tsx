@@ -42,10 +42,20 @@ const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
 const DEFAULT_OPEN = '09:00'
 const DEFAULT_CLOSE = '18:00'
 
+function getEmptySchedule(): DaySchedule[] {
+  return DAYS_OF_WEEK.map(({ value }) => ({
+    day: value,
+    shifts: [],
+    is_closed: true,
+  }))
+}
+
 function getDefaultSchedule(): DaySchedule[] {
   return DAYS_OF_WEEK.map(({ value }) => ({
     day: value,
-    shifts: [{ shift_number: 1, open_time: DEFAULT_OPEN, close_time: DEFAULT_CLOSE }],
+    shifts: [
+      { shift_number: 1, open_time: DEFAULT_OPEN, close_time: DEFAULT_CLOSE },
+    ],
     is_closed: value === '0',
   }))
 }
@@ -89,9 +99,11 @@ function businessHoursToSchedule(hours: BusinessHours[]): DaySchedule[] {
 }
 
 export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
-  const [schedule, setSchedule] = useState<DaySchedule[]>(getDefaultSchedule())
+  const [schedule, setSchedule] = useState<DaySchedule[]>(getEmptySchedule())
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [applyAllOpen, setApplyAllOpen] = useState(DEFAULT_OPEN)
+  const [applyAllClose, setApplyAllClose] = useState(DEFAULT_CLOSE)
 
   const loadHours = useCallback(async () => {
     if (!businessId) {
@@ -101,7 +113,11 @@ export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
 
     setIsLoading(true)
     const hours = await fetchBusinessHoursAction(businessId)
-    setSchedule(businessHoursToSchedule(hours))
+    if (hours.length > 0) {
+      setSchedule(businessHoursToSchedule(hours))
+    } else {
+      setSchedule(getEmptySchedule())
+    }
     setIsLoading(false)
   }, [businessId])
 
@@ -117,7 +133,13 @@ export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
         is_closed: !updated[dayIdx].is_closed,
         shifts: !updated[dayIdx].is_closed
           ? []
-          : [{ shift_number: 1, open_time: DEFAULT_OPEN, close_time: DEFAULT_CLOSE }],
+          : [
+              {
+                shift_number: 1,
+                open_time: DEFAULT_OPEN,
+                close_time: DEFAULT_CLOSE,
+              },
+            ],
       }
       return updated
     })
@@ -142,7 +164,10 @@ export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
   const handleAddShift = (dayIdx: number) => {
     setSchedule((prev) => {
       const updated = [...prev]
-      const maxShift = Math.max(...updated[dayIdx].shifts.map((s) => s.shift_number), 0)
+      const maxShift = Math.max(
+        ...updated[dayIdx].shifts.map((s) => s.shift_number),
+        0
+      )
       updated[dayIdx].shifts.push({
         shift_number: maxShift + 1,
         open_time: '14:00',
@@ -163,6 +188,43 @@ export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
     })
   }
 
+  const handleApplyToAll = () => {
+    setSchedule((prev) =>
+      prev.map((day) => ({
+        ...day,
+        is_closed: false,
+        shifts: [
+          {
+            shift_number: 1,
+            open_time: applyAllOpen,
+            close_time: applyAllClose,
+          },
+        ],
+      }))
+    )
+    toast.success('Horario aplicado a todos los días')
+  }
+
+  const handleApplyToWeekdays = () => {
+    setSchedule((prev) =>
+      prev.map((day) => ({
+        ...day,
+        is_closed: day.day === '0' || day.day === '6',
+        shifts:
+          day.day === '0' || day.day === '6'
+            ? []
+            : [
+                {
+                  shift_number: 1,
+                  open_time: applyAllOpen,
+                  close_time: applyAllClose,
+                },
+              ],
+      }))
+    )
+    toast.success('Horario aplicado a días laborales')
+  }
+
   const handleSave = async () => {
     if (!businessId) {
       toast.error('No hay sucursal seleccionada')
@@ -171,7 +233,10 @@ export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
 
     setIsSaving(true)
 
-    const hoursToSave: Omit<BusinessHours, 'id' | 'business_id' | 'created_at' | 'updated_at'>[] = []
+    const hoursToSave: Omit<
+      BusinessHours,
+      'id' | 'business_id' | 'created_at' | 'updated_at'
+    >[] = []
 
     schedule.forEach((day) => {
       if (day.is_closed) {
@@ -231,16 +296,58 @@ export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Horarios de Atención</CardTitle>
         <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
           Guardar
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+          <Label className="text-sm font-medium">Aplicar horario rápido</Label>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground">Desde</Label>
+              <Input
+                type="time"
+                value={applyAllOpen}
+                onChange={(e) => setApplyAllOpen(e.target.value)}
+                className="w-28"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground">Hasta</Label>
+              <Input
+                type="time"
+                value={applyAllClose}
+                onChange={(e) => setApplyAllClose(e.target.value)}
+                className="w-28"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleApplyToWeekdays}
+              >
+                Lun - Vie
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleApplyToAll}>
+                Todos
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {schedule.map((day, dayIdx) => (
           <DayRow
             key={day.day}
             day={day}
-            dayLabel={DAYS_OF_WEEK.find((d) => d.value === day.day)?.label || ''}
+            dayLabel={
+              DAYS_OF_WEEK.find((d) => d.value === day.day)?.label || ''
+            }
             onToggle={() => handleToggleDay(dayIdx)}
             onTimeChange={(shiftIdx, field, value) =>
               handleTimeChange(dayIdx, shiftIdx, field, value)
@@ -258,7 +365,11 @@ interface DayRowProps {
   day: DaySchedule
   dayLabel: string
   onToggle: () => void
-  onTimeChange: (shiftIdx: number, field: 'open_time' | 'close_time', value: string) => void
+  onTimeChange: (
+    shiftIdx: number,
+    field: 'open_time' | 'close_time',
+    value: string
+  ) => void
   onAddShift: () => void
   onRemoveShift: (shiftIdx: number) => void
 }
@@ -291,13 +402,18 @@ function DayRow({
       ) : (
         <div className="space-y-2 pl-12">
           {day.shifts.map((shift, shiftIdx) => (
-            <div key={shift.shift_number} className="flex items-center gap-3 flex-wrap">
+            <div
+              key={shift.shift_number}
+              className="flex items-center gap-3 flex-wrap"
+            >
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground">Desde</Label>
                 <Input
                   type="time"
                   value={shift.open_time}
-                  onChange={(e) => onTimeChange(shiftIdx, 'open_time', e.target.value)}
+                  onChange={(e) =>
+                    onTimeChange(shiftIdx, 'open_time', e.target.value)
+                  }
                   className="w-28"
                 />
               </div>
@@ -306,7 +422,9 @@ function DayRow({
                 <Input
                   type="time"
                   value={shift.close_time}
-                  onChange={(e) => onTimeChange(shiftIdx, 'close_time', e.target.value)}
+                  onChange={(e) =>
+                    onTimeChange(shiftIdx, 'close_time', e.target.value)
+                  }
                   className="w-28"
                 />
               </div>

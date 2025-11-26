@@ -45,141 +45,147 @@
 
 :root {
   --radius: 0.625rem;
-  /* Paleta Verde Azulado - Modo Claro */
-  --background: oklch(98% 0.003 250);
-  /* Casi blanco con ligero tinte azulado frío */
-  --foreground: oklch(15% 0.01 250);
-  /* Gris oscuro frío */
+  /* Paleta Amarillo-Violeta - Modo Claro */
+  /* Primary: #FDF5AA (amarillo), Secondary: #7E6B9E (violeta), Accent: #4E3D6B (púrpura) */
+  --background: oklch(98.5% 0.002 300);
+  /* Casi blanco con tinte cálido */
+  --foreground: oklch(18% 0.04 300);
+  /* Púrpura muy oscuro para texto */
   --card: oklch(100% 0 0);
   /* white */
-  --card-foreground: oklch(15% 0.01 250);
-  /* Gris oscuro frío */
+  --card-foreground: oklch(18% 0.04 300);
+  /* Púrpura muy oscuro */
   --popover: oklch(100% 0 0);
   /* white */
-  --popover-foreground: oklch(15% 0.01 250);
-  /* Gris oscuro frío */
-  --primary: oklch(0.78 0.12 165);
-  /* #4ECCA3 */
-  --primary-foreground: oklch(100% 0 0);
-  /* white */
-  --secondary: oklch(0.58 0.11 165);
-  /* #169976 */
+  --popover-foreground: oklch(18% 0.04 300);
+  /* Púrpura muy oscuro */
+  --primary: oklch(0.94 0.10 95);
+  /* #FDF5AA - Amarillo suave */
+  --primary-foreground: oklch(0.22 0.06 300);
+  /* Púrpura oscuro */
+  --secondary: oklch(0.55 0.12 300);
+  /* #7E6B9E - Violeta medio */
   --secondary-foreground: oklch(100% 0 0);
   /* white */
-  --muted: oklch(0.96 0.003 250);
-  /* Gris muy claro frío */
-  --muted-foreground: oklch(0.45 0.01 250);
-  /* Gris medio frío */
-  --accent: oklch(0.96 0.003 250);
-  /* Gris muy claro frío */
-  --accent-foreground: oklch(0.25 0.01 250);
-  /* Gris oscuro frío */
-  --border: oklch(0.88 0.005 250);
-  /* Gris para bordes frío */
-  --input: oklch(0.88 0.005 250);
-  /* Gris para inputs frío */
-  --ring: oklch(0.68 0.10 165);
-  /* teal-500 */
+  --muted: oklch(0.94 0 0);
+  /* Gris claro puro para skeletons */
+  --muted-foreground: oklch(0.45 0 0);
+  /* Gris medio puro */
+  --accent: oklch(0.38 0.10 300);
+  /* #4E3D6B - Púrpura oscuro */
+  --accent-foreground: oklch(100% 0 0);
+  /* white */
+  --border: oklch(0.90 0.005 300);
+  /* Gris claro para bordes */
+  --input: oklch(0.90 0.005 300);
+  /* Gris claro para inputs */
+  --ring: oklch(0.88 0.08 95);
+  /* Amarillo para focus */
 
-  /* Colores funcionales (se mantienen los originales para alertas) */
+  /* Colores funcionales */
   --destructive: oklch(63.652% 0.22579 24.441);
 
-  /* Gráficos y Sidebar (adaptados a la paleta verde azulado) */
-  --chart-1: oklch(0.78 0.12 165);
-  /* teal-500 - primary */
-  --chart-2: oklch(0.85 0.08 165);
-  /* teal-300 */
-  --chart-3: oklch(0.58 0.11 165);
-  /* teal-700 - secondary */
-  --chart-4: oklch(0.72 0.10 165);
-  /* teal-400 */
-  --chart-5: oklch(0.45 0.09 165);
-  /* teal-800 */
-  --sidebar: oklch(98% 0.003 250);
+  /* Gráficos - Amarillo primario, violetas secundarios */
+  --chart-1: oklch(0.94 0.10 95);
+  /* Amarillo primary */
+  --chart-2: oklch(0.55 0.12 300);
+  /* Violeta medio */
+  --chart-3: oklch(0.38 0.10 300);
+  /* Púrpura oscuro */
+  --chart-4: oklch(0.70 0.10 300);
+  /* Lavanda */
+  --chart-5: oklch(0.28 0.08 300);
+  /* Púrpura muy oscuro */
+
+  /* Sidebar */
+  --sidebar: oklch(98.5% 0.002 300);
   /* Mismo color que background */
-  --sidebar-foreground: oklch(0.25 0.01 250);
-  /* Gris oscuro frío */
-  --sidebar-primary: oklch(0.58 0.11 165);
-  /* teal-600 - secondary */
-  --sidebar-primary-foreground: oklch(98% 0.003 250);
-  /* Casi blanco frío */
-  --sidebar-accent: oklch(0.96 0.005 250);
-  /* Gris claro frío para hover */
-  --sidebar-accent-foreground: oklch(0.25 0.01 250);
-  /* Gris oscuro frío */
-  --sidebar-border: oklch(0.88 0.005 250);
-  /* Gris para bordes frío */
-  --sidebar-ring: oklch(0.78 0.12 165);
-  /* teal-500 - primary */
+  --sidebar-foreground: oklch(0.28 0.06 300);
+  /* Púrpura oscuro */
+  --sidebar-primary: oklch(0.94 0.10 95);
+  /* Amarillo primary */
+  --sidebar-primary-foreground: oklch(0.22 0.06 300);
+  /* Púrpura oscuro */
+  --sidebar-accent: oklch(0.96 0.03 95);
+  /* Amarillo muy suave para hover */
+  --sidebar-accent-foreground: oklch(0.28 0.06 300);
+  /* Púrpura oscuro */
+  --sidebar-border: oklch(0.90 0.005 300);
+  /* Gris claro para bordes */
+  --sidebar-ring: oklch(0.88 0.08 95);
+  /* Amarillo para focus */
 }
 
 .dark {
-  /* Modo Oscuro - Fondo azul oscuro con acentos verde azulado */
+  /* Modo Oscuro - Paleta Amarillo-Violeta */
+  /* Primary: #FDF5AA (amarillo), Secondary: #9B8ABF (lavanda), Accent: #6B5B95 (violeta) */
   --background: oklch(12% 0.02 265);
-  /* Azul oscuro profundo - fondo principal */
-  --foreground: oklch(98% 0.005 265);
-  /* Blanco con ligero tinte azul */
-  --card: oklch(16% 0.025 265);
-  /* Azul grisáceo para tarjetas - más claro que el fondo */
-  --card-foreground: oklch(95% 0.005 265);
+  /* Fondo oscuro profundo (sin cambios) */
+  --foreground: oklch(96% 0.005 300);
+  /* Blanco con tinte cálido */
+  --card: oklch(16% 0.025 280);
+  /* Gris oscuro para tarjetas */
+  --card-foreground: oklch(95% 0.005 300);
   /* Blanco */
-  --popover: oklch(18% 0.025 265);
-  /* Azul grisáceo para popovers */
-  --popover-foreground: oklch(95% 0.005 265);
+  --popover: oklch(18% 0.025 280);
+  /* Gris oscuro para popovers */
+  --popover-foreground: oklch(95% 0.005 300);
   /* Blanco */
-  --primary: oklch(0.78 0.12 165);
-  /* Verde azulado - color de acento principal (#4ECCA3) */
-  --primary-foreground: oklch(98% 0.005 265);
+  --primary: oklch(0.94 0.10 95);
+  /* #FDF5AA - Amarillo suave */
+  --primary-foreground: oklch(0.18 0.04 300);
+  /* Púrpura muy oscuro */
+  --secondary: oklch(0.65 0.10 300);
+  /* #9B8ABF - Lavanda */
+  --secondary-foreground: oklch(100% 0 0);
   /* Blanco */
-  --secondary: oklch(0.58 0.11 165);
-  /* Verde oscuro para headers/secciones secundarias (#169976) */
-  --secondary-foreground: oklch(98% 0.005 265);
+  --muted: oklch(0.28 0 0);
+  /* Gris oscuro puro para skeletons en dark */
+  --muted-foreground: oklch(0.60 0 0);
+  /* Gris medio puro */
+  --accent: oklch(0.50 0.10 300);
+  /* #6B5B95 - Violeta medio */
+  --accent-foreground: oklch(100% 0 0);
   /* Blanco */
-  --muted: oklch(56.856% 0.02469 265.653);
-  /* Grisáceo oscuro apagado */
-  --muted-foreground: oklch(65% 0.005 265);
-  /* Gris medio */
-  --accent: oklch(0.78 0.12 165);
-  /* Verde azulado para acentos */
-  --accent-foreground: oklch(98% 0.005 265);
-  /* Blanco */
-  --border: oklch(30% 0.02 265);
+  --border: oklch(30% 0.02 280);
   /* Gris para bordes visibles */
-  --input: oklch(22% 0.03 265);
-  /* Azul oscuro para inputs */
-  --ring: oklch(0.78 0.12 165);
-  /* Verde azulado para ring/focus */
+  --input: oklch(22% 0.02 280);
+  /* Gris oscuro para inputs */
+  --ring: oklch(0.88 0.08 95);
+  /* Amarillo para focus */
 
-  /* Colores funcionales (se mantienen los originales para alertas) */
+  /* Colores funcionales */
   --destructive: oklch(0.704 0.191 22.216);
 
-  /* Gráficos y Sidebar (adaptados a la paleta verde azulado) */
-  --chart-1: oklch(0.78 0.12 165);
-  /* teal-500 - primary */
-  --chart-2: oklch(0.85 0.08 165);
-  /* teal-300 */
-  --chart-3: oklch(0.58 0.11 165);
-  /* teal-700 - secondary */
-  --chart-4: oklch(0.72 0.10 165);
-  /* teal-400 */
-  --chart-5: oklch(0.45 0.09 165);
-  /* teal-800 */
+  /* Gráficos - Amarillo primario, violetas secundarios */
+  --chart-1: oklch(0.94 0.10 95);
+  /* Amarillo primary */
+  --chart-2: oklch(0.65 0.10 300);
+  /* Lavanda */
+  --chart-3: oklch(0.50 0.10 300);
+  /* Violeta medio */
+  --chart-4: oklch(0.75 0.08 300);
+  /* Lavanda claro */
+  --chart-5: oklch(0.38 0.08 300);
+  /* Púrpura oscuro */
+
+  /* Sidebar */
   --sidebar: oklch(12% 0.02 265);
   /* Mismo color que background */
-  --sidebar-foreground: oklch(92% 0.005 265);
-  /* Blanco/Gris claro - textos normales del sidebar */
-  --sidebar-primary: oklch(0.78 0.12 165);
-  /* Verde azulado para items - primary */
-  --sidebar-primary-foreground: oklch(12% 0.02 265);
-  /* Oscuro */
-  --sidebar-accent: oklch(20% 0.02 265);
-  /* Grisáceo oscuro para hover */
-  --sidebar-accent-foreground: oklch(98% 0.005 265);
-  /* Blanco más brillante al hacer hover */
-  --sidebar-border: oklch(30% 0.02 265);
-  /* Gris para bordes visibles */
-  --sidebar-ring: oklch(0.78 0.12 165);
-  /* Verde azulado para focus */
+  --sidebar-foreground: oklch(90% 0.005 300);
+  /* Blanco/Gris claro */
+  --sidebar-primary: oklch(0.94 0.10 95);
+  /* Amarillo primary */
+  --sidebar-primary-foreground: oklch(0.18 0.04 300);
+  /* Púrpura muy oscuro */
+  --sidebar-accent: oklch(22% 0.025 95);
+  /* Amarillo muy oscuro para hover */
+  --sidebar-accent-foreground: oklch(0.94 0.10 95);
+  /* Amarillo */
+  --sidebar-border: oklch(30% 0.02 280);
+  /* Gris para bordes */
+  --sidebar-ring: oklch(0.88 0.08 95);
+  /* Amarillo para focus */
 }
 
 @layer base {
@@ -212,7 +218,8 @@
 
 /* Handle on hover - Light Mode */
 ::-webkit-scrollbar-thumb:hover {
-  background: #373c9e49;
+  background: #7E6B9E;
+  /* Violeta - contrasta con amarillo */
 }
 
 /* Dark Mode Scrollbar */
@@ -226,7 +233,8 @@
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: oklch(35% 0.04 265);
+  background: oklch(0.65 0.10 300);
+  /* Lavanda para hover */
 }
 
 .subtitle {

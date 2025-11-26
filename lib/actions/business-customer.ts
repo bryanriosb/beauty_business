@@ -365,3 +365,23 @@ export async function incrementCustomerVisitAction(
     return { success: false, error: error.message }
   }
 }
+
+export async function deleteBusinessCustomersAction(
+  ids: string[]
+): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+  try {
+    const supabase = await getSupabaseAdminClient()
+
+    const { error } = await supabase
+      .from('business_customers')
+      .delete()
+      .in('id', ids)
+
+    if (error) throw error
+
+    return { success: true, deletedCount: ids.length }
+  } catch (error: any) {
+    console.error('Error batch deleting business customers:', error)
+    return { success: false, deletedCount: 0, error: error.message }
+  }
+}

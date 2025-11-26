@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Check, User, AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, translateSpecialty } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getAvailableSpecialistsForSlotAction, type AvailableSpecialist } from '@/lib/actions/availability'
 
@@ -188,7 +188,7 @@ export default function SpecialistPicker({
                 </p>
                 {specialist.specialty && (
                   <p className="text-xs text-muted-foreground truncate">
-                    {specialist.specialty}
+                    {translateSpecialty(specialist.specialty)}
                   </p>
                 )}
               </div>

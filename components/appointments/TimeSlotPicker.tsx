@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { ChevronLeft, ChevronRight, Clock, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Clock, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getAvailableSlotsForServiceAction, type TimeSlot } from '@/lib/actions/availability'
 
@@ -14,6 +13,7 @@ interface TimeSlotPickerProps {
   value?: string
   onChange: (time: string, availableSpecialistIds: string[]) => void
   disabled?: boolean
+  excludeAppointmentId?: string
 }
 
 export default function TimeSlotPicker({
@@ -29,7 +29,6 @@ export default function TimeSlotPicker({
   const [error, setError] = useState<string | null>(null)
   const [businessOpen, setBusinessOpen] = useState(true)
   const [serviceDuration, setServiceDuration] = useState(0)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function loadAvailability() {
@@ -67,16 +66,6 @@ export default function TimeSlotPicker({
 
     loadAvailability()
   }, [businessId, serviceId, date])
-
-  const handleScroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 200
-      scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      })
-    }
-  }
 
   const handleSelectSlot = (slot: TimeSlot) => {
     if (!slot.available || disabled) return
@@ -149,80 +138,41 @@ export default function TimeSlotPicker({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Clock className="h-4 w-4" />
+        <Clock className="h-4 w-4 shrink-0" />
         <span>
           {availableSlots.length} horario{availableSlots.length !== 1 ? 's' : ''} disponible
           {availableSlots.length !== 1 ? 's' : ''}
         </span>
       </div>
 
-      <div className="relative group">
-        {/* Botón scroll izquierda */}
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md bg-background"
-          onClick={() => handleScroll('left')}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+      <div className="grid grid-cols-4 gap-2">
+        {availableSlots.map((slot, index) => {
+          const isSelected = value === slot.time
 
-        {/* Container de slots con scroll horizontal */}
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-2 overflow-x-auto scrollbar-hide py-2 px-1 scroll-smooth"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {slots.map((slot, index) => {
-            const isSelected = value === slot.time
-            const isAvailable = slot.available
-
-            return (
-              <button
-                key={index}
-                type="button"
-                disabled={!isAvailable || disabled}
-                onClick={() => handleSelectSlot(slot)}
-                className={cn(
-                  'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-                  isAvailable && !isSelected && [
-                    'bg-secondary text-secondary-foreground',
-                    'hover:bg-primary/10 hover:text-primary',
-                    'border border-transparent hover:border-primary/20',
-                  ],
-                  isSelected && [
-                    'bg-primary text-primary-foreground',
-                    'shadow-md',
-                  ],
-                  !isAvailable && [
-                    'bg-muted text-muted-foreground/50',
-                    'cursor-not-allowed line-through',
-                  ],
-                  disabled && 'opacity-50 cursor-not-allowed'
-                )}
-              >
-                {formatTime(slot.time)}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Botón scroll derecha */}
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md bg-background"
-          onClick={() => handleScroll('right')}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-
-        {/* Gradientes de fade en los bordes */}
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+          return (
+            <button
+              key={index}
+              type="button"
+              disabled={disabled}
+              onClick={() => handleSelectSlot(slot)}
+              className={cn(
+                'px-4 py-1.5 rounded-full text-sm font-medium transition-all text-center',
+                'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                !isSelected && [
+                  'bg-secondary text-secondary-foreground',
+                  'hover:bg-primary hover:text-primary-foreground',
+                ],
+                isSelected && [
+                  'bg-primary text-primary-foreground',
+                  'shadow-md',
+                ],
+                disabled && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              {formatTime(slot.time)}
+            </button>
+          )
+        })}
       </div>
 
       {value && (

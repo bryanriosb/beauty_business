@@ -36,8 +36,9 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Upload, X, Image as ImageIcon, Loader2, Images } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, Loader2, Images, Clock } from 'lucide-react'
 import BusinessStorageService from '@/lib/services/business/business-storage-service'
+import { BusinessHoursEditor } from './BusinessHoursEditor'
 import { BusinessType } from '@/lib/types/enums'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { BusinessGalleryImage } from '@/lib/models/business/business-gallery-image'
@@ -418,11 +419,15 @@ export function BusinessModal({
             )}
 
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="general">Información General</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="hours" disabled={!business?.id}>
+                  <Clock className="h-4 w-4 mr-1" />
+                  Horarios
+                </TabsTrigger>
                 <TabsTrigger
                   value="gallery"
-                  disabled={!isCompanyAdmin && !isBusinessAdmin}
+                  disabled={!business?.id || (!isCompanyAdmin && !isBusinessAdmin)}
                 >
                   Galería
                 </TabsTrigger>
@@ -689,6 +694,13 @@ export function BusinessModal({
                     />
                   </div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="hours" className="mt-4">
+                <BusinessHoursEditor
+                  businessId={business?.id || null}
+                  disabled={isSubmitting}
+                />
               </TabsContent>
 
               <TabsContent value="gallery" className="space-y-6 mt-4">

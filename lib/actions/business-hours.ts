@@ -151,3 +151,32 @@ export async function deleteBusinessSpecialHoursAction(
     return { success: false, error: error.message }
   }
 }
+
+export async function createDefaultBusinessHoursAction(
+  businessId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await getSupabaseAdminClient()
+
+    const defaultHours: BusinessHoursInsert[] = [
+      { business_id: businessId, day: '1', shift_number: 1, open_time: '09:00', close_time: '18:00', is_closed: false },
+      { business_id: businessId, day: '2', shift_number: 1, open_time: '09:00', close_time: '18:00', is_closed: false },
+      { business_id: businessId, day: '3', shift_number: 1, open_time: '09:00', close_time: '18:00', is_closed: false },
+      { business_id: businessId, day: '4', shift_number: 1, open_time: '09:00', close_time: '18:00', is_closed: false },
+      { business_id: businessId, day: '5', shift_number: 1, open_time: '09:00', close_time: '18:00', is_closed: false },
+      { business_id: businessId, day: '6', shift_number: 1, open_time: '09:00', close_time: '18:00', is_closed: false },
+      { business_id: businessId, day: '0', shift_number: 1, open_time: null, close_time: null, is_closed: true },
+    ]
+
+    const { error } = await supabase
+      .from('business_operating_hours')
+      .insert(defaultHours)
+
+    if (error) throw error
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error creating default business hours:', error)
+    return { success: false, error: error.message }
+  }
+}

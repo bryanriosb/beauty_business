@@ -113,14 +113,16 @@ export async function getAvailableSlotsForServiceAction(
       }
     }
 
-    // 3. Obtener especialistas que ofrecen esta categoría de servicio
+    // 3. Obtener especialistas que ofrecen esta categoría de servicio (del negocio actual)
     let specialistIds: string[] = []
 
     if (categoryId) {
+      // Join con specialists para filtrar por business_id
       const { data: specialistCategories } = await supabase
         .from('specialist_service_categories')
-        .select('specialist_id')
+        .select('specialist_id, specialists!inner(business_id)')
         .eq('service_category_id', categoryId)
+        .eq('specialists.business_id', businessId)
 
       if (specialistCategories && specialistCategories.length > 0) {
         specialistIds = specialistCategories.map((sc) => sc.specialist_id)

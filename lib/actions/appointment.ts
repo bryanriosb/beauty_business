@@ -2,7 +2,6 @@
 
 import {
   getRecordById,
-  insertRecord,
   updateRecord,
   deleteRecord,
   getSupabaseAdminClient,
@@ -12,6 +11,12 @@ import type {
   AppointmentInsert,
   AppointmentUpdate,
 } from '@/lib/models/appointment/appointment'
+
+export interface AppointmentServiceInput {
+  service_id: string
+  price_at_booking_cents: number
+  duration_minutes: number
+}
 
 export interface AppointmentListResponse {
   data: Appointment[]
@@ -243,16 +248,40 @@ export async function getAppointmentByIdAction(
 }
 
 export async function createAppointmentAction(
-  data: AppointmentInsert
+  data: AppointmentInsert,
+  services?: AppointmentServiceInput[]
 ): Promise<{ success: boolean; data?: Appointment; error?: string }> {
   try {
-    const appointment = await insertRecord<Appointment>('appointments', data)
+    const supabase = await getSupabaseAdminClient()
 
-    if (!appointment) {
-      return { success: false, error: 'Error al crear la cita' }
+    const { data: appointment, error: appointmentError } = await supabase
+      .from('appointments')
+      .insert(data)
+      .select()
+      .single()
+
+    if (appointmentError || !appointment) {
+      return { success: false, error: appointmentError?.message || 'Error al crear la cita' }
     }
 
-    return { success: true, data: appointment }
+    if (services && services.length > 0) {
+      const appointmentServices = services.map((service) => ({
+        appointment_id: appointment.id,
+        service_id: service.service_id,
+        price_at_booking_cents: service.price_at_booking_cents,
+        duration_minutes: service.duration_minutes,
+      }))
+
+      const { error: servicesError } = await supabase
+        .from('appointment_services')
+        .insert(appointmentServices)
+
+      if (servicesError) {
+        console.error('Error creating appointment services:', servicesError)
+      }
+    }
+
+    return { success: true, data: appointment as Appointment }
   } catch (error: any) {
     console.error('Error creating appointment:', error)
     return { success: false, error: error.message || 'Error desconocido' }

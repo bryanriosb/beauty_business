@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Clock, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import type { Specialist } from '@/lib/models/specialist/specialist'
-import { cn } from '@/lib/utils'
+import { cn, translateCategory, translateSpecialty } from '@/lib/utils'
 
 export interface CurrentAppointment {
   startTime: string
@@ -47,8 +47,12 @@ export function SpecialistCard({
   goalProgress,
   isOnline = false,
 }: SpecialistCardProps) {
-  const initials = `${specialist.first_name[0]}${specialist.last_name?.[0] || ''}`.toUpperCase()
-  const fullName = `${specialist.first_name} ${specialist.last_name || ''}`.trim()
+  const initials = `${specialist.first_name[0]}${
+    specialist.last_name?.[0] || ''
+  }`.toUpperCase()
+  const fullName = `${specialist.first_name} ${
+    specialist.last_name || ''
+  }`.trim()
   const username = specialist.username || specialist.first_name.toLowerCase()
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -80,7 +84,10 @@ export function SpecialistCard({
         <div className="flex items-start gap-3">
           <div className="relative">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={specialist.profile_picture_url || undefined} alt={fullName} />
+              <AvatarImage
+                src={specialist.profile_picture_url || undefined}
+                alt={fullName}
+              />
               <AvatarFallback className="bg-primary/10 text-primary font-medium">
                 {initials}
               </AvatarFallback>
@@ -93,7 +100,7 @@ export function SpecialistCard({
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-sm truncate">{fullName}</h3>
             <p className="text-xs text-muted-foreground truncate">
-              {specialist.specialty || 'Especialista'}
+              {specialist.specialty ? translateSpecialty(specialist.specialty) : 'Especialista'}
             </p>
             <p className="text-xs text-muted-foreground/70">@{username}</p>
           </div>
@@ -104,7 +111,7 @@ export function SpecialistCard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-7 w-7"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="h-4 w-4" />
@@ -138,7 +145,9 @@ export function SpecialistCard({
               <span className="text-xs text-muted-foreground">
                 {goalProgress.label || 'Meta mensual'}
               </span>
-              <span className="text-xs font-medium">{goalProgress.percentage}%</span>
+              <span className="text-xs font-medium">
+                {goalProgress.percentage}%
+              </span>
             </div>
             <Progress
               value={goalProgress.percentage}
@@ -161,7 +170,11 @@ export function SpecialistCard({
             {currentAppointment.services.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {currentAppointment.services.map((service, i) => (
-                  <Badge key={i} variant="outline" className="text-xs px-2 py-0">
+                  <Badge
+                    key={i}
+                    variant="outline"
+                    className="text-xs px-2 py-0"
+                  >
                     {service}
                   </Badge>
                 ))}
@@ -178,8 +191,12 @@ export function SpecialistCard({
                 .split(',')
                 .slice(0, 3)
                 .map((tag, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs px-2 py-0">
-                    {tag.trim()}
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className="text-xs px-2 py-0"
+                  >
+                    {translateCategory(tag.trim())}
                   </Badge>
                 ))}
             </div>

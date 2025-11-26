@@ -8,6 +8,7 @@ import {
   deleteRecord,
   deleteRecords,
 } from '@/lib/actions/supabase'
+import { createDefaultBusinessHoursAction } from '@/lib/actions/business-hours'
 import type { Business, BusinessInsert } from '@/lib/models/business/business'
 
 export interface BusinessListResponse {
@@ -93,6 +94,9 @@ export async function createBusinessAction(data: BusinessInsert): Promise<{ succ
     if (!business) {
       return { success: false, error: 'Error al crear el negocio' }
     }
+
+    // Crear horarios por defecto para el nuevo negocio
+    await createDefaultBusinessHoursAction(business.id)
 
     return { success: true, data: business }
   } catch (error: any) {

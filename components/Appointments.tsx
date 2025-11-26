@@ -8,7 +8,7 @@ import { Event } from 'react-big-calendar'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 import AppointmentService from '@/lib/services/appointment/appointment-service'
-import type { Appointment } from '@/lib/models/appointment/appointment'
+import type { Appointment, AppointmentWithDetails } from '@/lib/models/appointment/appointment'
 import { USER_ROLES } from '@/const/roles'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
@@ -38,6 +38,7 @@ export default function Appointments() {
   const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null)
   const [allAppointments, setAllAppointments] = useState<any[]>([])
+  const [appointmentToEdit, setAppointmentToEdit] = useState<AppointmentWithDetails | null>(null)
   const { user, role } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
   const appointmentService = new AppointmentService()
@@ -137,8 +138,24 @@ export default function Appointments() {
   }
 
   const handleCreateAppointment = () => {
+    setAppointmentToEdit(null)
     setSelectedSlot(null)
     setIsFormModalOpen(true)
+  }
+
+  const handleEditAppointment = (appointment: AppointmentWithDetails) => {
+    setAppointmentToEdit(appointment)
+    setIsFormModalOpen(true)
+  }
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      await appointmentService.updateItem({ id: appointmentId, status: 'CANCELLED' })
+      handleAppointmentSuccess()
+      setIsDetailsModalOpen(false)
+    } catch (error) {
+      console.error('Error cancelling appointment:', error)
+    }
   }
 
   const handleNavigate = (date: Date) => {
@@ -323,11 +340,17 @@ export default function Appointments() {
         appointmentId={selectedAppointmentId}
         open={isDetailsModalOpen}
         onOpenChange={setIsDetailsModalOpen}
+        onEdit={handleEditAppointment}
+        onCancel={handleCancelAppointment}
       />
 
       <AppointmentFormModal
+        appointment={appointmentToEdit}
         open={isFormModalOpen}
-        onOpenChange={setIsFormModalOpen}
+        onOpenChange={(open) => {
+          setIsFormModalOpen(open)
+          if (!open) setAppointmentToEdit(null)
+        }}
         defaultDate={selectedSlot?.start}
         onSuccess={handleAppointmentSuccess}
       />
