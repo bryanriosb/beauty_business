@@ -49,7 +49,13 @@ function ActionCard({ action }: { action: PendingAction }) {
   const Icon = config.icon
 
   return (
-    <div className={cn('rounded-lg border p-2 sm:p-3', config.borderColor, config.bgColor)}>
+    <div
+      className={cn(
+        'rounded-lg border p-2 sm:p-3',
+        config.borderColor,
+        config.bgColor
+      )}
+    >
       <div className="flex items-center justify-between mb-1.5 sm:mb-2">
         <div className="flex items-center gap-1.5 sm:gap-2">
           <Icon className={cn('h-3.5 w-3.5 sm:h-4 sm:w-4', config.color)} />
@@ -57,7 +63,10 @@ function ActionCard({ action }: { action: PendingAction }) {
             {config.title}
           </span>
         </div>
-        <Badge variant="secondary" className={cn('text-[10px] sm:text-xs', config.badgeColor)}>
+        <Badge
+          variant="secondary"
+          className={cn('text-[10px] sm:text-xs', config.badgeColor)}
+        >
           {action.count}
         </Badge>
       </div>
@@ -69,7 +78,9 @@ function ActionCard({ action }: { action: PendingAction }) {
           >
             <div className="flex-1 min-w-0">
               <span className="font-medium truncate block">{item.title}</span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground">{item.subtitle}</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground">
+                {item.subtitle}
+              </span>
             </div>
             {item.time && (
               <span className="text-[10px] sm:text-xs text-muted-foreground ml-2 shrink-0">
@@ -131,10 +142,18 @@ export function PendingActions({ businessId }: PendingActionsProps) {
     <Card className="border h-full flex flex-col">
       <CardHeader className="pb-2 shrink-0">
         <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-          <AlertTriangle className={cn('h-4 w-4', hasActions ? 'text-amber-500' : 'text-muted-foreground')} />
+          <AlertTriangle
+            className={cn(
+              'h-4 w-4',
+              hasActions ? 'text-amber-500' : 'text-muted-foreground'
+            )}
+          />
           <span className="truncate">Requiere Atención</span>
           {hasActions && (
-            <Badge variant="destructive" className="text-[10px] sm:text-xs shrink-0">
+            <Badge
+              variant="destructive"
+              className="text-[10px] sm:text-xs shrink-0"
+            >
               {actions.reduce((sum, a) => sum + a.count, 0)}
             </Badge>
           )}
@@ -157,7 +176,7 @@ export function PendingActions({ businessId }: PendingActionsProps) {
           </div>
         ) : (
           <div className="py-4 sm:py-8 text-center h-full flex flex-col items-center justify-center">
-            <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto text-green-500/50 mb-2 sm:mb-3" />
+            <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto text-primary mb-2 sm:mb-3" />
             <p className="text-muted-foreground text-xs sm:text-sm">
               Todo en orden
             </p>

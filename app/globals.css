@@ -59,7 +59,7 @@
   /* white */
   --popover-foreground: oklch(18% 0.04 300);
   /* Púrpura muy oscuro */
-  --primary: oklch(0.94 0.10 95);
+  --primary: oklch(0.90 0.09 85);
   /* #FDF5AA - Amarillo suave */
   --primary-foreground: oklch(0.22 0.06 300);
   /* Púrpura oscuro */
@@ -131,7 +131,7 @@
   /* Gris oscuro para popovers */
   --popover-foreground: oklch(95% 0.005 300);
   /* Blanco */
-  --primary: oklch(0.94 0.10 95);
+  --primary: oklch(0.90 0.09 85);
   /* #FDF5AA - Amarillo suave */
   --primary-foreground: oklch(0.18 0.04 300);
   /* Púrpura muy oscuro */

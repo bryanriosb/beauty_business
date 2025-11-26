@@ -1,14 +1,12 @@
 import {
   Building2,
   Calendar,
-  FileText,
   LayoutDashboard,
   Settings,
   Users,
   Scissors,
   UserCircle,
   BarChart3,
-  Briefcase,
   FileStack,
 } from 'lucide-react'
 import { USER_ROLES, type UserRole } from './roles'
@@ -78,6 +76,16 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     url: '/admin/invoices',
     icon: FileStack,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+    items: [
+      {
+        title: 'Lista',
+        url: '/admin/invoices',
+      },
+      {
+        title: 'Configuración',
+        url: '/admin/invoices/settings',
+      },
+    ],
   },
 ]
 

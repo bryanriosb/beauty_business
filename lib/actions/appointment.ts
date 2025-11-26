@@ -290,16 +290,43 @@ export async function createAppointmentAction(
 
 export async function updateAppointmentAction(
   id: string,
-  data: AppointmentUpdate
-): Promise<{ success: boolean; data?: Appointment; error?: string }> {
+  data: AppointmentUpdate,
+  options?: { generateInvoice?: boolean; businessData?: { name: string; address?: string; phone?: string; nit?: string } }
+): Promise<{ success: boolean; data?: Appointment; error?: string; invoiceGenerated?: boolean }> {
   try {
+    const supabase = await getSupabaseAdminClient()
+
+    const { data: currentAppointment } = await supabase
+      .from('appointments')
+      .select('payment_status, business_id')
+      .eq('id', id)
+      .single()
+
     const appointment = await updateRecord<Appointment>('appointments', id, data)
 
     if (!appointment) {
       return { success: false, error: 'Error al actualizar la cita' }
     }
 
-    return { success: true, data: appointment }
+    let invoiceGenerated = false
+
+    const shouldGenerateInvoice =
+      data.payment_status === 'PAID' &&
+      currentAppointment?.payment_status !== 'PAID' &&
+      options?.generateInvoice !== false
+
+    if (shouldGenerateInvoice && options?.businessData) {
+      const { createInvoiceFromAppointmentAction } = await import('./invoice')
+      const invoiceResult = await createInvoiceFromAppointmentAction(id, {
+        business_name: options.businessData.name,
+        business_address: options.businessData.address,
+        business_phone: options.businessData.phone,
+        business_nit: options.businessData.nit,
+      })
+      invoiceGenerated = invoiceResult.success
+    }
+
+    return { success: true, data: appointment, invoiceGenerated }
   } catch (error: any) {
     console.error('Error updating appointment:', error)
     return { success: false, error: error.message || 'Error desconocido' }

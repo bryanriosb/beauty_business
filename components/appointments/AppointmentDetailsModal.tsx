@@ -10,7 +10,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { AppointmentWithDetails } from '@/lib/models/appointment/appointment'
+import type { Invoice } from '@/lib/models/invoice/invoice'
 import AppointmentService from '@/lib/services/appointment/appointment-service'
+import InvoiceService from '@/lib/services/invoice/invoice-service'
 import {
   Calendar,
   Clock,
@@ -19,8 +21,10 @@ import {
   Package,
   Mail,
   Phone,
+  FileText,
 } from 'lucide-react'
 import Loading from '@/components/ui/loading'
+import { toast } from 'sonner'
 
 interface AppointmentDetailsModalProps {
   appointmentId: string | null
@@ -28,6 +32,13 @@ interface AppointmentDetailsModalProps {
   onOpenChange: (open: boolean) => void
   onEdit?: (appointment: AppointmentWithDetails) => void
   onCancel?: (appointmentId: string) => void
+  businessData?: {
+    name: string
+    address?: string
+    phone?: string
+    nit?: string
+  }
+  onViewInvoice?: (invoice: Invoice) => void
 }
 
 export default function AppointmentDetailsModal({
@@ -36,21 +47,30 @@ export default function AppointmentDetailsModal({
   onOpenChange,
   onEdit,
   onCancel,
+  businessData,
+  onViewInvoice,
 }: AppointmentDetailsModalProps) {
   const [appointment, setAppointment] = useState<AppointmentWithDetails | null>(
     null
   )
+  const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false)
   const appointmentService = new AppointmentService()
+  const invoiceService = new InvoiceService()
 
   useEffect(() => {
     if (!appointmentId || !open) return
 
-    const fetchAppointmentDetails = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true)
-        const data = await appointmentService.getById(appointmentId)
-        setAppointment(data as AppointmentWithDetails)
+        const [appointmentData, invoiceData] = await Promise.all([
+          appointmentService.getById(appointmentId),
+          invoiceService.getByAppointment(appointmentId),
+        ])
+        setAppointment(appointmentData as AppointmentWithDetails)
+        setInvoice(invoiceData)
       } catch (error) {
         console.error('Error fetching appointment details:', error)
       } finally {
@@ -58,8 +78,33 @@ export default function AppointmentDetailsModal({
       }
     }
 
-    fetchAppointmentDetails()
+    fetchData()
   }, [appointmentId, open])
+
+  const handleGenerateInvoice = async () => {
+    if (!appointment || !businessData) return
+
+    setIsGeneratingInvoice(true)
+    try {
+      const result = await invoiceService.createFromAppointment(appointment.id, {
+        business_name: businessData.name,
+        business_address: businessData.address,
+        business_phone: businessData.phone,
+        business_nit: businessData.nit,
+      })
+
+      if (result.success && result.data) {
+        setInvoice(result.data)
+        toast.success('Factura generada correctamente')
+      } else {
+        toast.error(result.error || 'Error al generar la factura')
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error al generar la factura')
+    } finally {
+      setIsGeneratingInvoice(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -336,6 +381,35 @@ export default function AppointmentDetailsModal({
               </div>
             )}
           </div>
+
+          {appointment.payment_status === 'PAID' && businessData && (
+            <div className="border-t pt-4">
+              {invoice ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => onViewInvoice?.(invoice)}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Ver Factura {invoice.invoice_number}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGenerateInvoice}
+                  disabled={isGeneratingInvoice}
+                >
+                  {isGeneratingInvoice ? (
+                    <Loading className="mr-2 h-4 w-4" />
+                  ) : (
+                    <FileText className="mr-2 h-4 w-4" />
+                  )}
+                  {isGeneratingInvoice ? 'Generando...' : 'Generar Factura'}
+                </Button>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-2 pt-4">
             <Button

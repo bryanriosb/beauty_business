@@ -44,3 +44,5 @@ export type userRoles =
   | 'business_monitor'
   | 'specialist'
   | 'customer'
+
+export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'PAID' | 'CANCELLED'

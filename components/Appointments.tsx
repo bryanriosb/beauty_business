@@ -16,7 +16,11 @@ import { Plus, Calendar, List, Table } from 'lucide-react'
 import AppointmentDetailsModal from './appointments/AppointmentDetailsModal'
 import AppointmentFormModal from './appointments/AppointmentFormModal'
 import DayAppointmentsModal from './appointments/DayAppointmentsModal'
+import InvoiceDetailModal from './invoices/InvoiceDetailModal'
 import Loading from '@/components/ui/loading'
+import { getBusinessByIdAction } from '@/lib/actions/business'
+import type { Business } from '@/lib/models/business/business'
+import type { Invoice } from '@/lib/models/invoice/invoice'
 
 type ViewMode = 'day' | 'week' | 'month'
 type DisplayMode = 'calendar' | 'list' | 'table'
@@ -39,12 +43,27 @@ export default function Appointments() {
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null)
   const [allAppointments, setAllAppointments] = useState<any[]>([])
   const [appointmentToEdit, setAppointmentToEdit] = useState<AppointmentWithDetails | null>(null)
+  const [businessData, setBusinessData] = useState<Business | null>(null)
+  const [invoiceToView, setInvoiceToView] = useState<Invoice | null>(null)
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
   const { user, role } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
   const appointmentService = new AppointmentService()
 
   const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
   const activeBusinessId = activeBusiness?.id
+
+  useEffect(() => {
+    async function loadBusinessData() {
+      if (!activeBusinessId) {
+        setBusinessData(null)
+        return
+      }
+      const business = await getBusinessByIdAction(activeBusinessId)
+      setBusinessData(business)
+    }
+    loadBusinessData()
+  }, [activeBusinessId])
 
   const dateRange = useMemo(() => {
     const start = new Date(currentDate)
@@ -187,6 +206,11 @@ export default function Appointments() {
       const appointmentDate = new Date(appointment.start_time)
       return appointmentDate >= dayStart && appointmentDate <= dayEnd
     })
+  }
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    setInvoiceToView(invoice)
+    setIsInvoiceModalOpen(true)
   }
 
   const handleAppointmentSuccess = () => {
@@ -342,6 +366,12 @@ export default function Appointments() {
         onOpenChange={setIsDetailsModalOpen}
         onEdit={handleEditAppointment}
         onCancel={handleCancelAppointment}
+        businessData={businessData ? {
+          name: businessData.name,
+          address: businessData.address,
+          phone: businessData.phone_number || undefined,
+        } : undefined}
+        onViewInvoice={handleViewInvoice}
       />
 
       <AppointmentFormModal
@@ -353,6 +383,12 @@ export default function Appointments() {
         }}
         defaultDate={selectedSlot?.start}
         onSuccess={handleAppointmentSuccess}
+      />
+
+      <InvoiceDetailModal
+        open={isInvoiceModalOpen}
+        onOpenChange={setIsInvoiceModalOpen}
+        invoice={invoiceToView}
       />
     </div>
   )

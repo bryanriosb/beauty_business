@@ -56,8 +56,10 @@ function StatCard({
   }
 
   const highlightClasses = {
-    success: 'border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20',
-    warning: 'border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20',
+    success:
+      'border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20',
+    warning:
+      'border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20',
     default: 'border',
   }
 
@@ -123,7 +125,7 @@ export function TodayStats({ businessId }: TodayStatsProps) {
     }
   }, [businessId])
 
-  const pendingCount = (stats?.pending_appointments || 0)
+  const pendingCount = stats?.pending_appointments || 0
   const hasUnconfirmed = pendingCount > 0
 
   return (
@@ -144,7 +146,9 @@ export function TodayStats({ businessId }: TodayStatsProps) {
         <StatCard
           title="Ingresos Esperados"
           value={formatCurrency((stats?.expected_revenue || 0) / 100)}
-          subtitle={`${formatCurrency((stats?.realized_revenue || 0) / 100)} realizados`}
+          subtitle={`${formatCurrency(
+            (stats?.realized_revenue || 0) / 100
+          )} realizados`}
           icon={DollarSign}
           trend={
             comparison
@@ -185,7 +189,8 @@ export function TodayStats({ businessId }: TodayStatsProps) {
               <Skeleton className="h-4 w-20" />
             ) : (
               <span className="text-sm text-muted-foreground">
-                {stats?.completed_appointments || 0} de {stats?.total_appointments || 0} completadas
+                {stats?.completed_appointments || 0} de{' '}
+                {stats?.total_appointments || 0} completadas
               </span>
             )}
           </div>
@@ -195,23 +200,25 @@ export function TodayStats({ businessId }: TodayStatsProps) {
             <Progress
               value={
                 stats?.total_appointments
-                  ? (stats.completed_appointments / stats.total_appointments) * 100
+                  ? (stats.completed_appointments / stats.total_appointments) *
+                    100
                   : 0
               }
               className="h-2"
             />
           )}
           <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+            <span>{stats?.cancelled_appointments || 0} canceladas/no-show</span>
             <span>
-              {stats?.cancelled_appointments || 0} canceladas/no-show
-            </span>
-            <span>
-              Semana: {formatCurrency((comparison?.this_week_revenue || 0) / 100)}
+              Semana:{' '}
+              {formatCurrency((comparison?.this_week_revenue || 0) / 100)}
               {comparison && comparison.week_revenue_change !== 0 && (
                 <span
                   className={cn(
                     'ml-1',
-                    comparison.week_revenue_change >= 0 ? 'text-green-600' : 'text-red-600'
+                    comparison.week_revenue_change >= 0
+                      ? 'text-green-600'
+                      : 'text-red-600'
                   )}
                 >
                   ({comparison.week_revenue_change >= 0 ? '+' : ''}
