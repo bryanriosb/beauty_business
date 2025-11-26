@@ -85,3 +85,9 @@ export interface BusinessUpdate {
   review_count?: number
   logo_url?: string | null
 }
+
+export interface BusinessWithAccount extends Business {
+  business_account: {
+    company_name: string
+  } | null
+}

@@ -8,6 +8,7 @@ import {
   Business,
   BusinessInsert,
   BusinessUpdate,
+  BusinessWithAccount,
 } from '@/lib/models/business/business'
 import {
   Dialog,
@@ -66,7 +67,7 @@ type BusinessFormValues = z.infer<typeof formSchema>
 interface BusinessModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  business?: Business | null
+  business?: Business | BusinessWithAccount | null
   onSave: (data: BusinessInsert | BusinessUpdate) => Promise<void>
 }
 

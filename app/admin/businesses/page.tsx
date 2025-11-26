@@ -18,7 +18,7 @@ import { useRef, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { toast } from 'sonner'
-import type { Business, BusinessInsert, BusinessUpdate } from '@/lib/models/business/business'
+import type { BusinessWithAccount, BusinessInsert, BusinessUpdate } from '@/lib/models/business/business'
 
 export default function BusinessesPage() {
   const { user, role, isLoading } = useCurrentUser()
@@ -28,7 +28,7 @@ export default function BusinessesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false)
-  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null)
+  const [selectedBusiness, setSelectedBusiness] = useState<BusinessWithAccount | null>(null)
   const [businessToDelete, setBusinessToDelete] = useState<string | null>(null)
   const [businessesToDelete, setBusinessesToDelete] = useState<string[]>([])
 
@@ -76,7 +76,7 @@ export default function BusinessesPage() {
     setModalOpen(true)
   }
 
-  const handleEditBusiness = (business: Business) => {
+  const handleEditBusiness = (business: BusinessWithAccount) => {
     setSelectedBusiness(business)
     setModalOpen(true)
   }

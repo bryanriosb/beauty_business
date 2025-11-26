@@ -9,10 +9,10 @@ import {
   deleteRecords,
 } from '@/lib/actions/supabase'
 import { createDefaultBusinessHoursAction } from '@/lib/actions/business-hours'
-import type { Business, BusinessInsert } from '@/lib/models/business/business'
+import type { Business, BusinessInsert, BusinessWithAccount } from '@/lib/models/business/business'
 
 export interface BusinessListResponse {
-  data: Business[]
+  data: BusinessWithAccount[]
   total: number
   total_pages: number
 }
@@ -34,7 +34,8 @@ export async function fetchBusinessesAction(params?: {
       filters.business_account_id = params.business_account_id
     }
 
-    const businesses = await getAllRecords<Business>('businesses', {
+    const businesses = await getAllRecords<BusinessWithAccount>('businesses', {
+      select: '*, business_account:business_accounts(company_name)',
       filters: Object.keys(filters).length > 0 ? filters : undefined,
       order: { column: 'created_at', ascending: false },
     })

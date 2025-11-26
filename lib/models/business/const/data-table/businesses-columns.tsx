@@ -1,8 +1,9 @@
-import { Business } from '@/lib/models/business/business'
+import { BusinessWithAccount } from '@/lib/models/business/business'
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { Building2 } from 'lucide-react'
 
 // Mapeo de tipos de negocio a español
 const businessTypeLabels: Record<string, string> = {
@@ -11,13 +12,27 @@ const businessTypeLabels: Record<string, string> = {
   BEAUTY_STUDIO: 'Estudio de Belleza',
 }
 
-export const BUSINESSES_COLUMNS: ColumnDef<Business>[] = [
+export const BUSINESSES_COLUMNS: ColumnDef<BusinessWithAccount>[] = [
   {
     accessorKey: 'name',
     header: 'Nombre',
     cell: ({ row }) => {
       const name = row.getValue('name') as string
       return <div className="font-medium">{name}</div>
+    },
+  },
+  {
+    id: 'account',
+    header: 'Cuenta',
+    cell: ({ row }) => {
+      const account = row.original.business_account
+      if (!account) return <div className="text-muted-foreground">-</div>
+      return (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Building2 className="h-4 w-4" />
+          <span>{account.company_name}</span>
+        </div>
+      )
     },
   },
   {
