@@ -25,6 +25,8 @@ import {
 } from 'lucide-react'
 import Loading from '@/components/ui/loading'
 import { toast } from 'sonner'
+import StatusSelector from './StatusSelector'
+import type { AppointmentStatus } from '@/lib/types/enums'
 
 interface AppointmentDetailsModalProps {
   appointmentId: string | null
@@ -32,6 +34,7 @@ interface AppointmentDetailsModalProps {
   onOpenChange: (open: boolean) => void
   onEdit?: (appointment: AppointmentWithDetails) => void
   onCancel?: (appointmentId: string) => void
+  onStatusChange?: () => void
   businessData?: {
     name: string
     address?: string
@@ -47,6 +50,7 @@ export default function AppointmentDetailsModal({
   onOpenChange,
   onEdit,
   onCancel,
+  onStatusChange,
   businessData,
   onViewInvoice,
 }: AppointmentDetailsModalProps) {
@@ -56,6 +60,7 @@ export default function AppointmentDetailsModal({
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const appointmentService = new AppointmentService()
   const invoiceService = new InvoiceService()
 
@@ -106,6 +111,31 @@ export default function AppointmentDetailsModal({
     }
   }
 
+  const handleStatusChange = async (newStatus: AppointmentStatus) => {
+    if (!appointment) return
+
+    setIsUpdatingStatus(true)
+    try {
+      const result = await appointmentService.updateItem({
+        id: appointment.id,
+        status: newStatus,
+      })
+
+      if (result.success) {
+        const updatedAppointment = await appointmentService.getById(appointment.id)
+        setAppointment(updatedAppointment as AppointmentWithDetails)
+        toast.success('Estado actualizado correctamente')
+        onStatusChange?.()
+      } else {
+        toast.error(result.error || 'Error al actualizar el estado')
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error al actualizar el estado')
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -141,35 +171,14 @@ export default function AppointmentDetailsModal({
     })
   }
 
-  const statusTranslations: Record<string, string> = {
-    PENDING: 'Pendiente',
-    CONFIRMED: 'Confirmada',
-    COMPLETED: 'Completada',
-    CANCELLED: 'Cancelada',
-    NO_SHOW: 'No Asistió',
-  }
-
   const paymentStatusTranslations: Record<string, string> = {
     PAID: 'Pagado',
     PENDING: 'Pendiente',
+    UNPAID: 'Sin Pagar',
     FAILED: 'Fallido',
     REFUNDED: 'Reembolsado',
   }
 
-  const getStatusStyles = (status: string) => {
-    const styles: Record<string, { bg: string; text: string }> = {
-      CANCELLED: { bg: 'bg-[#e2e8f0]', text: 'text-[#475569]' },
-      CONFIRMED: { bg: 'bg-[#a3b4f7]', text: 'text-[#1e293b]' },
-      COMPLETED: { bg: 'bg-[#86efac]', text: 'text-[#1e293b]' },
-      PENDING: { bg: 'bg-[#fde68a]', text: 'text-[#1e293b]' },
-      NO_SHOW: { bg: 'bg-[#c4b5fd]', text: 'text-[#1e293b]' },
-    }
-    return styles[status] || { bg: 'bg-[#a3b4f7]', text: 'text-[#1e293b]' }
-  }
-
-  const statusStyle = getStatusStyles(appointment.status)
-  const statusText =
-    statusTranslations[appointment.status] || appointment.status
   const paymentStatusText =
     paymentStatusTranslations[appointment.payment_status] ||
     appointment.payment_status
@@ -190,12 +199,13 @@ export default function AppointmentDetailsModal({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="flex justify-end gap-2">
-            <span
-              className={`px-3 py-1.5 rounded-md font-medium text-sm ${statusStyle.bg} ${statusStyle.text}`}
-            >
-              {statusText}
-            </span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm text-muted-foreground">Estado de la cita:</span>
+            <StatusSelector
+              value={appointment.status}
+              onChange={handleStatusChange}
+              disabled={isUpdatingStatus}
+            />
           </div>
 
           <div className="grid gap-4">

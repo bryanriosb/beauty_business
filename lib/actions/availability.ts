@@ -14,6 +14,7 @@ export interface AvailabilityParams {
   businessId: string
   serviceId: string
   date: string
+  excludeAppointmentId?: string
 }
 
 export interface AvailabilityResult {
@@ -54,7 +55,7 @@ export async function getAvailableSlotsForServiceAction(
   params: AvailabilityParams
 ): Promise<AvailabilityResult> {
   try {
-    const { businessId, serviceId, date } = params
+    const { businessId, serviceId, date, excludeAppointmentId } = params
     const supabase = await getSupabaseAdminClient()
 
     // 1. Obtener el servicio y su duración
@@ -172,14 +173,20 @@ export async function getAvailableSlotsForServiceAction(
       .lte('start_time', dateEnd)
       .gte('end_time', dateStart)
 
-    // 6. Obtener citas existentes para esa fecha
-    const { data: existingAppointments } = await supabase
+    // 6. Obtener citas existentes para esa fecha (excluyendo la cita actual si estamos editando)
+    let appointmentsQuery = supabase
       .from('appointments')
-      .select('specialist_id, start_time, end_time, status')
+      .select('id, specialist_id, start_time, end_time, status')
       .in('specialist_id', specialistIds)
       .gte('start_time', dateStart)
       .lte('start_time', dateEnd)
       .in('status', ['PENDING', 'CONFIRMED'])
+
+    if (excludeAppointmentId) {
+      appointmentsQuery = appointmentsQuery.neq('id', excludeAppointmentId)
+    }
+
+    const { data: existingAppointments } = await appointmentsQuery
 
     // 7. Generar todos los slots posibles del negocio
     const allPossibleSlots: Set<string> = new Set()
@@ -312,7 +319,8 @@ export async function getAvailableSpecialistsForSlotAction(
   businessId: string,
   serviceId: string,
   date: string,
-  time: string
+  time: string,
+  excludeAppointmentId?: string
 ): Promise<{ success: boolean; specialists: AvailableSpecialist[]; error?: string }> {
   try {
     const supabase = await getSupabaseAdminClient()
@@ -322,6 +330,7 @@ export async function getAvailableSpecialistsForSlotAction(
       businessId,
       serviceId,
       date,
+      excludeAppointmentId,
     })
 
     if (!availability.success) {

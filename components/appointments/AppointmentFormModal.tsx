@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -92,6 +92,8 @@ export default function AppointmentFormModal({
   const [availableSpecialistIds, setAvailableSpecialistIds] = useState<string[]>([])
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const isInitializingRef = useRef(false)
+  const isEditMode = !!appointment
 
   const { role, businesses } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
@@ -146,12 +148,26 @@ export default function AppointmentFormModal({
   // Load appointment data for editing
   useEffect(() => {
     if (appointment && open) {
+      isInitializingRef.current = true
+
       const appointmentDate = new Date(appointment.start_time)
       const startTimeStr = format(appointmentDate, 'HH:mm')
 
+      // Load services from appointment_services first
+      const appointmentWithDetails = appointment as AppointmentWithDetails
+      if (appointmentWithDetails.appointment_services?.length) {
+        const servicesFromAppointment: SelectedService[] = appointmentWithDetails.appointment_services.map((as) => ({
+          id: as.service_id,
+          name: as.service.name,
+          duration_minutes: as.duration_minutes,
+          price_cents: as.price_at_booking_cents,
+        }))
+        setSelectedServices(servicesFromAppointment)
+      }
+
       form.reset({
         business_id: appointment.business_id,
-        service_id: '',
+        service_id: appointmentWithDetails.appointment_services?.[0]?.service_id || '',
         specialist_id: appointment.specialist_id,
         customer_id: appointment.users_profile_id,
         date: format(appointmentDate, 'yyyy-MM-dd'),
@@ -163,17 +179,15 @@ export default function AppointmentFormModal({
         payment_status: appointment.payment_status,
       })
 
-      // Load services from appointment_services if available
-      const appointmentWithDetails = appointment as AppointmentWithDetails
-      if (appointmentWithDetails.appointment_services?.length) {
-        const servicesFromAppointment: SelectedService[] = appointmentWithDetails.appointment_services.map((as) => ({
-          id: as.service_id,
-          name: as.service.name,
-          duration_minutes: as.duration_minutes,
-          price_cents: as.price_at_booking_cents,
-        }))
-        setSelectedServices(servicesFromAppointment)
+      // Initialize available specialist IDs with the current specialist
+      if (appointment.specialist_id) {
+        setAvailableSpecialistIds([appointment.specialist_id])
       }
+
+      // Reset the flag after a tick to allow the form values to settle
+      setTimeout(() => {
+        isInitializingRef.current = false
+      }, 100)
     }
   }, [appointment, open, form])
 
@@ -224,8 +238,9 @@ export default function AppointmentFormModal({
     }
   }, [open, effectiveBusinessId, form])
 
-  // Clear dependent fields when services change
+  // Clear dependent fields when services change (skip during edit initialization)
   useEffect(() => {
+    if (isInitializingRef.current) return
     form.setValue('start_time', '')
     form.setValue('end_time', '')
     form.setValue('specialist_id', '')
@@ -233,16 +248,18 @@ export default function AppointmentFormModal({
     setAvailableSpecialistIds([])
   }, [selectedServices.length, firstServiceId, form])
 
-  // Clear specialist when date changes
+  // Clear specialist when date changes (skip during edit initialization)
   useEffect(() => {
+    if (isInitializingRef.current) return
     form.setValue('start_time', '')
     form.setValue('end_time', '')
     form.setValue('specialist_id', '')
     setAvailableSpecialistIds([])
   }, [currentDate, form])
 
-  // Clear specialist when time changes
+  // Clear specialist when time changes (skip during edit initialization)
   useEffect(() => {
+    if (isInitializingRef.current) return
     form.setValue('specialist_id', '')
   }, [currentStartTime, form])
 
@@ -506,6 +523,7 @@ export default function AppointmentFormModal({
                       value={field.value}
                       onChange={handleTimeSlotSelect}
                       disabled={isSubmitting}
+                      excludeAppointmentId={appointment?.id}
                     />
                     <FormMessage />
                   </FormItem>
@@ -530,6 +548,7 @@ export default function AppointmentFormModal({
                       value={field.value}
                       onChange={handleSpecialistSelect}
                       disabled={isSubmitting}
+                      excludeAppointmentId={appointment?.id}
                     />
                     <FormMessage />
                   </FormItem>

@@ -27,13 +27,13 @@ export interface MenuItem {
 export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
   {
     title: 'Tablero',
-    url: '/admin/dashboard',
+    url: '/admin',
     icon: LayoutDashboard,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
   {
     title: 'Citas',
-    url: '/admin',
+    url: '/admin/appointments',
     icon: Calendar,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },

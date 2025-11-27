@@ -8,7 +8,10 @@ import { Event } from 'react-big-calendar'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 import AppointmentService from '@/lib/services/appointment/appointment-service'
-import type { Appointment, AppointmentWithDetails } from '@/lib/models/appointment/appointment'
+import type {
+  Appointment,
+  AppointmentWithDetails,
+} from '@/lib/models/appointment/appointment'
 import { USER_ROLES } from '@/const/roles'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
@@ -28,21 +31,27 @@ type DisplayMode = 'calendar' | 'list' | 'table'
 export default function Appointments() {
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
+  const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [displayMode, setDisplayMode] = useState<DisplayMode>('calendar')
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date()
     now.setHours(0, 0, 0, 0)
     return now
   })
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<
+    string | null
+  >(null)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isDayModalOpen, setIsDayModalOpen] = useState(false)
   const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null)
-  const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null)
+  const [selectedSlot, setSelectedSlot] = useState<{
+    start: Date
+    end: Date
+  } | null>(null)
   const [allAppointments, setAllAppointments] = useState<any[]>([])
-  const [appointmentToEdit, setAppointmentToEdit] = useState<AppointmentWithDetails | null>(null)
+  const [appointmentToEdit, setAppointmentToEdit] =
+    useState<AppointmentWithDetails | null>(null)
   const [businessData, setBusinessData] = useState<Business | null>(null)
   const [invoiceToView, setInvoiceToView] = useState<Invoice | null>(null)
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
@@ -117,17 +126,19 @@ export default function Appointments() {
 
         setAllAppointments(response.data)
 
-        const formattedEvents: Event[] = response.data.map((appointment: any) => {
-          const startTime = new Date(appointment.start_time)
-          const endTime = new Date(appointment.end_time)
+        const formattedEvents: Event[] = response.data.map(
+          (appointment: any) => {
+            const startTime = new Date(appointment.start_time)
+            const endTime = new Date(appointment.end_time)
 
-          return {
-            title: '',
-            start: startTime,
-            end: endTime,
-            resource: appointment,
+            return {
+              title: '',
+              start: startTime,
+              end: endTime,
+              resource: appointment,
+            }
           }
-        })
+        )
 
         setEvents(formattedEvents)
       } catch (error) {
@@ -169,7 +180,10 @@ export default function Appointments() {
 
   const handleCancelAppointment = async (appointmentId: string) => {
     try {
-      await appointmentService.updateItem({ id: appointmentId, status: 'CANCELLED' })
+      await appointmentService.updateItem({
+        id: appointmentId,
+        status: 'CANCELLED',
+      })
       handleAppointmentSuccess()
       setIsDetailsModalOpen(false)
     } catch (error) {
@@ -229,17 +243,19 @@ export default function Appointments() {
 
         setAllAppointments(response.data)
 
-        const formattedEvents: Event[] = response.data.map((appointment: any) => {
-          const startTime = new Date(appointment.start_time)
-          const endTime = new Date(appointment.end_time)
+        const formattedEvents: Event[] = response.data.map(
+          (appointment: any) => {
+            const startTime = new Date(appointment.start_time)
+            const endTime = new Date(appointment.end_time)
 
-          return {
-            title: '',
-            start: startTime,
-            end: endTime,
-            resource: appointment,
+            return {
+              title: '',
+              start: startTime,
+              end: endTime,
+              resource: appointment,
+            }
           }
-        })
+        )
 
         setEvents(formattedEvents)
       } catch (error) {
@@ -356,7 +372,9 @@ export default function Appointments() {
         open={isDayModalOpen}
         onOpenChange={setIsDayModalOpen}
         date={selectedDayDate}
-        appointments={selectedDayDate ? getDayAppointments(selectedDayDate) : []}
+        appointments={
+          selectedDayDate ? getDayAppointments(selectedDayDate) : []
+        }
         onSelectAppointment={handleDayAppointmentSelect}
       />
 
@@ -366,11 +384,16 @@ export default function Appointments() {
         onOpenChange={setIsDetailsModalOpen}
         onEdit={handleEditAppointment}
         onCancel={handleCancelAppointment}
-        businessData={businessData ? {
-          name: businessData.name,
-          address: businessData.address,
-          phone: businessData.phone_number || undefined,
-        } : undefined}
+        onStatusChange={handleAppointmentSuccess}
+        businessData={
+          businessData
+            ? {
+                name: businessData.name,
+                address: businessData.address,
+                phone: businessData.phone_number || undefined,
+              }
+            : undefined
+        }
         onViewInvoice={handleViewInvoice}
       />
 

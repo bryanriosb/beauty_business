@@ -15,6 +15,7 @@ interface SpecialistPickerProps {
   value?: string
   onChange: (specialistId: string, specialist?: AvailableSpecialist) => void
   disabled?: boolean
+  excludeAppointmentId?: string
 }
 
 export default function SpecialistPicker({
@@ -26,6 +27,7 @@ export default function SpecialistPicker({
   value,
   onChange,
   disabled = false,
+  excludeAppointmentId,
 }: SpecialistPickerProps) {
   const [specialists, setSpecialists] = useState<AvailableSpecialist[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -52,7 +54,8 @@ export default function SpecialistPicker({
           businessId,
           serviceId,
           date,
-          time
+          time,
+          excludeAppointmentId
         )
 
         if (result.success) {
@@ -71,7 +74,7 @@ export default function SpecialistPicker({
     }
 
     loadSpecialists()
-  }, [businessId, serviceId, date, time, availableSpecialistIds])
+  }, [businessId, serviceId, date, time, availableSpecialistIds, excludeAppointmentId])
 
   const handleSelectSpecialist = (spec: AvailableSpecialist) => {
     if (disabled) return

@@ -14,6 +14,7 @@ interface TimeSlotPickerProps {
   onChange: (time: string, availableSpecialistIds: string[]) => void
   disabled?: boolean
   excludeAppointmentId?: string
+  initialSpecialistId?: string
 }
 
 export default function TimeSlotPicker({
@@ -23,6 +24,8 @@ export default function TimeSlotPicker({
   value,
   onChange,
   disabled = false,
+  excludeAppointmentId,
+  initialSpecialistId,
 }: TimeSlotPickerProps) {
   const [slots, setSlots] = useState<TimeSlot[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -45,6 +48,7 @@ export default function TimeSlotPicker({
           businessId,
           serviceId,
           date,
+          excludeAppointmentId,
         })
 
         if (result.success) {
@@ -65,7 +69,7 @@ export default function TimeSlotPicker({
     }
 
     loadAvailability()
-  }, [businessId, serviceId, date])
+  }, [businessId, serviceId, date, excludeAppointmentId])
 
   const handleSelectSlot = (slot: TimeSlot) => {
     if (!slot.available || disabled) return
