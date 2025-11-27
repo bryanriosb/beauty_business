@@ -19,11 +19,36 @@ interface StatusOption {
 }
 
 const STATUS_OPTIONS: StatusOption[] = [
-  { value: 'PENDING', label: 'Pendiente', bgColor: 'bg-[#fde68a]', textColor: 'text-[#1e293b]' },
-  { value: 'CONFIRMED', label: 'Confirmada', bgColor: 'bg-[#a3b4f7]', textColor: 'text-[#1e293b]' },
-  { value: 'COMPLETED', label: 'Completada', bgColor: 'bg-[#86efac]', textColor: 'text-[#1e293b]' },
-  { value: 'CANCELLED', label: 'Cancelada', bgColor: 'bg-[#e2e8f0]', textColor: 'text-[#475569]' },
-  { value: 'NO_SHOW', label: 'No Asistió', bgColor: 'bg-[#c4b5fd]', textColor: 'text-[#1e293b]' },
+  {
+    value: 'PENDING',
+    label: 'Pendiente',
+    bgColor: 'bg-[#fde68a]',
+    textColor: 'text-[#1e293b]',
+  },
+  {
+    value: 'CONFIRMED',
+    label: 'Confirmada',
+    bgColor: 'bg-[#a3b4f7]',
+    textColor: 'text-[#1e293b]',
+  },
+  {
+    value: 'COMPLETED',
+    label: 'Completada',
+    bgColor: 'bg-[#86efac]',
+    textColor: 'text-[#1e293b]',
+  },
+  {
+    value: 'CANCELLED',
+    label: 'Cancelada',
+    bgColor: 'bg-[#e2e8f0]',
+    textColor: 'text-[#475569]',
+  },
+  {
+    value: 'NO_SHOW',
+    label: 'No Asistió',
+    bgColor: 'bg-[#c4b5fd]',
+    textColor: 'text-[#1e293b]',
+  },
 ]
 
 interface StatusSelectorProps {
@@ -37,7 +62,8 @@ export default function StatusSelector({
   onChange,
   disabled = false,
 }: StatusSelectorProps) {
-  const currentOption = STATUS_OPTIONS.find((opt) => opt.value === value) || STATUS_OPTIONS[0]
+  const currentOption =
+    STATUS_OPTIONS.find((opt) => opt.value === value) || STATUS_OPTIONS[0]
 
   return (
     <Select
@@ -47,7 +73,7 @@ export default function StatusSelector({
     >
       <SelectTrigger
         className={cn(
-          'w-auto min-w-[140px] border-0 font-medium text-sm h-8',
+          'w-auto min-w-[140px] border-0 font-medium text-sm h-8 dark:text-white',
           currentOption.bgColor,
           currentOption.textColor
         )}
@@ -62,12 +88,7 @@ export default function StatusSelector({
             className="cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  'w-2 h-2 rounded-full',
-                  option.bgColor
-                )}
-              />
+              <span className={cn('w-2 h-2 rounded-full', option.bgColor)} />
               <span>{option.label}</span>
             </div>
           </SelectItem>

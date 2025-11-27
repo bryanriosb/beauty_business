@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, Percent } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -92,8 +93,8 @@ export default function AppointmentFormModal({
   const [availableSpecialistIds, setAvailableSpecialistIds] = useState<string[]>([])
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [discountPercent, setDiscountPercent] = useState(0)
   const isInitializingRef = useRef(false)
-  const isEditMode = !!appointment
 
   const { role, businesses } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
@@ -111,9 +112,17 @@ export default function AppointmentFormModal({
     return selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0)
   }, [selectedServices])
 
-  const totalPrice = useMemo(() => {
+  const totalServicesPrice = useMemo(() => {
     return selectedServices.reduce((sum, s) => sum + s.price_cents, 0)
   }, [selectedServices])
+
+  const priceCalculations = useMemo(() => {
+    const subtotal = Math.round(totalServicesPrice / 1.19)
+    const tax = totalServicesPrice - subtotal
+    const discount = Math.round(subtotal * (discountPercent / 100))
+    const total = subtotal + tax - discount
+    return { subtotal, tax, discount, total }
+  }, [totalServicesPrice, discountPercent])
 
   const firstServiceId = selectedServices.length > 0 ? selectedServices[0].id : ''
 
@@ -184,6 +193,14 @@ export default function AppointmentFormModal({
         setAvailableSpecialistIds([appointment.specialist_id])
       }
 
+      // Calculate discount percent from existing values
+      if (appointment.subtotal_cents > 0 && appointment.discount_cents > 0) {
+        const percent = Math.round((appointment.discount_cents / appointment.subtotal_cents) * 100)
+        setDiscountPercent(percent)
+      } else {
+        setDiscountPercent(0)
+      }
+
       // Reset the flag after a tick to allow the form values to settle
       setTimeout(() => {
         isInitializingRef.current = false
@@ -235,6 +252,7 @@ export default function AppointmentFormModal({
       setServices([])
       setSelectedServices([])
       setAvailableSpecialistIds([])
+      setDiscountPercent(0)
     }
   }, [open, effectiveBusinessId, form])
 
@@ -334,10 +352,10 @@ export default function AppointmentFormModal({
         customer_note: values.customer_note || null,
         payment_method: values.payment_method,
         payment_status: values.payment_status,
-        subtotal_cents: totalPrice,
-        tax_cents: 0,
-        discount_cents: 0,
-        total_price_cents: totalPrice,
+        subtotal_cents: priceCalculations.subtotal,
+        tax_cents: priceCalculations.tax,
+        discount_cents: priceCalculations.discount,
+        total_price_cents: priceCalculations.total,
       }
 
       const servicesData: AppointmentServiceInput[] = selectedServices.map((s) => ({
@@ -459,6 +477,55 @@ export default function AppointmentFormModal({
                 </p>
               )}
             </FormItem>
+
+            {/* Price Summary */}
+            {selectedServices.length > 0 && (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Resumen de Precios</span>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal (sin IVA)</span>
+                    <span>${(priceCalculations.subtotal / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">IVA (19%)</span>
+                    <span>${(priceCalculations.tax / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Descuento</span>
+                      <div className="relative w-20">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={discountPercent}
+                          onChange={(e) => {
+                            const val = Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                            setDiscountPercent(val)
+                          }}
+                          className="h-7 pr-7 text-right text-sm"
+                          disabled={isSubmitting}
+                        />
+                        <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                    </div>
+                    {priceCalculations.discount > 0 && (
+                      <span className="text-green-600">
+                        -${(priceCalculations.discount / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+                      </span>
+                    )}
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold text-base">
+                    <span>Total</span>
+                    <span>${(priceCalculations.total / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Step 3: Date */}
             <FormField
