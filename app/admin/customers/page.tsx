@@ -1,6 +1,6 @@
 'use client'
 
-import { DataTable, DataTableRef, SearchConfig } from '@/components/DataTable'
+import { DataTable, DataTableRef, SearchConfig, FilterConfig } from '@/components/DataTable'
 import { Button } from '@/components/ui/button'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
@@ -10,7 +10,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, Trash2, Plus } from 'lucide-react'
+import {
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Plus,
+  UserCheck,
+  UserX,
+  Crown,
+  Ban,
+  Store,
+  Users,
+  Share2,
+  Globe,
+  HelpCircle,
+} from 'lucide-react'
 import BusinessCustomerService from '@/lib/services/customer/business-customer-service'
 import { CUSTOMERS_COLUMNS } from '@/lib/models/customer/const/data-table/customers-columns'
 import CustomerModal from '@/components/customers/CustomerModal'
@@ -43,6 +57,33 @@ export default function CustomersPage() {
       placeholder: 'Buscar cliente...',
       serverField: 'search',
     }),
+    []
+  )
+
+  const filterConfigs: FilterConfig[] = useMemo(
+    () => [
+      {
+        column: 'status',
+        title: 'Estado',
+        options: [
+          { label: 'Activo', value: 'active', icon: UserCheck },
+          { label: 'Inactivo', value: 'inactive', icon: UserX },
+          { label: 'VIP', value: 'vip', icon: Crown },
+          { label: 'Bloqueado', value: 'blocked', icon: Ban },
+        ],
+      },
+      {
+        column: 'source',
+        title: 'Origen',
+        options: [
+          { label: 'Presencial', value: 'walk_in', icon: Store },
+          { label: 'Referido', value: 'referral', icon: Users },
+          { label: 'Redes sociales', value: 'social_media', icon: Share2 },
+          { label: 'Sitio web', value: 'website', icon: Globe },
+          { label: 'Otro', value: 'other', icon: HelpCircle },
+        ],
+      },
+    ],
     []
   )
 
@@ -221,6 +262,7 @@ export default function CustomersPage() {
           })}
           service={customerService}
           searchConfig={searchConfig}
+          filters={filterConfigs}
           defaultQueryParams={serviceParams || {}}
           enableRowSelection={canDelete}
           onDeleteSelected={handleBatchDelete}

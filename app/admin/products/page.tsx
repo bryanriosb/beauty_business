@@ -1,6 +1,7 @@
 'use client'
 
-import { DataTable, DataTableRef, SearchConfig } from '@/components/DataTable'
+import { DataTable, DataTableRef, SearchConfig, FilterConfig } from '@/components/DataTable'
+import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, Trash2, Plus } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Plus, CheckCircle, XCircle } from 'lucide-react'
 import ProductService from '@/lib/services/product/product-service'
 import BusinessService from '@/lib/services/business/business-service'
 import { PRODUCTS_COLUMNS } from '@/lib/models/product/const/data-table/products-columns'
@@ -79,6 +80,40 @@ export default function ProductsPage() {
     }),
     []
   )
+
+  const filterConfigs: FilterConfig[] = useMemo(() => {
+    const configs: FilterConfig[] = [
+      {
+        column: 'is_active',
+        title: 'Estado',
+        options: [
+          {
+            label: 'Activo',
+            value: 'true',
+            icon: CheckCircle,
+          },
+          {
+            label: 'Inactivo',
+            value: 'false',
+            icon: XCircle,
+          },
+        ],
+      },
+    ]
+
+    if (categories.length > 0) {
+      configs.push({
+        column: 'category_id',
+        title: 'Categoría',
+        options: categories.map((cat) => ({
+          label: cat.name,
+          value: cat.id,
+        })),
+      })
+    }
+
+    return configs
+  }, [categories])
 
   const handleCreateProduct = () => {
     setSelectedProduct(null)
@@ -264,6 +299,7 @@ export default function ProductsPage() {
         service={productService}
         defaultQueryParams={queryParams}
         searchConfig={searchConfig}
+        filters={filterConfigs}
         enableRowSelection={!!canDeleteProduct}
         onDeleteSelected={handleBatchDelete}
       />
