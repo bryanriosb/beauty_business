@@ -11,6 +11,7 @@ import {
   type TodayStats as TodayStatsType,
   type ComparisonStats,
 } from '@/lib/actions/dashboard'
+import { fetchPendingBalanceStatsAction } from '@/lib/actions/appointment-payment'
 import {
   Calendar,
   DollarSign,
@@ -19,6 +20,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  Wallet,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -102,17 +104,23 @@ export function TodayStats({ businessId }: TodayStatsProps) {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<TodayStatsType | null>(null)
   const [comparison, setComparison] = useState<ComparisonStats | null>(null)
+  const [pendingBalance, setPendingBalance] = useState<{
+    total_pending_cents: number
+    appointments_with_balance: number
+  } | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [todayData, comparisonData] = await Promise.all([
+        const [todayData, comparisonData, balanceData] = await Promise.all([
           fetchTodayStatsAction(businessId),
           fetchComparisonStatsAction(businessId),
+          fetchPendingBalanceStatsAction(businessId),
         ])
         setStats(todayData)
         setComparison(comparisonData)
+        setPendingBalance(balanceData)
       } catch (error) {
         console.error('Error fetching today stats:', error)
       } finally {
@@ -127,10 +135,11 @@ export function TodayStats({ businessId }: TodayStatsProps) {
 
   const pendingCount = stats?.pending_appointments || 0
   const hasUnconfirmed = pendingCount > 0
+  const hasPendingBalance = (pendingBalance?.total_pending_cents || 0) > 0
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <StatCard
           title="Citas de Hoy"
           value={stats?.total_appointments || 0}
@@ -174,6 +183,14 @@ export function TodayStats({ businessId }: TodayStatsProps) {
           highlight={
             (stats?.confirmed_appointments || 0) > 0 ? 'success' : 'default'
           }
+        />
+        <StatCard
+          title="Cartera Pendiente"
+          value={formatCurrency((pendingBalance?.total_pending_cents || 0) / 100)}
+          subtitle={`${pendingBalance?.appointments_with_balance || 0} citas con saldo`}
+          icon={Wallet}
+          loading={loading}
+          highlight={hasPendingBalance ? 'warning' : 'default'}
         />
       </div>
 

@@ -7,38 +7,53 @@ export class BusinessStorageService {
     file: File,
     businessId: string
   ): Promise<{ success: boolean; url?: string; error?: string }> {
-    return this.uploadImage(file, businessId, 'logo')
+    return this._uploadImage(file, businessId, 'logo')
   }
 
   async uploadGalleryCover(
     file: File,
     businessId: string
   ): Promise<{ success: boolean; url?: string; error?: string }> {
-    return this.uploadImage(file, businessId, 'gallery-cover')
+    return this._uploadImage(file, businessId, 'gallery-cover')
   }
 
   async uploadGalleryImage(
     file: File,
     businessId: string
   ): Promise<{ success: boolean; url?: string; error?: string }> {
-    return this.uploadImage(file, businessId, 'gallery')
+    return this._uploadImage(file, businessId, 'gallery')
   }
 
   async uploadServiceImage(
     file: File,
     businessId: string
   ): Promise<{ success: boolean; url?: string; error?: string }> {
-    return this.uploadImage(file, businessId, 'services')
+    return this._uploadImage(file, businessId, 'services')
   }
 
   async uploadSpecialistImage(
     file: File,
     businessId: string
   ): Promise<{ success: boolean; url?: string; error?: string }> {
-    return this.uploadImage(file, businessId, 'specialists')
+    return this._uploadImage(file, businessId, 'specialists')
   }
 
-  private async uploadImage(
+  async uploadProductImage(
+    file: File,
+    businessId: string
+  ): Promise<{ success: boolean; url?: string; error?: string }> {
+    return this._uploadImage(file, businessId, 'products')
+  }
+
+  async uploadImage(
+    file: File,
+    businessId: string,
+    type: ImageType
+  ): Promise<{ success: boolean; url?: string; error?: string }> {
+    return this._uploadImage(file, businessId, type)
+  }
+
+  private async _uploadImage(
     file: File,
     businessId: string,
     type: ImageType

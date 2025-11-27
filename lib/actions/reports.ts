@@ -417,3 +417,141 @@ export async function fetchRevenueBySpecialistAction(
       value: s.total_revenue,
     }))
 }
+
+export interface SupplyConsumptionStats {
+  product_id: string
+  product_name: string
+  category_name: string | null
+  unit_abbreviation: string
+  total_consumed: number
+  total_cost_cents: number
+  appointment_count: number
+}
+
+export interface SupplyConsumptionSummary {
+  total_consumption_cost: number
+  total_movements: number
+  unique_products_consumed: number
+  top_consumed: SupplyConsumptionStats[]
+}
+
+export async function fetchSupplyConsumptionStatsAction(
+  params: DateRangeParams
+): Promise<SupplyConsumptionSummary> {
+  const supabase = await getSupabaseAdminClient()
+
+  const { data: movements, error } = await supabase
+    .from('inventory_movements')
+    .select(`
+      id,
+      product_id,
+      quantity,
+      unit_cost_cents,
+      appointment_id,
+      product:products(
+        id,
+        name,
+        category:product_categories(name),
+        unit_of_measure:unit_of_measures(abbreviation)
+      )
+    `)
+    .eq('business_id', params.business_id)
+    .eq('movement_type', 'CONSUMPTION')
+    .gte('created_at', params.start_date)
+    .lte('created_at', params.end_date)
+
+  if (error) {
+    console.error('Error fetching supply consumption:', error)
+    return {
+      total_consumption_cost: 0,
+      total_movements: 0,
+      unique_products_consumed: 0,
+      top_consumed: [],
+    }
+  }
+
+  const productMap = new Map<string, SupplyConsumptionStats>()
+  let totalCost = 0
+  const appointmentSet = new Set<string>()
+
+  movements?.forEach((mov: any) => {
+    const productId = mov.product_id
+    const cost = (mov.unit_cost_cents || 0) * mov.quantity
+    totalCost += cost
+
+    if (mov.appointment_id) {
+      appointmentSet.add(mov.appointment_id)
+    }
+
+    const existing = productMap.get(productId)
+    if (existing) {
+      existing.total_consumed += mov.quantity
+      existing.total_cost_cents += cost
+      existing.appointment_count += mov.appointment_id ? 1 : 0
+    } else {
+      productMap.set(productId, {
+        product_id: productId,
+        product_name: mov.product?.name || 'Producto desconocido',
+        category_name: mov.product?.category?.name || null,
+        unit_abbreviation: mov.product?.unit_of_measure?.abbreviation || 'und',
+        total_consumed: mov.quantity,
+        total_cost_cents: cost,
+        appointment_count: mov.appointment_id ? 1 : 0,
+      })
+    }
+  })
+
+  const topConsumed = Array.from(productMap.values())
+    .sort((a, b) => b.total_cost_cents - a.total_cost_cents)
+
+  return {
+    total_consumption_cost: totalCost,
+    total_movements: movements?.length || 0,
+    unique_products_consumed: productMap.size,
+    top_consumed: topConsumed,
+  }
+}
+
+export interface SupplyConsumptionTrendItem {
+  date: string
+  consumption_count: number
+  total_cost_cents: number
+}
+
+export async function fetchSupplyConsumptionTrendAction(
+  params: DateRangeParams
+): Promise<SupplyConsumptionTrendItem[]> {
+  const supabase = await getSupabaseAdminClient()
+
+  const { data: movements, error } = await supabase
+    .from('inventory_movements')
+    .select('created_at, quantity, unit_cost_cents')
+    .eq('business_id', params.business_id)
+    .eq('movement_type', 'CONSUMPTION')
+    .gte('created_at', params.start_date)
+    .lte('created_at', params.end_date)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching consumption trend:', error)
+    return []
+  }
+
+  const dailyMap = new Map<string, { count: number; cost: number }>()
+
+  movements?.forEach((mov) => {
+    const date = mov.created_at.split('T')[0]
+    const cost = (mov.unit_cost_cents || 0) * mov.quantity
+    const existing = dailyMap.get(date) || { count: 0, cost: 0 }
+    dailyMap.set(date, {
+      count: existing.count + 1,
+      cost: existing.cost + cost,
+    })
+  })
+
+  return Array.from(dailyMap.entries()).map(([date, data]) => ({
+    date,
+    consumption_count: data.count,
+    total_cost_cents: data.cost,
+  }))
+}

@@ -11,8 +11,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { AppointmentWithDetails } from '@/lib/models/appointment/appointment'
 import type { Invoice } from '@/lib/models/invoice/invoice'
+import type { AppointmentPaymentWithCreator } from '@/lib/models/appointment-payment/appointment-payment'
 import AppointmentService from '@/lib/services/appointment/appointment-service'
 import InvoiceService from '@/lib/services/invoice/invoice-service'
+import {
+  fetchPaymentsByAppointmentAction,
+  deletePaymentAction,
+} from '@/lib/actions/appointment-payment'
 import {
   Calendar,
   Clock,
@@ -22,11 +27,17 @@ import {
   Mail,
   Phone,
   FileText,
+  Syringe,
+  Plus,
+  Wallet,
 } from 'lucide-react'
 import Loading from '@/components/ui/loading'
 import { toast } from 'sonner'
 import StatusSelector from './StatusSelector'
-import type { AppointmentStatus } from '@/lib/types/enums'
+import PaymentStatusSelector from './PaymentStatusSelector'
+import AddPaymentModal from './AddPaymentModal'
+import PaymentHistorySection from './PaymentHistorySection'
+import type { AppointmentStatus, PaymentStatus } from '@/lib/types/enums'
 
 interface AppointmentDetailsModalProps {
   appointmentId: string | null
@@ -42,6 +53,7 @@ interface AppointmentDetailsModalProps {
     nit?: string
   }
   onViewInvoice?: (invoice: Invoice) => void
+  currentUserId?: string
 }
 
 export default function AppointmentDetailsModal({
@@ -53,14 +65,19 @@ export default function AppointmentDetailsModal({
   onStatusChange,
   businessData,
   onViewInvoice,
+  currentUserId,
 }: AppointmentDetailsModalProps) {
   const [appointment, setAppointment] = useState<AppointmentWithDetails | null>(
     null
   )
   const [invoice, setInvoice] = useState<Invoice | null>(null)
+  const [payments, setPayments] = useState<AppointmentPaymentWithCreator[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [isUpdatingPaymentStatus, setIsUpdatingPaymentStatus] = useState(false)
+  const [isDeletingPayment, setIsDeletingPayment] = useState(false)
+  const [showAddPaymentModal, setShowAddPaymentModal] = useState(false)
   const appointmentService = new AppointmentService()
   const invoiceService = new InvoiceService()
 
@@ -70,12 +87,14 @@ export default function AppointmentDetailsModal({
     const fetchData = async () => {
       try {
         setIsLoading(true)
-        const [appointmentData, invoiceData] = await Promise.all([
+        const [appointmentData, invoiceData, paymentsData] = await Promise.all([
           appointmentService.getById(appointmentId),
           invoiceService.getByAppointment(appointmentId),
+          fetchPaymentsByAppointmentAction(appointmentId),
         ])
         setAppointment(appointmentData as AppointmentWithDetails)
         setInvoice(invoiceData)
+        setPayments(paymentsData)
       } catch (error) {
         console.error('Error fetching appointment details:', error)
       } finally {
@@ -86,17 +105,53 @@ export default function AppointmentDetailsModal({
     fetchData()
   }, [appointmentId, open])
 
+  const refreshData = async () => {
+    if (!appointmentId) return
+    const [appointmentData, paymentsData] = await Promise.all([
+      appointmentService.getById(appointmentId),
+      fetchPaymentsByAppointmentAction(appointmentId),
+    ])
+    setAppointment(appointmentData as AppointmentWithDetails)
+    setPayments(paymentsData)
+    onStatusChange?.()
+  }
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!appointmentId) return
+    setIsDeletingPayment(true)
+    try {
+      const result = await deletePaymentAction(paymentId, appointmentId)
+      if (result.success) {
+        toast.success('Abono eliminado correctamente')
+        await refreshData()
+      } else {
+        toast.error(result.error || 'Error al eliminar el abono')
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error desconocido')
+    } finally {
+      setIsDeletingPayment(false)
+    }
+  }
+
+  const balanceDueCents = appointment
+    ? appointment.total_price_cents - (appointment.amount_paid_cents || 0)
+    : 0
+
   const handleGenerateInvoice = async () => {
     if (!appointment || !businessData) return
 
     setIsGeneratingInvoice(true)
     try {
-      const result = await invoiceService.createFromAppointment(appointment.id, {
-        business_name: businessData.name,
-        business_address: businessData.address,
-        business_phone: businessData.phone,
-        business_nit: businessData.nit,
-      })
+      const result = await invoiceService.createFromAppointment(
+        appointment.id,
+        {
+          business_name: businessData.name,
+          business_address: businessData.address,
+          business_phone: businessData.phone,
+          business_nit: businessData.nit,
+        }
+      )
 
       if (result.success && result.data) {
         setInvoice(result.data)
@@ -122,7 +177,9 @@ export default function AppointmentDetailsModal({
       })
 
       if (result.success) {
-        const updatedAppointment = await appointmentService.getById(appointment.id)
+        const updatedAppointment = await appointmentService.getById(
+          appointment.id
+        )
         setAppointment(updatedAppointment as AppointmentWithDetails)
         toast.success('Estado actualizado correctamente')
         onStatusChange?.()
@@ -133,6 +190,47 @@ export default function AppointmentDetailsModal({
       toast.error(error.message || 'Error al actualizar el estado')
     } finally {
       setIsUpdatingStatus(false)
+    }
+  }
+
+  const handlePaymentStatusChange = async (newStatus: PaymentStatus) => {
+    if (!appointment) return
+
+    setIsUpdatingPaymentStatus(true)
+    try {
+      const result = await appointmentService.updateItem(
+        {
+          id: appointment.id,
+          payment_status: newStatus,
+        },
+        newStatus === 'PAID' && businessData
+          ? { generateInvoice: true, businessData }
+          : undefined
+      )
+
+      if (result.success) {
+        const updatedAppointment = await appointmentService.getById(
+          appointment.id
+        )
+        setAppointment(updatedAppointment as AppointmentWithDetails)
+
+        if (newStatus === 'PAID' && result.invoiceGenerated) {
+          const invoiceData = await invoiceService.getByAppointment(
+            appointment.id
+          )
+          setInvoice(invoiceData)
+          toast.success('Pago registrado y factura generada')
+        } else {
+          toast.success('Estado de pago actualizado')
+        }
+        onStatusChange?.()
+      } else {
+        toast.error(result.error || 'Error al actualizar el estado de pago')
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error al actualizar el estado de pago')
+    } finally {
+      setIsUpdatingPaymentStatus(false)
     }
   }
 
@@ -171,41 +269,32 @@ export default function AppointmentDetailsModal({
     })
   }
 
-  const paymentStatusTranslations: Record<string, string> = {
-    PAID: 'Pagado',
-    PENDING: 'Pendiente',
-    UNPAID: 'Sin Pagar',
-    FAILED: 'Fallido',
-    REFUNDED: 'Reembolsado',
-  }
-
-  const paymentStatusText =
-    paymentStatusTranslations[appointment.payment_status] ||
-    appointment.payment_status
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span>Detalles de la Cita</span>
-            <Badge
-              variant={
-                appointment.payment_status === 'PAID' ? 'default' : 'secondary'
-              }
-            >
-              {paymentStatusText}
-            </Badge>
-          </DialogTitle>
+          <DialogTitle>Detalles de la Cita</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm text-muted-foreground">Estado de la cita:</span>
-            <StatusSelector
-              value={appointment.status}
-              onChange={handleStatusChange}
-              disabled={isUpdatingStatus}
-            />
+          <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Pago:</span>
+              <PaymentStatusSelector
+                value={appointment.payment_status}
+                onChange={handlePaymentStatusChange}
+                disabled={isUpdatingPaymentStatus}
+                size="sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Cita:</span>
+              <StatusSelector
+                value={appointment.status}
+                onChange={handleStatusChange}
+                disabled={isUpdatingStatus}
+                size="sm"
+              />
+            </div>
           </div>
 
           <div className="grid gap-4">
@@ -346,6 +435,53 @@ export default function AppointmentDetailsModal({
                 </div>
               )}
 
+            {appointment.appointment_supplies &&
+              appointment.appointment_supplies.length > 0 && (
+                <div className="flex items-start gap-3">
+                  <Syringe className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium mb-2">Insumos</p>
+                    <div className="space-y-2">
+                      {appointment.appointment_supplies.map((supply) => {
+                        const unitAbbr =
+                          supply.product?.unit_of_measure?.abbreviation || 'und'
+                        return (
+                          <div
+                            key={supply.id}
+                            className="flex justify-between text-sm border-b pb-2"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium">
+                                {supply.product?.name || 'Producto'}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                <span>
+                                  {supply.quantity_used} {unitAbbr}
+                                </span>
+                                <span>•</span>
+                                <span>
+                                  $
+                                  {(
+                                    supply.unit_price_cents / 100
+                                  ).toLocaleString('es-CO')}
+                                  /{unitAbbr}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="font-medium ml-2">
+                              $
+                              {(supply.total_price_cents / 100).toLocaleString(
+                                'es-CO'
+                              )}
+                            </p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             <div className="flex items-start gap-3">
               <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div className="flex-1">
@@ -354,33 +490,83 @@ export default function AppointmentDetailsModal({
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>
-                      ${(appointment.subtotal_cents / 100).toFixed(2)}
+                      ${(appointment.subtotal_cents / 100).toLocaleString('es-CO')}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Impuesto</span>
-                    <span>${(appointment.tax_cents / 100).toFixed(2)}</span>
+                    <span>${(appointment.tax_cents / 100).toLocaleString('es-CO')}</span>
                   </div>
                   {appointment.discount_cents > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Descuento</span>
                       <span>
-                        -${(appointment.discount_cents / 100).toFixed(2)}
+                        -${(appointment.discount_cents / 100).toLocaleString('es-CO')}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
                     <span>Total</span>
                     <span>
-                      ${(appointment.total_price_cents / 100).toFixed(2)}
+                      ${(appointment.total_price_cents / 100).toLocaleString('es-CO')}
                     </span>
                   </div>
+                  {(appointment.amount_paid_cents || 0) > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Abonado</span>
+                      <span>
+                        -${((appointment.amount_paid_cents || 0) / 100).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                  )}
+                  {balanceDueCents > 0 && (
+                    <div className="flex justify-between font-bold text-amber-600 pt-1">
+                      <span>Saldo Pendiente</span>
+                      <span>
+                        ${(balanceDueCents / 100).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Método de pago: {appointment.payment_method}
-                </p>
               </div>
             </div>
+
+            {appointment.payment_status !== 'PAID' && balanceDueCents > 0 && (
+              <div className="flex items-start gap-3">
+                <Wallet className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-medium">Abonos</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddPaymentModal(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Agregar Abono
+                    </Button>
+                  </div>
+                  <PaymentHistorySection
+                    payments={payments}
+                    onDeletePayment={handleDeletePayment}
+                    isDeleting={isDeletingPayment}
+                  />
+                </div>
+              </div>
+            )}
+
+            {payments.length > 0 && appointment.payment_status === 'PAID' && (
+              <div className="flex items-start gap-3">
+                <Wallet className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium mb-2">Historial de Abonos</p>
+                  <PaymentHistorySection
+                    payments={payments}
+                    showDelete={false}
+                  />
+                </div>
+              </div>
+            )}
 
             {appointment.customer_note && (
               <div className="border-t pt-4">
@@ -444,11 +630,25 @@ export default function AppointmentDetailsModal({
               }}
               disabled={appointment?.status === 'CANCELLED'}
             >
-              {appointment?.status === 'CANCELLED' ? 'Cancelada' : 'Cancelar Cita'}
+              {appointment?.status === 'CANCELLED'
+                ? 'Cancelada'
+                : 'Cancelar Cita'}
             </Button>
           </div>
         </div>
       </DialogContent>
+
+      {appointment && (
+        <AddPaymentModal
+          open={showAddPaymentModal}
+          onOpenChange={setShowAddPaymentModal}
+          appointmentId={appointment.id}
+          businessId={appointment.business_id}
+          balanceDueCents={balanceDueCents}
+          onPaymentAdded={refreshData}
+          createdBy={currentUserId}
+        />
+      )}
     </Dialog>
   )
 }

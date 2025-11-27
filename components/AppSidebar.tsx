@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import {
   Sidebar,
   SidebarContent,
@@ -16,13 +17,27 @@ import Logo from './Logo'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { NavMain } from './NavMain'
 import { BusinessSwitcher } from './BusinessSwitcher'
+import { LowStockAlertBadge } from './inventory/LowStockAlert'
 
 export function AppSidebar() {
   const { role } = useCurrentUser()
 
-  const filteredAppItems = SIDE_APP_MENU_ITEMS.filter((item) =>
-    role ? item.allowedRoles.includes(role) : false
-  )
+  const filteredAppItems = useMemo(() => {
+    const items = SIDE_APP_MENU_ITEMS.filter((item) =>
+      role ? item.allowedRoles.includes(role) : false
+    )
+
+    // Add badge to Inventory menu item
+    return items.map((item) => {
+      if (item.url === '/admin/inventory') {
+        return {
+          ...item,
+          badge: <LowStockAlertBadge className="ml-auto" />,
+        }
+      }
+      return item
+    })
+  }, [role])
 
   const filteredSystemItems = SIDE_SYSTEM_MENU_ITEMS.filter((item) =>
     role ? item.allowedRoles.includes(role) : false

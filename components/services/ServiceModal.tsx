@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { CreatableCombobox, type ComboboxOption } from '@/components/ui/creatable-combobox'
 import type {
   Service,
   ServiceInsert,
@@ -41,19 +42,15 @@ import type {
 } from '@/lib/models/service/service'
 import type { Business } from '@/lib/models/business/business'
 import { Loader2 } from 'lucide-react'
+import {
+  ServiceSuppliesSection,
+  mapServiceSuppliesToItems,
+  type SupplyItem,
+} from '@/components/services/ServiceSuppliesSection'
+import { fetchServiceSuppliesAction, updateServiceSuppliesAction } from '@/lib/actions/service-supply'
+import { createServiceCategoryAction } from '@/lib/actions/service'
 import { BusinessStorageService } from '@/lib/services/business/business-storage-service'
 import { toast } from 'sonner'
-
-const categoryLabels: Record<string, string> = {
-  nails: 'Uñas',
-  haircut: 'Corte de cabello',
-  coloring: 'Coloración',
-  facial: 'Tratamiento facial',
-  makeup: 'Maquillaje',
-  waxing: 'Depilación',
-  massage: 'Masajes',
-  spa: 'Spa',
-}
 
 const formSchema = z.object({
   business_id: z.string().min(1, 'Selecciona una sucursal'),
@@ -75,6 +72,7 @@ interface ServiceModalProps {
   businesses: Business[]
   categories: ServiceCategory[]
   onSave: (data: ServiceInsert | ServiceUpdate) => Promise<void>
+  onCategoryCreated?: (category: ServiceCategory) => void
   isCompanyAdmin?: boolean
   currentBusinessId?: string | null
 }
@@ -86,12 +84,31 @@ export function ServiceModal({
   businesses,
   categories,
   onSave,
+  onCategoryCreated,
   isCompanyAdmin = false,
   currentBusinessId,
 }: ServiceModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [storageService] = useState(() => new BusinessStorageService())
+  const [supplies, setSupplies] = useState<SupplyItem[]>([])
+  const [loadingSupplies, setLoadingSupplies] = useState(false)
   const isEdit = !!service
+
+  const categoryOptions: ComboboxOption[] = categories.map((cat) => ({
+    value: cat.id,
+    label: cat.name,
+  }))
+
+  const handleCreateCategory = async (name: string): Promise<{ value: string; label: string } | null> => {
+    const result = await createServiceCategoryAction(name)
+    if (result.success && result.data) {
+      toast.success(`Categoría "${result.data.name}" creada`)
+      onCategoryCreated?.(result.data)
+      return { value: result.data.id, label: result.data.name }
+    }
+    toast.error(result.error || 'Error al crear la categoría')
+    return null
+  }
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(formSchema),
@@ -119,6 +136,19 @@ export function ServiceModal({
         is_featured: service.is_featured,
         image_url: service.image_url || '',
       })
+      // Cargar insumos del servicio
+      const loadSupplies = async () => {
+        setLoadingSupplies(true)
+        try {
+          const serviceSupplies = await fetchServiceSuppliesAction(service.id)
+          setSupplies(mapServiceSuppliesToItems(serviceSupplies))
+        } catch (error) {
+          console.error('Error loading supplies:', error)
+        } finally {
+          setLoadingSupplies(false)
+        }
+      }
+      loadSupplies()
     } else {
       const defaultBusinessId = isCompanyAdmin
         ? businesses.length === 1
@@ -135,6 +165,7 @@ export function ServiceModal({
         is_featured: false,
         image_url: '',
       })
+      setSupplies([])
     }
   }, [service, form, businesses, isCompanyAdmin, currentBusinessId])
 
@@ -167,8 +198,20 @@ export function ServiceModal({
         image_url: data.image_url || null,
       }
       await onSave(payload)
+
+      // Guardar supplies si es edición
+      if (service) {
+        const suppliesData = supplies.map((s) => ({
+          product_id: s.product_id,
+          default_quantity: s.default_quantity,
+          is_required: s.is_required,
+        }))
+        await updateServiceSuppliesAction(service.id, suppliesData)
+      }
+
       onOpenChange(false)
       form.reset()
+      setSupplies([])
     } catch (error) {
       console.error('Error saving service:', error)
     } finally {
@@ -264,39 +307,30 @@ export function ServiceModal({
               )}
             />
 
-            {categories.length > 0 && (
-              <FormField
-                control={form.control}
-                name="category_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoría</FormLabel>
-                    <Select
-                      onValueChange={(value) =>
-                        field.onChange(value === 'none' ? null : value)
-                      }
-                      value={field.value || 'none'}
+            <FormField
+              control={form.control}
+              name="category_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoría</FormLabel>
+                  <FormControl>
+                    <CreatableCombobox
+                      options={categoryOptions}
+                      value={field.value || null}
+                      onChange={field.onChange}
+                      onCreateNew={handleCreateCategory}
+                      placeholder="Seleccionar categoría..."
+                      searchPlaceholder="Buscar o crear categoría..."
+                      emptyText="No hay categorías"
+                      createText="Crear categoría"
                       disabled={isSubmitting}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Sin categoría" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">Sin categoría</SelectItem>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {categoryLabels[category.name] || category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                      allowClear
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -391,6 +425,27 @@ export function ServiceModal({
                 </FormItem>
               )}
             />
+
+            {isEdit && (
+              <div className="pt-2 border-t">
+                <ServiceSuppliesSection
+                  businessId={businessId || currentBusinessId || ''}
+                  supplies={supplies}
+                  onChange={setSupplies}
+                  disabled={isSubmitting || loadingSupplies}
+                />
+                {supplies.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    El precio base del servicio puede ser 0 si se cobra por insumos
+                  </p>
+                )}
+              </div>
+            )}
+            {!isEdit && (
+              <p className="text-xs text-muted-foreground pt-2 border-t">
+                Guarda el servicio primero para poder agregar insumos asociados
+              </p>
+            )}
 
             <DialogFooter>
               <Button

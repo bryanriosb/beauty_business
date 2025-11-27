@@ -15,7 +15,9 @@ import { AppointmentsReport } from '@/components/reports/AppointmentsReport'
 import { ServicesReport } from '@/components/reports/ServicesReport'
 import { SpecialistsReport } from '@/components/reports/SpecialistsReport'
 import { CustomersReport } from '@/components/reports/CustomersReport'
-import { DollarSign, Calendar, Scissors, UserCircle, Users } from 'lucide-react'
+import { SuppliesReport } from '@/components/reports/SuppliesReport'
+import { AccountsReceivableReport } from '@/components/reports/AccountsReceivableReport'
+import { DollarSign, Calendar, Scissors, UserCircle, Users, Syringe, Wallet } from 'lucide-react'
 
 export default function ReportsPage() {
   const { isLoading } = useCurrentUser()
@@ -104,6 +106,14 @@ export default function ReportsPage() {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Clientes</span>
           </TabsTrigger>
+          <TabsTrigger value="supplies" className="gap-1.5">
+            <Syringe className="h-4 w-4" />
+            <span className="hidden sm:inline">Insumos</span>
+          </TabsTrigger>
+          <TabsTrigger value="receivables" className="gap-1.5">
+            <Wallet className="h-4 w-4" />
+            <span className="hidden sm:inline">Cartera</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="revenue">
@@ -143,6 +153,27 @@ export default function ReportsPage() {
             businessId={activeBusinessId}
             startDate={dateRangeProps.startDate}
             endDate={dateRangeProps.endDate}
+          />
+        </TabsContent>
+
+        <TabsContent value="supplies">
+          <SuppliesReport
+            businessId={activeBusinessId}
+            startDate={dateRangeProps.startDate}
+            endDate={dateRangeProps.endDate}
+          />
+        </TabsContent>
+
+        <TabsContent value="receivables">
+          <AccountsReceivableReport
+            businessId={activeBusinessId}
+            startDate={dateRangeProps.startDate}
+            endDate={dateRangeProps.endDate}
+            businessData={
+              activeBusiness
+                ? { name: activeBusiness.name }
+                : undefined
+            }
           />
         </TabsContent>
       </Tabs>

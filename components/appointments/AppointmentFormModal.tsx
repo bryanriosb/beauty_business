@@ -38,6 +38,7 @@ import {
 import { Calendar } from '@/components/ui/calendar'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
+import { NumericInput } from '@/components/ui/numeric-input'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -53,8 +54,15 @@ import CustomerSelector from './CustomerSelector'
 import TimeSlotPicker from './TimeSlotPicker'
 import SpecialistPicker from './SpecialistPicker'
 import { MultiServiceSelector, type SelectedService } from './MultiServiceSelector'
+import {
+  AppointmentSuppliesSection,
+  calculateSuppliesTotal,
+  hasInsufficientStock,
+} from './AppointmentSuppliesSection'
 import type { AvailableSpecialist } from '@/lib/actions/availability'
-import type { AppointmentServiceInput } from '@/lib/actions/appointment'
+import type { AppointmentServiceInput, AppointmentSupplyInput } from '@/lib/actions/appointment'
+import type { SelectedSupply } from '@/lib/models/product'
+import { validateStockForSuppliesAction } from '@/lib/actions/inventory'
 
 const appointmentFormSchema = z.object({
   business_id: z.string().min(1, 'El negocio es requerido'),
@@ -67,7 +75,7 @@ const appointmentFormSchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']),
   customer_note: z.string().optional(),
   payment_method: z.enum(['AT_VENUE', 'CREDIT_CARD', 'PAYPAL', 'NEQUI']),
-  payment_status: z.enum(['UNPAID', 'PAID', 'REFUNDED']),
+  payment_status: z.enum(['UNPAID', 'PARTIAL', 'PAID', 'REFUNDED']),
 })
 
 type AppointmentFormData = z.infer<typeof appointmentFormSchema>
@@ -92,6 +100,7 @@ export default function AppointmentFormModal({
   const [isLoadingServices, setIsLoadingServices] = useState(false)
   const [availableSpecialistIds, setAvailableSpecialistIds] = useState<string[]>([])
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
+  const [supplies, setSupplies] = useState<SelectedSupply[]>([])
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [discountPercent, setDiscountPercent] = useState(0)
   const isInitializingRef = useRef(false)
@@ -116,13 +125,20 @@ export default function AppointmentFormModal({
     return selectedServices.reduce((sum, s) => sum + s.price_cents, 0)
   }, [selectedServices])
 
+  const totalSuppliesPrice = useMemo(() => {
+    return calculateSuppliesTotal(supplies)
+  }, [supplies])
+
   const priceCalculations = useMemo(() => {
-    const subtotal = Math.round(totalServicesPrice / 1.19)
-    const tax = totalServicesPrice - subtotal
-    const discount = Math.round(subtotal * (discountPercent / 100))
+    const servicesSubtotal = Math.round(totalServicesPrice / 1.19)
+    const servicesTax = totalServicesPrice - servicesSubtotal
+    // Supplies cost is added without IVA (cost price)
+    const subtotal = servicesSubtotal + totalSuppliesPrice
+    const tax = servicesTax
+    const discount = Math.round(servicesSubtotal * (discountPercent / 100))
     const total = subtotal + tax - discount
-    return { subtotal, tax, discount, total }
-  }, [totalServicesPrice, discountPercent])
+    return { subtotal, tax, discount, total, suppliesCost: totalSuppliesPrice }
+  }, [totalServicesPrice, totalSuppliesPrice, discountPercent])
 
   const firstServiceId = selectedServices.length > 0 ? selectedServices[0].id : ''
 
@@ -170,6 +186,8 @@ export default function AppointmentFormModal({
           name: as.service.name,
           duration_minutes: as.duration_minutes,
           price_cents: as.price_at_booking_cents,
+          original_price_cents: as.price_at_booking_cents, // Use booking price as original since we don't have service base price here
+          has_custom_price: false,
         }))
         setSelectedServices(servicesFromAppointment)
       }
@@ -251,6 +269,7 @@ export default function AppointmentFormModal({
       })
       setServices([])
       setSelectedServices([])
+      setSupplies([])
       setAvailableSpecialistIds([])
       setDiscountPercent(0)
     }
@@ -339,6 +358,24 @@ export default function AppointmentFormModal({
         }
       }
 
+      if (!appointment && supplies.length > 0) {
+        const stockValidation = await validateStockForSuppliesAction(
+          supplies.map((s) => ({
+            product_id: s.product_id,
+            quantity_required: s.quantity,
+          }))
+        )
+
+        if (!stockValidation.valid) {
+          const insufficientItems = stockValidation.insufficientStock
+            .map((item) => `${item.product_name} (faltan ${item.shortage.toFixed(2)})`)
+            .join(', ')
+          toast.error(`Stock insuficiente: ${insufficientItems}`)
+          setIsSubmitting(false)
+          return
+        }
+      }
+
       const startDateTime = new Date(`${values.date}T${values.start_time}:00`)
       const endDateTime = new Date(`${values.date}T${values.end_time}:00`)
 
@@ -364,6 +401,12 @@ export default function AppointmentFormModal({
         duration_minutes: s.duration_minutes,
       }))
 
+      const suppliesData: AppointmentSupplyInput[] = supplies.map((s) => ({
+        product_id: s.product_id,
+        quantity_used: s.quantity,
+        unit_price_cents: s.unit_price_cents,
+      }))
+
       let result
       if (appointment?.id) {
         result = await appointmentService.updateItem({
@@ -371,7 +414,7 @@ export default function AppointmentFormModal({
           id: appointment.id,
         })
       } else {
-        result = await appointmentService.createItem(appointmentData, servicesData)
+        result = await appointmentService.createItem(appointmentData, servicesData, suppliesData)
       }
 
       if (result.success) {
@@ -478,6 +521,14 @@ export default function AppointmentFormModal({
               )}
             </FormItem>
 
+            {/* Supplies Section */}
+            <AppointmentSuppliesSection
+              serviceIds={selectedServices.map((s) => s.id)}
+              supplies={supplies}
+              onChange={setSupplies}
+              disabled={isSubmitting}
+            />
+
             {/* Price Summary */}
             {selectedServices.length > 0 && (
               <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
@@ -486,9 +537,15 @@ export default function AppointmentFormModal({
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal (sin IVA)</span>
-                    <span>${(priceCalculations.subtotal / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
+                    <span className="text-muted-foreground">Servicios (sin IVA)</span>
+                    <span>${(Math.round(totalServicesPrice / 1.19) / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
                   </div>
+                  {priceCalculations.suppliesCost > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Insumos</span>
+                      <span>${(priceCalculations.suppliesCost / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">IVA (19%)</span>
                     <span>${(priceCalculations.tax / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
@@ -497,17 +554,16 @@ export default function AppointmentFormModal({
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">Descuento</span>
                       <div className="relative w-20">
-                        <Input
-                          type="number"
+                        <NumericInput
                           min={0}
-                          max={100}
                           value={discountPercent}
-                          onChange={(e) => {
-                            const val = Math.min(100, Math.max(0, Number(e.target.value) || 0))
-                            setDiscountPercent(val)
+                          onChange={(val) => {
+                            const value = Math.min(100, Math.max(0, val ?? 0))
+                            setDiscountPercent(value)
                           }}
                           className="h-7 pr-7 text-right text-sm"
                           disabled={isSubmitting}
+                          allowDecimals={false}
                         />
                         <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                       </div>
@@ -747,7 +803,10 @@ export default function AppointmentFormModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || (!appointment && hasInsufficientStock(supplies))}
+              >
                 {isSubmitting
                   ? 'Guardando...'
                   : appointment

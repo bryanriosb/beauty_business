@@ -16,6 +16,30 @@ interface KPICardProps {
   }
   loading?: boolean
   className?: string
+  variant?: 'default' | 'warning' | 'danger' | 'success'
+}
+
+const variantStyles = {
+  default: {
+    card: '',
+    value: '',
+    icon: 'text-muted-foreground',
+  },
+  warning: {
+    card: 'border-amber-200 bg-amber-50/50',
+    value: 'text-amber-700',
+    icon: 'text-amber-500',
+  },
+  danger: {
+    card: 'border-red-200 bg-red-50/50',
+    value: 'text-red-700',
+    icon: 'text-red-500',
+  },
+  success: {
+    card: 'border-green-200 bg-green-50/50',
+    value: 'text-green-700',
+    icon: 'text-green-500',
+  },
 }
 
 export function KPICard({
@@ -26,7 +50,10 @@ export function KPICard({
   trend,
   loading,
   className,
+  variant = 'default',
 }: KPICardProps) {
+  const styles = variantStyles[variant]
+
   if (loading) {
     return (
       <Card className={cn('border', className)}>
@@ -40,14 +67,14 @@ export function KPICard({
   }
 
   return (
-    <Card className={cn('border', className)}>
+    <Card className={cn('border', styles.card, className)}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">{title}</span>
-          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+          {Icon && <Icon className={cn('h-4 w-4', styles.icon)} />}
         </div>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl font-bold">{value}</span>
+          <span className={cn('text-2xl font-bold', styles.value)}>{value}</span>
           {trend && (
             <span
               className={cn(

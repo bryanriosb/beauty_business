@@ -8,6 +8,8 @@ import {
   UserCircle,
   BarChart3,
   FileStack,
+  Package,
+  Warehouse,
 } from 'lucide-react'
 import { USER_ROLES, type UserRole } from './roles'
 
@@ -41,6 +43,18 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Servicios',
     url: '/admin/services',
     icon: Scissors,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  },
+  {
+    title: 'Productos',
+    url: '/admin/products',
+    icon: Package,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  },
+  {
+    title: 'Inventario',
+    url: '/admin/inventory',
+    icon: Warehouse,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
   {

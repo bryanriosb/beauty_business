@@ -1,11 +1,11 @@
 'use client'
 
-import { Service } from '@/lib/models/service/service'
+import { ServiceWithCategory } from '@/lib/models/service/service'
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Star, Clock, ImageIcon } from 'lucide-react'
+import { Star, Clock, ImageIcon, Tag } from 'lucide-react'
 import Image from 'next/image'
 
 function formatPrice(cents: number): string {
@@ -24,7 +24,13 @@ function formatDuration(minutes: number): string {
   return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`
 }
 
-export const SERVICES_COLUMNS: ColumnDef<Service>[] = [
+export const SERVICES_COLUMNS: ColumnDef<ServiceWithCategory>[] = [
+  {
+    accessorKey: 'category_id',
+    header: 'category_id',
+    meta: { hidden: true },
+    enableHiding: false,
+  },
   {
     accessorKey: 'image_url',
     header: '',
@@ -62,6 +68,22 @@ export const SERVICES_COLUMNS: ColumnDef<Service>[] = [
             </div>
           )}
         </div>
+      )
+    },
+  },
+  {
+    id: 'category',
+    accessorFn: (row) => row.category?.name,
+    header: 'Categoría',
+    cell: ({ row }) => {
+      const category = row.original.category
+      return category ? (
+        <Badge variant="secondary" className="gap-1">
+          <Tag className="h-3 w-3" />
+          {category.name}
+        </Badge>
+      ) : (
+        <span className="text-muted-foreground text-sm">Sin categoría</span>
       )
     },
   },

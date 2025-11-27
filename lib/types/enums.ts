@@ -6,7 +6,7 @@ export type DayOfWeek = '0' | '1' | '2' | '3' | '4' | '5' | '6'
 
 export type UserGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY'
 
-export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED'
+export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUNDED'
 
 export type PaymentMethod = 'AT_VENUE' | 'CREDIT_CARD' | 'PAYPAL' | 'NEQUI'
 
@@ -46,3 +46,13 @@ export type userRoles =
   | 'customer'
 
 export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'PAID' | 'CANCELLED'
+
+export type ProductType = 'SUPPLY' | 'RETAIL'
+
+export type InventoryMovementType =
+  | 'ENTRY'
+  | 'CONSUMPTION'
+  | 'SALE'
+  | 'ADJUSTMENT'
+  | 'TRANSFER'
+  | 'WASTE'

@@ -13,6 +13,7 @@ export interface Appointment {
   tax_cents: number
   discount_cents: number
   total_price_cents: number
+  amount_paid_cents: number
   payment_status: PaymentStatus
   payment_method: PaymentMethod
   created_at: string
@@ -32,6 +33,7 @@ export class Appointment implements Appointment {
   tax_cents: number
   discount_cents: number
   total_price_cents: number
+  amount_paid_cents: number
   payment_status: PaymentStatus
   payment_method: PaymentMethod
   created_at: string
@@ -50,13 +52,13 @@ export class Appointment implements Appointment {
     this.tax_cents = data.tax_cents
     this.discount_cents = data.discount_cents
     this.total_price_cents = data.total_price_cents
+    this.amount_paid_cents = data.amount_paid_cents
     this.payment_status = data.payment_status
     this.payment_method = data.payment_method
     this.created_at = data.created_at
     this.updated_at = data.updated_at
   }
 
-  // Helper methods
   get totalPrice(): number {
     return this.total_price_cents / 100
   }
@@ -72,6 +74,18 @@ export class Appointment implements Appointment {
   get discount(): number {
     return this.discount_cents / 100
   }
+
+  get amountPaid(): number {
+    return this.amount_paid_cents / 100
+  }
+
+  get balanceDue(): number {
+    return (this.total_price_cents - this.amount_paid_cents) / 100
+  }
+
+  get balanceDueCents(): number {
+    return this.total_price_cents - this.amount_paid_cents
+  }
 }
 
 export interface AppointmentInsert {
@@ -86,6 +100,7 @@ export interface AppointmentInsert {
   tax_cents?: number
   discount_cents?: number
   total_price_cents?: number
+  amount_paid_cents?: number
   payment_status?: PaymentStatus
   payment_method?: PaymentMethod
 }
@@ -102,6 +117,7 @@ export interface AppointmentUpdate {
   tax_cents?: number
   discount_cents?: number
   total_price_cents?: number
+  amount_paid_cents?: number
   payment_status?: PaymentStatus
   payment_method?: PaymentMethod
 }
@@ -143,6 +159,20 @@ export interface AppointmentWithDetails extends Appointment {
         id: string
         name: string
         icon_key: string | null
+      } | null
+    }
+  }>
+  appointment_supplies?: Array<{
+    id: string
+    product_id: string
+    quantity_used: number
+    unit_price_cents: number
+    total_price_cents: number
+    product: {
+      id: string
+      name: string
+      unit_of_measure?: {
+        abbreviation: string
       } | null
     }
   }>

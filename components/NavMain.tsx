@@ -35,6 +35,7 @@ export interface NavItem {
   url: string
   icon?: LucideIcon
   isActive?: boolean
+  badge?: React.ReactNode
   items?: {
     title: string
     url: string
@@ -197,6 +198,7 @@ export function NavMain({
                   <Link href={item.url}>
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
+                    {item.badge}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

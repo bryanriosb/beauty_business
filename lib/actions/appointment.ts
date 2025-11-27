@@ -18,6 +18,12 @@ export interface AppointmentServiceInput {
   duration_minutes: number
 }
 
+export interface AppointmentSupplyInput {
+  product_id: string
+  quantity_used: number
+  unit_price_cents: number
+}
+
 export interface AppointmentListResponse {
   data: Appointment[]
   total: number
@@ -212,6 +218,18 @@ export async function getAppointmentByIdAction(
               icon_key
             )
           )
+        ),
+        appointment_supplies(
+          id,
+          product_id,
+          quantity_used,
+          unit_price_cents,
+          total_price_cents,
+          product:products(
+            id,
+            name,
+            unit_of_measure:unit_of_measures(abbreviation)
+          )
         )
       `
       )
@@ -249,7 +267,8 @@ export async function getAppointmentByIdAction(
 
 export async function createAppointmentAction(
   data: AppointmentInsert,
-  services?: AppointmentServiceInput[]
+  services?: AppointmentServiceInput[],
+  supplies?: AppointmentSupplyInput[]
 ): Promise<{ success: boolean; data?: Appointment; error?: string }> {
   try {
     const supabase = await getSupabaseAdminClient()
@@ -281,6 +300,25 @@ export async function createAppointmentAction(
       }
     }
 
+    // Save appointment supplies
+    if (supplies && supplies.length > 0) {
+      const appointmentSupplies = supplies.map((supply) => ({
+        appointment_id: appointment.id,
+        product_id: supply.product_id,
+        quantity_used: supply.quantity_used,
+        unit_price_cents: supply.unit_price_cents,
+        total_price_cents: Math.round(supply.quantity_used * supply.unit_price_cents),
+      }))
+
+      const { error: suppliesError } = await supabase
+        .from('appointment_supplies')
+        .insert(appointmentSupplies)
+
+      if (suppliesError) {
+        console.error('Error creating appointment supplies:', suppliesError)
+      }
+    }
+
     return { success: true, data: appointment as Appointment }
   } catch (error: any) {
     console.error('Error creating appointment:', error)
@@ -292,13 +330,13 @@ export async function updateAppointmentAction(
   id: string,
   data: AppointmentUpdate,
   options?: { generateInvoice?: boolean; businessData?: { name: string; address?: string; phone?: string; nit?: string } }
-): Promise<{ success: boolean; data?: Appointment; error?: string; invoiceGenerated?: boolean }> {
+): Promise<{ success: boolean; data?: Appointment; error?: string; invoiceGenerated?: boolean; stockDeducted?: boolean }> {
   try {
     const supabase = await getSupabaseAdminClient()
 
     const { data: currentAppointment } = await supabase
       .from('appointments')
-      .select('payment_status, business_id')
+      .select('payment_status, business_id, status')
       .eq('id', id)
       .single()
 
@@ -309,6 +347,34 @@ export async function updateAppointmentAction(
     }
 
     let invoiceGenerated = false
+    let stockDeducted = false
+
+    // Deduct stock when appointment is completed
+    const shouldDeductStock =
+      data.status === 'COMPLETED' &&
+      currentAppointment?.status !== 'COMPLETED'
+
+    if (shouldDeductStock && currentAppointment?.business_id) {
+      // Get appointment supplies
+      const { data: supplies } = await supabase
+        .from('appointment_supplies')
+        .select('product_id, quantity_used, unit_price_cents')
+        .eq('appointment_id', id)
+
+      if (supplies && supplies.length > 0) {
+        const { createBulkConsumptionAction } = await import('./inventory')
+        const consumptionResult = await createBulkConsumptionAction(
+          id,
+          currentAppointment.business_id,
+          supplies.map((s) => ({
+            product_id: s.product_id,
+            quantity: s.quantity_used,
+            unit_price_cents: s.unit_price_cents,
+          }))
+        )
+        stockDeducted = consumptionResult.success
+      }
+    }
 
     const shouldGenerateInvoice =
       data.payment_status === 'PAID' &&
@@ -326,7 +392,7 @@ export async function updateAppointmentAction(
       invoiceGenerated = invoiceResult.success
     }
 
-    return { success: true, data: appointment, invoiceGenerated }
+    return { success: true, data: appointment, invoiceGenerated, stockDeducted }
   } catch (error: any) {
     console.error('Error updating appointment:', error)
     return { success: false, error: error.message || 'Error desconocido' }

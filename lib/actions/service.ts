@@ -13,10 +13,11 @@ import type {
   ServiceInsert,
   ServiceUpdate,
   ServiceCategory,
+  ServiceWithCategory,
 } from '@/lib/models/service/service'
 
 export interface ServiceListResponse {
-  data: Service[]
+  data: ServiceWithCategory[]
   total: number
   total_pages: number
 }
@@ -25,11 +26,13 @@ export async function fetchServicesAction(params?: {
   page?: number
   page_size?: number
   business_id?: string
-  category_id?: string
-  is_featured?: boolean
+  category_id?: string | string[]
+  is_featured?: boolean | string | string[]
+  name?: string
 }): Promise<ServiceListResponse> {
   try {
-    const services = await getAllRecords<Service>('services', {
+    const services = await getAllRecords<ServiceWithCategory>('services', {
+      select: '*, category:service_categories(*)',
       order: { column: 'created_at', ascending: false },
     })
 
@@ -42,14 +45,28 @@ export async function fetchServicesAction(params?: {
     }
 
     if (params?.category_id) {
+      const categoryIds = Array.isArray(params.category_id)
+        ? params.category_id
+        : [params.category_id]
       filteredServices = filteredServices.filter(
-        (service) => service.category_id === params.category_id
+        (service) => service.category_id && categoryIds.includes(service.category_id)
       )
     }
 
     if (params?.is_featured !== undefined) {
+      const featuredValues = Array.isArray(params.is_featured)
+        ? params.is_featured
+        : [params.is_featured]
+      const boolValues = featuredValues.map((v) => v === true || v === 'true')
       filteredServices = filteredServices.filter(
-        (service) => service.is_featured === params.is_featured
+        (service) => boolValues.includes(service.is_featured)
+      )
+    }
+
+    if (params?.name) {
+      const searchTerm = params.name.toLowerCase()
+      filteredServices = filteredServices.filter(
+        (service) => service.name.toLowerCase().includes(searchTerm)
       )
     }
 
@@ -140,6 +157,26 @@ export async function fetchServiceCategoriesAction(): Promise<ServiceCategory[]>
   } catch (error) {
     console.error('Error fetching service categories:', error)
     return []
+  }
+}
+
+export async function createServiceCategoryAction(
+  name: string
+): Promise<{ success: boolean; data?: ServiceCategory; error?: string }> {
+  try {
+    const category = await insertRecord<ServiceCategory>('service_categories', {
+      name,
+      icon_key: null,
+    })
+
+    if (!category) {
+      return { success: false, error: 'Error al crear la categoría' }
+    }
+
+    return { success: true, data: category }
+  } catch (error: any) {
+    console.error('Error creating service category:', error)
+    return { success: false, error: error.message || 'Error desconocido' }
   }
 }
 

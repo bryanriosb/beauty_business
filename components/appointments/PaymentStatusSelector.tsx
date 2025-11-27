@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import {
   Select,
   SelectContent,
@@ -9,78 +8,73 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import type { AppointmentStatus } from '@/lib/types/enums'
+import type { PaymentStatus } from '@/lib/types/enums'
 
-interface StatusOption {
-  value: AppointmentStatus
+interface PaymentStatusOption {
+  value: PaymentStatus
   label: string
   bgColor: string
   textColor: string
 }
 
-const STATUS_OPTIONS: StatusOption[] = [
+const PAYMENT_STATUS_OPTIONS: PaymentStatusOption[] = [
   {
-    value: 'PENDING',
-    label: 'Pendiente',
+    value: 'UNPAID',
+    label: 'Sin Pagar',
+    bgColor: 'bg-[#fecaca]',
+    textColor: 'text-[#7f1d1d]',
+  },
+  {
+    value: 'PARTIAL',
+    label: 'Abonado',
     bgColor: 'bg-[#fde68a]',
-    textColor: 'text-[#1e293b]',
+    textColor: 'text-[#78350f]',
   },
   {
-    value: 'CONFIRMED',
-    label: 'Confirmada',
-    bgColor: 'bg-[#a3b4f7]',
-    textColor: 'text-[#1e293b]',
-  },
-  {
-    value: 'COMPLETED',
-    label: 'Completada',
+    value: 'PAID',
+    label: 'Pagado',
     bgColor: 'bg-[#86efac]',
-    textColor: 'text-[#1e293b]',
+    textColor: 'text-[#14532d]',
   },
   {
-    value: 'CANCELLED',
-    label: 'Cancelada',
+    value: 'REFUNDED',
+    label: 'Reembolsado',
     bgColor: 'bg-[#e2e8f0]',
     textColor: 'text-[#475569]',
   },
-  {
-    value: 'NO_SHOW',
-    label: 'No Asistió',
-    bgColor: 'bg-[#c4b5fd]',
-    textColor: 'text-[#1e293b]',
-  },
 ]
 
-interface StatusSelectorProps {
-  value: AppointmentStatus
-  onChange: (status: AppointmentStatus) => void
+interface PaymentStatusSelectorProps {
+  value: PaymentStatus
+  onChange: (status: PaymentStatus) => void
   disabled?: boolean
   size?: 'sm' | 'default'
 }
 
-export default function StatusSelector({
+export default function PaymentStatusSelector({
   value,
   onChange,
   disabled = false,
   size = 'default',
-}: StatusSelectorProps) {
+}: PaymentStatusSelectorProps) {
   const currentOption =
-    STATUS_OPTIONS.find((opt) => opt.value === value) || STATUS_OPTIONS[0]
+    PAYMENT_STATUS_OPTIONS.find((opt) => opt.value === value) ||
+    PAYMENT_STATUS_OPTIONS[0]
 
   const isSmall = size === 'sm'
 
   return (
     <Select
       value={value}
-      onValueChange={(val) => onChange(val as AppointmentStatus)}
+      onValueChange={(val) => onChange(val as PaymentStatus)}
       disabled={disabled}
     >
       <SelectTrigger
         className={cn(
-          'w-auto border-0 font-medium dark:text-white',
+          'w-auto border-0 font-medium',
           isSmall
-            ? 'min-w-[110px] text-xs !h-7 px-2.5'
-            : 'min-w-[140px] text-sm !h-8',
+            ? 'min-w-[90px] text-xs !h-7 px-2.5'
+            : 'min-w-[120px] text-sm !h-8',
           currentOption.bgColor,
           currentOption.textColor
         )}
@@ -88,7 +82,7 @@ export default function StatusSelector({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {STATUS_OPTIONS.map((option) => (
+        {PAYMENT_STATUS_OPTIONS.map((option) => (
           <SelectItem
             key={option.value}
             value={option.value}
