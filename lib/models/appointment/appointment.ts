@@ -155,6 +155,7 @@ export interface AppointmentWithDetails extends Appointment {
       name: string
       description: string | null
       category_id: string | null
+      tax_rate: number | null
       service_category?: {
         id: string
         name: string

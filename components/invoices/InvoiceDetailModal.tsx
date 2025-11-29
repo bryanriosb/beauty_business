@@ -123,7 +123,16 @@ export default function InvoiceDetailModal({
                 <tbody className="divide-y">
                   {invoice.items.map((item, index) => (
                     <tr key={index}>
-                      <td className="p-3">{item.name}</td>
+                      <td className="p-3">
+                        <div>{item.name}</div>
+                        {item.tax_rate !== null && item.tax_rate !== undefined && item.tax_rate > 0 ? (
+                          <span className="text-xs text-primary">
+                            IVA {item.tax_rate}% ({formatCurrency((item.tax_cents || 0) / 100)})
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Sin IVA</span>
+                        )}
+                      </td>
                       <td className="p-3 text-center">{item.quantity}</td>
                       <td className="p-3 text-right">
                         {formatCurrency(item.unit_price_cents / 100)}
@@ -141,15 +150,15 @@ export default function InvoiceDetailModal({
           <div className="flex justify-end">
             <div className="w-64 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-muted-foreground">Subtotal (sin IVA)</span>
                 <span>{formatCurrency(invoice.subtotal_cents / 100)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  IVA ({invoice.tax_rate}%)
-                </span>
-                <span>{formatCurrency(invoice.tax_cents / 100)}</span>
-              </div>
+              {invoice.tax_cents > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">IVA</span>
+                  <span>{formatCurrency(invoice.tax_cents / 100)}</span>
+                </div>
+              )}
               {invoice.discount_cents > 0 && (
                 <div className="flex justify-between text-sm text-green-600">
                   <span>Descuento</span>

@@ -85,8 +85,6 @@ const IDENTIFICATION_TYPES = [
   { value: 'PASSPORT', label: 'Pasaporte' },
 ]
 
-const TAX_RATE = 19
-
 const getDefaultFormData = (
   invoice?: Invoice | null,
   nextInvoiceNumber?: string
@@ -137,14 +135,17 @@ export default function InvoiceModal({
   }
 
   const calculations = useMemo(() => {
-    // Los precios ya incluyen IVA, calcular base e impuesto desde el total
     const totalCents = formData.items.reduce(
       (sum, item) => sum + item.total_cents,
       0
     )
-    const subtotalCents = Math.round(totalCents / (1 + TAX_RATE / 100))
-    const taxCents = totalCents - subtotalCents
-    return { subtotalCents, taxCents, totalCents }
+    const taxCents = formData.items.reduce(
+      (sum, item) => sum + (item.tax_cents || 0),
+      0
+    )
+    const subtotalCents = totalCents - taxCents
+    const avgTaxRate = subtotalCents > 0 ? Math.round((taxCents / subtotalCents) * 100) : 0
+    return { subtotalCents, taxCents, totalCents, avgTaxRate }
   }, [formData.items])
 
   const handleSubmit = async () => {
@@ -200,7 +201,7 @@ export default function InvoiceModal({
           notes: formData.notes.trim() || null,
           items: formData.items,
           subtotal_cents: calculations.subtotalCents,
-          tax_rate: TAX_RATE,
+          tax_rate: calculations.avgTaxRate,
           tax_cents: calculations.taxCents,
           total_cents: calculations.totalCents,
           issued_at:
@@ -372,13 +373,15 @@ export default function InvoiceModal({
 
           <div className="space-y-2 bg-muted/50 p-4 rounded-lg">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal (Base)</span>
+              <span className="text-muted-foreground">Subtotal (sin IVA)</span>
               <span>{formatCurrency(calculations.subtotalCents / 100)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">IVA ({TAX_RATE}%)</span>
-              <span>{formatCurrency(calculations.taxCents / 100)}</span>
-            </div>
+            {calculations.taxCents > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">IVA</span>
+                <span>{formatCurrency(calculations.taxCents / 100)}</span>
+              </div>
+            )}
             <Separator className="my-2" />
             <div className="flex justify-between font-semibold">
               <span>Total</span>

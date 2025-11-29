@@ -20,6 +20,7 @@ import { FieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import Loading from '@/components/ui/loading'
 import { LogIn } from 'lucide-react'
+import Image from 'next/image'
 
 const formSchema = z.object({
   username: z
@@ -62,12 +63,11 @@ export default function SignInPage() {
         return
       }
 
-        toast.success('Auténticacion exitosa')
-          setTimeout(() => {
+      toast.success('Auténticacion exitosa')
+      setTimeout(() => {
         console.log('Redirecting to /admin')
         router.push('/admin')
       }, 2000)
-
     } catch (error) {
       toast.error('Ocurrió un error. Por favor, intenta de nuevo.')
       setIsLoading(false)
@@ -162,8 +162,8 @@ export default function SignInPage() {
 
       {/* Columna derecha - Imagen */}
       <div className="relative hidden md:block">
-        <img
-          src="https://images.unsplash.com/photo-1695527081874-b674c46f40fb?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop"
+        <Image
+          src="/photo-login.png"
           alt="Beauty salon"
           className="absolute inset-0 h-full w-full object-cover"
         />

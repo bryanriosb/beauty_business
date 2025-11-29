@@ -34,6 +34,7 @@ export interface SelectedService {
   price_cents: number
   original_price_cents: number
   duration_minutes: number
+  tax_rate: number | null
   has_custom_price?: boolean
 }
 
@@ -106,6 +107,7 @@ export function MultiServiceSelector({
           price_cents: service.price_cents,
           original_price_cents: service.price_cents,
           duration_minutes: service.duration_minutes,
+          tax_rate: service.tax_rate,
           has_custom_price: false,
         },
       ])

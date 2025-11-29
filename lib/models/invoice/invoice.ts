@@ -6,6 +6,8 @@ export interface InvoiceItem {
   quantity: number
   unit_price_cents: number
   total_cents: number
+  tax_rate: number | null
+  tax_cents: number
 }
 
 export interface Invoice {

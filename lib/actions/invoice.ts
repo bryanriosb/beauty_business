@@ -182,7 +182,8 @@ export async function createInvoiceFromAppointmentAction(
           duration_minutes,
           service:services (
             id,
-            name
+            name,
+            tax_rate
           )
         )
       `)
@@ -231,19 +232,31 @@ export async function createInvoiceFromAppointmentAction(
 
     const userProfile = businessCustomer?.user_profile as any
 
-    const items = (appointment.appointment_services || []).map((as: any) => ({
-      service_id: as.service_id,
-      name: as.service?.name || 'Servicio',
-      quantity: 1,
-      unit_price_cents: as.price_at_booking_cents,
-      total_cents: as.price_at_booking_cents,
-    }))
+    const items = (appointment.appointment_services || []).map((as: any) => {
+      const serviceTaxRate = as.service?.tax_rate ?? null
+      const totalCentsItem = as.price_at_booking_cents
+      let taxCentsItem = 0
+
+      if (serviceTaxRate !== null && serviceTaxRate > 0) {
+        const subtotalItem = Math.round(totalCentsItem / (1 + serviceTaxRate / 100))
+        taxCentsItem = totalCentsItem - subtotalItem
+      }
+
+      return {
+        service_id: as.service_id,
+        name: as.service?.name || 'Servicio',
+        quantity: 1,
+        unit_price_cents: as.price_at_booking_cents,
+        total_cents: as.price_at_booking_cents,
+        tax_rate: serviceTaxRate,
+        tax_cents: taxCentsItem,
+      }
+    })
 
     const totalCents = items.reduce((sum: number, item: any) => sum + item.total_cents, 0)
-    const taxRate = 19
-    // Precios ya incluyen IVA, calcular base e impuesto desde el total
-    const subtotalCents = Math.round(totalCents / (1 + taxRate / 100))
-    const taxCents = totalCents - subtotalCents
+    const taxCents = items.reduce((sum: number, item: any) => sum + item.tax_cents, 0)
+    const subtotalCents = totalCents - taxCents
+    const taxRate = taxCents > 0 ? Math.round((taxCents / subtotalCents) * 100) : 0
 
     const customerAddress = userProfile
       ? `${userProfile.city || ''}, ${userProfile.state || ''}`.trim().replace(/^,\s*|,\s*$/g, '')

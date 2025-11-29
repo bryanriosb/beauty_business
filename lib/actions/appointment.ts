@@ -74,6 +74,7 @@ export async function fetchAppointmentsAction(params?: {
             name,
             description,
             category_id,
+            tax_rate,
             service_category:service_categories(
               id,
               name,
@@ -212,6 +213,7 @@ export async function getAppointmentByIdAction(
             name,
             description,
             category_id,
+            tax_rate,
             service_category:service_categories(
               id,
               name,

@@ -33,7 +33,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CreatableCombobox, type ComboboxOption } from '@/components/ui/creatable-combobox'
+import {
+  CreatableCombobox,
+  type ComboboxOption,
+} from '@/components/ui/creatable-combobox'
 import type {
   Service,
   ServiceInsert,
@@ -47,10 +50,14 @@ import {
   mapServiceSuppliesToItems,
   type SupplyItem,
 } from '@/components/services/ServiceSuppliesSection'
-import { fetchServiceSuppliesAction, updateServiceSuppliesAction } from '@/lib/actions/service-supply'
+import {
+  fetchServiceSuppliesAction,
+  updateServiceSuppliesAction,
+} from '@/lib/actions/service-supply'
 import { createServiceCategoryAction } from '@/lib/actions/service'
 import { BusinessStorageService } from '@/lib/services/business/business-storage-service'
 import { toast } from 'sonner'
+import { NumericInput } from '../ui/numeric-input'
 
 const formSchema = z.object({
   business_id: z.string().min(1, 'Selecciona una sucursal'),
@@ -61,6 +68,7 @@ const formSchema = z.object({
   duration_minutes: z.number().min(1, 'La duración debe ser al menos 1 minuto'),
   is_featured: z.boolean(),
   image_url: z.string().optional().or(z.literal('')),
+  has_tax: z.boolean(),
 })
 
 type ServiceFormValues = z.infer<typeof formSchema>
@@ -99,7 +107,9 @@ export function ServiceModal({
     label: cat.name,
   }))
 
-  const handleCreateCategory = async (name: string): Promise<{ value: string; label: string } | null> => {
+  const handleCreateCategory = async (
+    name: string
+  ): Promise<{ value: string; label: string } | null> => {
     const result = await createServiceCategoryAction(name)
     if (result.success && result.data) {
       toast.success(`Categoría "${result.data.name}" creada`)
@@ -121,6 +131,7 @@ export function ServiceModal({
       duration_minutes: 30,
       is_featured: false,
       image_url: '',
+      has_tax: true,
     },
   })
 
@@ -135,6 +146,7 @@ export function ServiceModal({
         duration_minutes: service.duration_minutes,
         is_featured: service.is_featured,
         image_url: service.image_url || '',
+        has_tax: service.tax_rate !== null && service.tax_rate > 0,
       })
       // Cargar insumos del servicio
       const loadSupplies = async () => {
@@ -164,6 +176,7 @@ export function ServiceModal({
         duration_minutes: 30,
         is_featured: false,
         image_url: '',
+        has_tax: true,
       })
       setSupplies([])
     }
@@ -171,18 +184,24 @@ export function ServiceModal({
 
   const businessId = form.watch('business_id')
 
-  const handleImageUpload = useCallback(async (file: File) => {
-    const targetBusinessId = businessId || currentBusinessId
-    if (!targetBusinessId) {
-      toast.error('Selecciona una sucursal antes de subir la imagen')
-      return { success: false, error: 'No hay sucursal seleccionada' }
-    }
-    const result = await storageService.uploadServiceImage(file, targetBusinessId)
-    if (!result.success) {
-      toast.error(result.error || 'Error al subir la imagen')
-    }
-    return result
-  }, [businessId, currentBusinessId, storageService])
+  const handleImageUpload = useCallback(
+    async (file: File) => {
+      const targetBusinessId = businessId || currentBusinessId
+      if (!targetBusinessId) {
+        toast.error('Selecciona una sucursal antes de subir la imagen')
+        return { success: false, error: 'No hay sucursal seleccionada' }
+      }
+      const result = await storageService.uploadServiceImage(
+        file,
+        targetBusinessId
+      )
+      if (!result.success) {
+        toast.error(result.error || 'Error al subir la imagen')
+      }
+      return result
+    },
+    [businessId, currentBusinessId, storageService]
+  )
 
   const onSubmit = async (data: ServiceFormValues) => {
     setIsSubmitting(true)
@@ -196,6 +215,7 @@ export function ServiceModal({
         duration_minutes: data.duration_minutes,
         is_featured: data.is_featured,
         image_url: data.image_url || null,
+        tax_rate: data.has_tax ? 19 : null,
       }
       await onSave(payload)
 
@@ -342,16 +362,12 @@ export function ServiceModal({
                       Precio (COP) <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        step={100}
+                      <NumericInput
+                        className="w-full"
                         placeholder="50000"
                         disabled={isSubmitting}
                         value={field.value}
-                        onChange={(e) =>
-                          field.onChange(Number(e.target.value) || 0)
-                        }
+                        onChange={(value) => field.onChange(value || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -384,6 +400,32 @@ export function ServiceModal({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="has_tax"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>
+                      Aplica IVA <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      {field.value
+                        ? 'Este servicio tiene IVA del 19%'
+                        : 'Este servicio está exento de IVA'}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -436,7 +478,8 @@ export function ServiceModal({
                 />
                 {supplies.length > 0 && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    El precio base del servicio puede ser 0 si se cobra por insumos
+                    El precio base del servicio puede ser 0 si se cobra por
+                    insumos
                   </p>
                 )}
               </div>

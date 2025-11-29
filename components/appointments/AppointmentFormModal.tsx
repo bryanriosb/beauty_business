@@ -136,24 +136,31 @@ export default function AppointmentFormModal({
     return selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0)
   }, [selectedServices])
 
-  const totalServicesPrice = useMemo(() => {
-    return selectedServices.reduce((sum, s) => sum + s.price_cents, 0)
-  }, [selectedServices])
-
   const totalSuppliesPrice = useMemo(() => {
     return calculateSuppliesTotal(supplies)
   }, [supplies])
 
   const priceCalculations = useMemo(() => {
-    const servicesSubtotal = Math.round(totalServicesPrice / 1.19)
-    const servicesTax = totalServicesPrice - servicesSubtotal
-    // Supplies cost is added without IVA (cost price)
+    let servicesTax = 0
+    let servicesSubtotal = 0
+
+    selectedServices.forEach((service) => {
+      if (service.tax_rate !== null && service.tax_rate > 0) {
+        const subtotalItem = Math.round(service.price_cents / (1 + service.tax_rate / 100))
+        const taxItem = service.price_cents - subtotalItem
+        servicesSubtotal += subtotalItem
+        servicesTax += taxItem
+      } else {
+        servicesSubtotal += service.price_cents
+      }
+    })
+
     const subtotal = servicesSubtotal + totalSuppliesPrice
     const tax = servicesTax
     const discount = Math.round(servicesSubtotal * (discountPercent / 100))
     const total = subtotal + tax - discount
     return { subtotal, tax, discount, total, suppliesCost: totalSuppliesPrice }
-  }, [totalServicesPrice, totalSuppliesPrice, discountPercent])
+  }, [selectedServices, totalSuppliesPrice, discountPercent])
 
   const firstServiceId =
     selectedServices.length > 0 ? selectedServices[0].id : ''
@@ -203,7 +210,8 @@ export default function AppointmentFormModal({
             name: as.service.name,
             duration_minutes: as.duration_minutes,
             price_cents: as.price_at_booking_cents,
-            original_price_cents: as.price_at_booking_cents, // Use booking price as original since we don't have service base price here
+            original_price_cents: as.price_at_booking_cents,
+            tax_rate: as.service.tax_rate,
             has_custom_price: false,
           }))
         setSelectedServices(servicesFromAppointment)
@@ -590,7 +598,7 @@ export default function AppointmentFormModal({
                         <span>
                           $
                           {(
-                            Math.round(totalServicesPrice / 1.19) / 100
+                            (priceCalculations.subtotal - priceCalculations.suppliesCost) / 100
                           ).toLocaleString('es-CO', {
                             minimumFractionDigits: 0,
                           })}

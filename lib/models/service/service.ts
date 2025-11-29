@@ -14,6 +14,7 @@ export interface Service {
   duration_minutes: number
   is_featured: boolean
   image_url: string | null
+  tax_rate: number | null
   created_at: string
   updated_at: string
 }
@@ -28,6 +29,7 @@ export class Service implements Service {
   duration_minutes: number
   is_featured: boolean
   image_url: string | null
+  tax_rate: number | null
   created_at: string
   updated_at: string
 
@@ -41,12 +43,17 @@ export class Service implements Service {
     this.duration_minutes = data.duration_minutes
     this.is_featured = data.is_featured
     this.image_url = data.image_url
+    this.tax_rate = data.tax_rate
     this.created_at = data.created_at
     this.updated_at = data.updated_at
   }
 
   get price(): number {
     return this.price_cents / 100
+  }
+
+  get hasTax(): boolean {
+    return this.tax_rate !== null && this.tax_rate > 0
   }
 }
 
@@ -59,6 +66,7 @@ export interface ServiceInsert {
   duration_minutes: number
   is_featured?: boolean
   image_url?: string | null
+  tax_rate?: number | null
 }
 
 export interface ServiceUpdate {
@@ -70,6 +78,7 @@ export interface ServiceUpdate {
   duration_minutes?: number
   is_featured?: boolean
   image_url?: string | null
+  tax_rate?: number | null
 }
 
 export interface ServiceWithCategory extends Service {
