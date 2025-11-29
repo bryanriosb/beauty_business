@@ -3,8 +3,10 @@ import type { DayOfWeek } from '@/lib/types/enums'
 export interface Specialist {
   id: string
   business_id: string | null
+  user_profile_id: string | null
   first_name: string
   last_name: string | null
+  email: string | null
   username: string | null
   specialty: string | null
   profile_picture_url: string | null
@@ -23,8 +25,10 @@ export function getSpecialistFullName(specialist: Specialist): string {
 
 export interface SpecialistInsert {
   business_id?: string | null
+  user_profile_id?: string | null
   first_name: string
   last_name?: string | null
+  email?: string | null
   username?: string | null
   specialty?: string | null
   profile_picture_url?: string | null
@@ -34,8 +38,10 @@ export interface SpecialistInsert {
 
 export interface SpecialistUpdate {
   business_id?: string | null
+  user_profile_id?: string | null
   first_name?: string
   last_name?: string | null
+  email?: string | null
   username?: string | null
   specialty?: string | null
   profile_picture_url?: string | null

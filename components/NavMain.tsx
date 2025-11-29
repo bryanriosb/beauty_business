@@ -29,6 +29,13 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
+import type { UserRole } from '@/const/roles'
+
+export interface NavSubItem {
+  title: string
+  url: string
+  allowedRoles?: UserRole[]
+}
 
 export interface NavItem {
   title: string
@@ -36,21 +43,23 @@ export interface NavItem {
   icon?: LucideIcon
   isActive?: boolean
   badge?: React.ReactNode
-  items?: {
-    title: string
-    url: string
-  }[]
+  items?: NavSubItem[]
 }
 
 function CollapsedMenuItem({
   item,
   pathname,
   isMobile,
+  userRole,
 }: {
   item: NavItem
   pathname: string
   isMobile: boolean
+  userRole?: UserRole | null
 }) {
+  const filteredItems = item.items?.filter(
+    (subItem) => !subItem.allowedRoles || (userRole && subItem.allowedRoles.includes(userRole))
+  )
   const [dropdownOpen, setDropdownOpen] = React.useState(false)
 
   const hasActiveSubItem =
@@ -85,7 +94,7 @@ function CollapsedMenuItem({
             sideOffset={4}
             className="min-w-56 rounded-lg"
           >
-            {item.items?.map((subItem) => (
+            {filteredItems?.map((subItem) => (
               <DropdownMenuItem key={subItem.title} asChild>
                 <Link href={subItem.url}>{subItem.title}</Link>
               </DropdownMenuItem>
@@ -143,7 +152,7 @@ function CollapsedMenuItem({
           sideOffset={4}
           className="min-w-56 rounded-lg"
         >
-          {item.items?.map((subItem) => (
+          {filteredItems?.map((subItem) => (
             <DropdownMenuItem key={subItem.title} asChild>
               <Link href={subItem.url}>{subItem.title}</Link>
             </DropdownMenuItem>
@@ -157,9 +166,11 @@ function CollapsedMenuItem({
 export function NavMain({
   items,
   label,
+  userRole,
 }: {
   items: NavItem[]
   label?: string
+  userRole?: UserRole | null
 }) {
   const pathname = usePathname()
   const { isMobile, open } = useSidebar()
@@ -220,11 +231,16 @@ export function NavMain({
                 item={item}
                 pathname={pathname}
                 isMobile={isMobile}
+                userRole={userRole}
               />
             )
           }
 
           // Con subítems y sidebar expandido: usar Collapsible
+          const filteredSubItems = item.items?.filter(
+            (subItem) => !subItem.allowedRoles || (userRole && subItem.allowedRoles.includes(userRole))
+          )
+
           return (
             <Collapsible
               key={item.title}
@@ -242,7 +258,7 @@ export function NavMain({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {item.items?.map((subItem) => {
+                    {filteredSubItems?.map((subItem) => {
                       const isSubItemActive = pathname === subItem.url
                       return (
                         <SidebarMenuSubItem

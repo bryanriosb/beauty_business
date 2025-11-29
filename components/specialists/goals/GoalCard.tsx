@@ -19,9 +19,9 @@ import { GOAL_TYPE_LABELS, GOAL_PERIOD_LABELS, calculateGoalProgress } from '@/l
 interface GoalCardProps {
   specialist: Specialist
   goal?: SpecialistGoal | null
-  onCreateGoal: (specialist: Specialist) => void
-  onEditGoal: (goal: SpecialistGoal, specialist: Specialist) => void
-  onDeleteGoal: (goalId: string) => void
+  onCreateGoal?: (specialist: Specialist) => void
+  onEditGoal?: (goal: SpecialistGoal, specialist: Specialist) => void
+  onDeleteGoal?: (goalId: string) => void
 }
 
 export function GoalCard({
@@ -62,7 +62,7 @@ export function GoalCard({
             <p className="text-xs text-muted-foreground/70">@{username}</p>
           </div>
 
-          {goal && (
+          {goal && (onEditGoal || onDeleteGoal) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -70,17 +70,21 @@ export function GoalCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEditGoal(goal, specialist)}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onDeleteGoal(goal.id)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Eliminar
-                </DropdownMenuItem>
+                {onEditGoal && (
+                  <DropdownMenuItem onClick={() => onEditGoal(goal, specialist)}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </DropdownMenuItem>
+                )}
+                {onDeleteGoal && (
+                  <DropdownMenuItem
+                    onClick={() => onDeleteGoal(goal.id)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -115,7 +119,7 @@ export function GoalCard({
                 </span>
               </div>
             </>
-          ) : (
+          ) : onCreateGoal ? (
             <Button
               variant="outline"
               size="sm"
@@ -125,6 +129,10 @@ export function GoalCard({
               <Target className="h-4 w-4 mr-2" />
               Definir meta
             </Button>
+          ) : (
+            <div className="text-center text-sm text-muted-foreground py-2">
+              Sin meta asignada
+            </div>
           )}
         </div>
       </CardContent>

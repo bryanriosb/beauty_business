@@ -61,10 +61,10 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         {filteredAppItems.length > 0 && (
-          <NavMain items={filteredAppItems} label="Aplicación" />
+          <NavMain items={filteredAppItems} label="Aplicación" userRole={role} />
         )}
         {filteredSystemItems.length > 0 && (
-          <NavMain items={filteredSystemItems} label="Sistema" />
+          <NavMain items={filteredSystemItems} label="Sistema" userRole={role} />
         )}
       </SidebarContent>
       <SidebarFooter>

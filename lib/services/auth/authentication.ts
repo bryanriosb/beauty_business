@@ -28,6 +28,7 @@ export async function authenticate(
       business_id: user.business_id || user.businesses?.[0]?.id || null,
       business_account_id: user.business_account_id,
       user_profile_id: user.user_profile_id,
+      specialist_id: user.specialist_id || null,
       businesses: user.businesses,
     }
 

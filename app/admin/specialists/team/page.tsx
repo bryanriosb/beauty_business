@@ -10,7 +10,7 @@ import SpecialistService from '@/lib/services/specialist/specialist-service'
 import SpecialistGoalService from '@/lib/services/specialist/specialist-goal-service'
 import { SpecialistGrid } from '@/components/specialists/SpecialistGrid'
 import { SpecialistFilters } from '@/components/specialists/SpecialistFilters'
-import { SpecialistModal } from '@/components/specialists/SpecialistModal'
+import { SpecialistModal, type SpecialistCredentials, type SpecialistCredentialsUpdate } from '@/components/specialists/SpecialistModal'
 import { SpecialistDetailPanel } from '@/components/specialists/SpecialistDetailPanel'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import { toast } from 'sonner'
@@ -27,6 +27,8 @@ import { fetchServiceCategoriesAction } from '@/lib/actions/service'
 import {
   fetchSpecialistServiceCategoriesAction,
   updateSpecialistServiceCategoriesAction,
+  updateSpecialistCredentialsAction,
+  syncSpecialistProfilePictureAction,
 } from '@/lib/actions/specialist'
 import { calculateGoalProgress } from '@/lib/models/specialist/specialist-goal'
 import type {
@@ -35,10 +37,12 @@ import type {
 } from '@/components/specialists/SpecialistCard'
 
 export default function SpecialistsTeamPage() {
-  const { role } = useCurrentUser()
+  const { role, specialistId: currentUserSpecialistId } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
   const specialistService = useMemo(() => new SpecialistService(), [])
   const goalService = useMemo(() => new SpecialistGoalService(), [])
+
+  const isProfessional = role === USER_ROLES.PROFESSIONAL
 
   const [specialists, setSpecialists] = useState<Specialist[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -75,7 +79,7 @@ export default function SpecialistsTeamPage() {
   const activeBusinessId = activeBusiness?.id
 
   const loadSpecialists = useCallback(async () => {
-    if (!isCompanyAdmin && !activeBusinessId) return
+    if (!isCompanyAdmin && !activeBusinessId && !isProfessional) return
 
     setIsLoading(true)
     try {
@@ -100,7 +104,12 @@ export default function SpecialistsTeamPage() {
         fetchServiceCategoriesAction(),
       ])
 
-      setSpecialists(result.data)
+      // Si es profesional, filtrar solo su propio registro
+      const filteredData = isProfessional && currentUserSpecialistId
+        ? result.data.filter(s => s.id === currentUserSpecialistId)
+        : result.data
+
+      setSpecialists(filteredData)
       setBusinessHours(hours)
       setServiceCategories(categories)
 
@@ -128,7 +137,7 @@ export default function SpecialistsTeamPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [specialistService, goalService, isCompanyAdmin, activeBusinessId])
+  }, [specialistService, goalService, isCompanyAdmin, activeBusinessId, isProfessional, currentUserSpecialistId])
 
   useEffect(() => {
     loadSpecialists()
@@ -201,7 +210,9 @@ export default function SpecialistsTeamPage() {
   const handleSaveSpecialist = async (
     data: SpecialistInsert | SpecialistUpdate,
     availability: Omit<SpecialistAvailability, 'id' | 'specialist_id'>[],
-    categoryIds: string[]
+    categoryIds: string[],
+    credentials?: SpecialistCredentials,
+    credentialsUpdate?: SpecialistCredentialsUpdate
   ) => {
     try {
       let specialistId: string
@@ -215,15 +226,39 @@ export default function SpecialistsTeamPage() {
           throw new Error(result.error)
         }
         specialistId = selectedSpecialist.id
+
+        if (data.profile_picture_url !== selectedSpecialist.profile_picture_url) {
+          await syncSpecialistProfilePictureAction(specialistId, data.profile_picture_url || null)
+        }
+
+        if (credentialsUpdate && (credentialsUpdate.newEmail || credentialsUpdate.newPassword)) {
+          const credResult = await updateSpecialistCredentialsAction({
+            specialistId,
+            newEmail: credentialsUpdate.newEmail,
+            newPassword: credentialsUpdate.newPassword,
+          })
+          if (!credResult.success) {
+            toast.error(credResult.error || 'Error al actualizar credenciales')
+          } else if (credentialsUpdate.newEmail || credentialsUpdate.newPassword) {
+            toast.success('Credenciales actualizadas')
+          }
+        }
+
         toast.success('Especialista actualizado correctamente')
       } else {
-        const result = await specialistService.createItem(
-          data as SpecialistInsert
-        )
+        const result = await specialistService.createWithAuth({
+          specialistData: data as SpecialistInsert,
+          credentials,
+        })
         if (!result.success || !result.data) {
           throw new Error(result.error)
         }
         specialistId = result.data.id
+
+        if (data.profile_picture_url) {
+          await syncSpecialistProfilePictureAction(specialistId, data.profile_picture_url)
+        }
+
         toast.success('Especialista creado correctamente')
       }
 
@@ -286,29 +321,33 @@ export default function SpecialistsTeamPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Especialistas ({filteredSpecialists.length})
+              {isProfessional ? 'Mi Perfil' : `Especialistas (${filteredSpecialists.length})`}
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Gestiona el equipo de especialistas
+              {isProfessional ? 'Gestiona tu información profesional' : 'Gestiona el equipo de especialistas'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" onClick={handleCreateSpecialist}>
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Especialista
-            </Button>
-          </div>
+          {!isProfessional && (
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={handleCreateSpecialist}>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Especialista
+              </Button>
+            </div>
+          )}
         </div>
 
-        <SpecialistFilters
-          search={search}
-          onSearchChange={setSearch}
-          specialtyFilter={specialtyFilter}
-          onSpecialtyFilterChange={setSpecialtyFilter}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          specialties={specialties}
-        />
+        {!isProfessional && (
+          <SpecialistFilters
+            search={search}
+            onSearchChange={setSearch}
+            specialtyFilter={specialtyFilter}
+            onSpecialtyFilterChange={setSpecialtyFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            specialties={specialties}
+          />
+        )}
 
         <div className="flex-1 overflow-auto">
           <SpecialistGrid
@@ -316,7 +355,7 @@ export default function SpecialistsTeamPage() {
             selectedId={detailSpecialistId}
             onSelect={handleSelectSpecialist}
             onEdit={handleEditSpecialist}
-            onDelete={handleDeleteSpecialist}
+            onDelete={isProfessional ? undefined : handleDeleteSpecialist}
             isLoading={isLoading}
             currentAppointments={currentAppointments}
             goalProgress={goalProgress}

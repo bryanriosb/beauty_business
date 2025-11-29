@@ -116,6 +116,14 @@ export async function getSpecialistByIdAction(
   }
 }
 
+export interface CreateSpecialistWithAuthData {
+  specialistData: SpecialistInsert
+  credentials?: {
+    email: string
+    password: string
+  }
+}
+
 export async function createSpecialistAction(
   data: SpecialistInsert
 ): Promise<{ success: boolean; data?: Specialist; error?: string }> {
@@ -129,6 +137,70 @@ export async function createSpecialistAction(
     return { success: true, data: specialist }
   } catch (error: any) {
     console.error('Error creating specialist:', error)
+    return { success: false, error: error.message || 'Error desconocido' }
+  }
+}
+
+export async function createSpecialistWithAuthAction(
+  input: CreateSpecialistWithAuthData
+): Promise<{ success: boolean; data?: Specialist; error?: string }> {
+  const { specialistData, credentials } = input
+
+  try {
+    const supabase = await getSupabaseAdminClient()
+
+    let userProfileId: string | null = null
+
+    if (credentials?.email && credentials?.password) {
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: credentials.email,
+        password: credentials.password,
+        email_confirm: true,
+        user_metadata: {
+          name: `${specialistData.first_name} ${specialistData.last_name || ''}`.trim(),
+        },
+      })
+
+      if (authError || !authData.user) {
+        console.error('Error creating auth user:', authError)
+        return { success: false, error: authError?.message || 'Error al crear usuario de autenticación' }
+      }
+
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users_profile')
+        .insert({
+          user_id: authData.user.id,
+          role: 'professional',
+        })
+        .select('id')
+        .single()
+
+      if (profileError || !userProfile) {
+        await supabase.auth.admin.deleteUser(authData.user.id)
+        console.error('Error creating user profile:', profileError)
+        return { success: false, error: profileError?.message || 'Error al crear perfil de usuario' }
+      }
+
+      userProfileId = userProfile.id
+    }
+
+    const specialistToInsert = {
+      ...specialistData,
+      user_profile_id: userProfileId,
+    }
+
+    const specialist = await insertRecord<Specialist>('specialists', specialistToInsert)
+
+    if (!specialist) {
+      if (userProfileId) {
+        await supabase.from('users_profile').delete().eq('id', userProfileId)
+      }
+      return { success: false, error: 'Error al crear el especialista' }
+    }
+
+    return { success: true, data: specialist }
+  } catch (error: any) {
+    console.error('Error creating specialist with auth:', error)
     return { success: false, error: error.message || 'Error desconocido' }
   }
 }
@@ -147,6 +219,78 @@ export async function updateSpecialistAction(
     return { success: true, data: specialist }
   } catch (error: any) {
     console.error('Error updating specialist:', error)
+    return { success: false, error: error.message || 'Error desconocido' }
+  }
+}
+
+export interface UpdateSpecialistCredentialsData {
+  specialistId: string
+  newEmail?: string
+  newPassword?: string
+}
+
+export async function updateSpecialistCredentialsAction(
+  input: UpdateSpecialistCredentialsData
+): Promise<{ success: boolean; error?: string }> {
+  const { specialistId, newEmail, newPassword } = input
+
+  if (!newEmail && !newPassword) {
+    return { success: true }
+  }
+
+  try {
+    const supabase = await getSupabaseAdminClient()
+
+    const { data: specialist } = await supabase
+      .from('specialists')
+      .select('user_profile_id, email')
+      .eq('id', specialistId)
+      .single()
+
+    if (!specialist?.user_profile_id) {
+      return { success: false, error: 'El especialista no tiene cuenta de usuario asociada' }
+    }
+
+    const { data: userProfile } = await supabase
+      .from('users_profile')
+      .select('user_id')
+      .eq('id', specialist.user_profile_id)
+      .single()
+
+    if (!userProfile?.user_id) {
+      return { success: false, error: 'No se encontró el usuario de autenticación' }
+    }
+
+    const updateData: { email?: string; password?: string } = {}
+    if (newEmail && newEmail !== specialist.email) {
+      updateData.email = newEmail
+    }
+    if (newPassword) {
+      updateData.password = newPassword
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      const { error: authError } = await supabase.auth.admin.updateUserById(
+        userProfile.user_id,
+        updateData
+      )
+
+      if (authError) {
+        console.error('Error updating auth user:', authError)
+        return { success: false, error: authError.message }
+      }
+
+      if (newEmail) {
+        await supabase
+          .from('specialists')
+          .update({ email: newEmail })
+          .eq('id', specialistId)
+      }
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error updating specialist credentials:', error)
     return { success: false, error: error.message || 'Error desconocido' }
   }
 }
@@ -370,5 +514,59 @@ export async function getCurrentAppointmentsForBusinessAction(
   } catch (error) {
     console.error('Error fetching current appointments:', error)
     return []
+  }
+}
+
+export async function syncSpecialistProfilePictureAction(
+  specialistId: string,
+  profilePictureUrl: string | null
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await getSupabaseAdminClient()
+
+    const { data: specialist, error: fetchError } = await supabase
+      .from('specialists')
+      .select('user_profile_id')
+      .eq('id', specialistId)
+      .single()
+
+    if (fetchError || !specialist) {
+      return { success: false, error: 'Especialista no encontrado' }
+    }
+
+    const { error: updateSpecialistError } = await supabase
+      .from('specialists')
+      .update({ profile_picture_url: profilePictureUrl })
+      .eq('id', specialistId)
+
+    if (updateSpecialistError) {
+      return { success: false, error: updateSpecialistError.message }
+    }
+
+    if (specialist.user_profile_id) {
+      const { data: userProfile, error: profileFetchError } = await supabase
+        .from('users_profile')
+        .select('user_id')
+        .eq('id', specialist.user_profile_id)
+        .single()
+
+      if (!profileFetchError && userProfile) {
+        await supabase
+          .from('users_profile')
+          .update({ profile_picture_url: profilePictureUrl })
+          .eq('id', specialist.user_profile_id)
+
+        if (userProfile.user_id) {
+          await supabase.auth.admin.updateUserById(userProfile.user_id, {
+            user_metadata: { avatar_url: profilePictureUrl },
+          })
+        }
+      }
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error syncing specialist profile picture:', error)
+    return { success: false, error: error.message || 'Error desconocido' }
   }
 }

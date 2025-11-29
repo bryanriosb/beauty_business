@@ -15,10 +15,12 @@ import type { Specialist } from '@/lib/models/specialist/specialist'
 import type { SpecialistGoal, SpecialistGoalInsert } from '@/lib/models/specialist/specialist-goal'
 
 export default function SpecialistsGoalsPage() {
-  const { role } = useCurrentUser()
+  const { role, specialistId: currentUserSpecialistId } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
   const specialistService = useMemo(() => new SpecialistService(), [])
   const goalService = useMemo(() => new SpecialistGoalService(), [])
+
+  const isProfessional = role === USER_ROLES.PROFESSIONAL
 
   const [specialists, setSpecialists] = useState<Specialist[]>([])
   const [goals, setGoals] = useState<Map<string, SpecialistGoal>>(new Map())
@@ -35,7 +37,7 @@ export default function SpecialistsGoalsPage() {
   const activeBusinessId = activeBusiness?.id
 
   const loadData = useCallback(async () => {
-    if (!isCompanyAdmin && !activeBusinessId) return
+    if (!isCompanyAdmin && !activeBusinessId && !isProfessional) return
 
     setIsLoading(true)
     try {
@@ -49,7 +51,12 @@ export default function SpecialistsGoalsPage() {
         activeBusinessId ? goalService.getActiveGoalsForBusiness(activeBusinessId) : Promise.resolve([]),
       ])
 
-      setSpecialists(specialistsResult.data)
+      // Si es profesional, filtrar solo su propio registro
+      const filteredData = isProfessional && currentUserSpecialistId
+        ? specialistsResult.data.filter(s => s.id === currentUserSpecialistId)
+        : specialistsResult.data
+
+      setSpecialists(filteredData)
 
       const goalsMap = new Map<string, SpecialistGoal>()
       goalsResult.forEach((goal) => {
@@ -62,7 +69,7 @@ export default function SpecialistsGoalsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [specialistService, goalService, isCompanyAdmin, activeBusinessId])
+  }, [specialistService, goalService, isCompanyAdmin, activeBusinessId, isProfessional, currentUserSpecialistId])
 
   useEffect(() => {
     loadData()
@@ -154,25 +161,27 @@ export default function SpecialistsGoalsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
             <Target className="h-7 w-7" />
-            Metas de Especialistas
+            {isProfessional ? 'Mi Meta' : 'Metas de Especialistas'}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Define y da seguimiento a las metas de tu equipo
+            {isProfessional ? 'Visualiza el progreso de tu meta' : 'Define y da seguimiento a las metas de tu equipo'}
           </p>
         </div>
       </div>
 
-      <div className="px-1 py-4">
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar especialista..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      {!isProfessional && (
+        <div className="px-1 py-4">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar especialista..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex-1 overflow-auto">
         {isLoading ? (
@@ -185,30 +194,36 @@ export default function SpecialistsGoalsPage() {
           <>
             {specialistsWithGoals.length > 0 && (
               <div className="mb-6">
-                <h2 className="text-sm font-medium text-muted-foreground px-4 mb-2">
-                  Con metas activas ({specialistsWithGoals.length})
-                </h2>
+                {!isProfessional && (
+                  <h2 className="text-sm font-medium text-muted-foreground px-4 mb-2">
+                    Con metas activas ({specialistsWithGoals.length})
+                  </h2>
+                )}
                 <GoalGrid
                   specialists={specialistsWithGoals}
                   goals={goals}
                   onCreateGoal={handleCreateGoal}
                   onEditGoal={handleEditGoal}
                   onDeleteGoal={handleDeleteGoal}
+                  readOnly={isProfessional}
                 />
               </div>
             )}
 
             {specialistsWithoutGoals.length > 0 && (
               <div>
-                <h2 className="text-sm font-medium text-muted-foreground px-4 mb-2">
-                  Sin metas ({specialistsWithoutGoals.length})
-                </h2>
+                {!isProfessional && (
+                  <h2 className="text-sm font-medium text-muted-foreground px-4 mb-2">
+                    Sin metas ({specialistsWithoutGoals.length})
+                  </h2>
+                )}
                 <GoalGrid
                   specialists={specialistsWithoutGoals}
                   goals={goals}
                   onCreateGoal={handleCreateGoal}
                   onEditGoal={handleEditGoal}
                   onDeleteGoal={handleDeleteGoal}
+                  readOnly={isProfessional}
                 />
               </div>
             )}

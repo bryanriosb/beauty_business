@@ -2,6 +2,7 @@ import {
   fetchSpecialistsAction,
   getSpecialistByIdAction,
   createSpecialistAction,
+  createSpecialistWithAuthAction,
   updateSpecialistAction,
   deleteSpecialistAction,
   deleteSpecialistsAction,
@@ -10,7 +11,9 @@ import {
   getTodayAppointmentsForSpecialistAction,
   getCurrentAppointmentsForBusinessAction,
   type CurrentAppointmentData,
+  type CreateSpecialistWithAuthData,
 } from '@/lib/actions/specialist'
+import { uploadImageAction } from '@/lib/actions/storage'
 import type {
   Specialist,
   SpecialistInsert,
@@ -50,6 +53,46 @@ export default class SpecialistService {
     }
   }
 
+  async fetchItem(id: string): Promise<{ success: boolean; data?: Specialist; error?: string }> {
+    try {
+      const result = await getSpecialistByIdAction(id)
+      if (result) {
+        return { success: true, data: result }
+      }
+      return { success: false, error: 'Specialist not found' }
+    } catch (error: any) {
+      console.error('Error fetching specialist:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  async uploadAvatar(
+    specialistId: string,
+    file: File
+  ): Promise<{ success: boolean; data?: string; error?: string }> {
+    try {
+      // Get the specialist to find their business_id
+      const specialist = await getSpecialistByIdAction(specialistId)
+      if (!specialist?.business_id) {
+        return { success: false, error: 'Specialist or business not found' }
+      }
+
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('businessId', specialist.business_id)
+      formData.append('type', 'specialists')
+
+      const result = await uploadImageAction(formData)
+      if (result.success && result.url) {
+        return { success: true, data: result.url }
+      }
+      return { success: false, error: result.error }
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   async createItem(
     data: SpecialistInsert
   ): Promise<{ success: boolean; data?: Specialist; error?: string }> {
@@ -57,6 +100,17 @@ export default class SpecialistService {
       return await createSpecialistAction(data)
     } catch (error: any) {
       console.error('Error creating specialist:', error)
+      throw error
+    }
+  }
+
+  async createWithAuth(
+    input: CreateSpecialistWithAuthData
+  ): Promise<{ success: boolean; data?: Specialist; error?: string }> {
+    try {
+      return await createSpecialistWithAuthAction(input)
+    } catch (error: any) {
+      console.error('Error creating specialist with auth:', error)
       throw error
     }
   }

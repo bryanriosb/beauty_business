@@ -7,10 +7,11 @@ import type { SpecialistGoal } from '@/lib/models/specialist/specialist-goal'
 interface GoalGridProps {
   specialists: Specialist[]
   goals: Map<string, SpecialistGoal>
-  onCreateGoal: (specialist: Specialist) => void
-  onEditGoal: (goal: SpecialistGoal, specialist: Specialist) => void
-  onDeleteGoal: (goalId: string) => void
+  onCreateGoal?: (specialist: Specialist) => void
+  onEditGoal?: (goal: SpecialistGoal, specialist: Specialist) => void
+  onDeleteGoal?: (goalId: string) => void
   isLoading?: boolean
+  readOnly?: boolean
 }
 
 export function GoalGrid({
@@ -20,6 +21,7 @@ export function GoalGrid({
   onEditGoal,
   onDeleteGoal,
   isLoading,
+  readOnly,
 }: GoalGridProps) {
   if (isLoading) {
     return (
@@ -49,9 +51,9 @@ export function GoalGrid({
           key={specialist.id}
           specialist={specialist}
           goal={goals.get(specialist.id)}
-          onCreateGoal={onCreateGoal}
-          onEditGoal={onEditGoal}
-          onDeleteGoal={onDeleteGoal}
+          onCreateGoal={readOnly ? undefined : onCreateGoal}
+          onEditGoal={readOnly ? undefined : onEditGoal}
+          onDeleteGoal={readOnly ? undefined : onDeleteGoal}
         />
       ))}
     </div>

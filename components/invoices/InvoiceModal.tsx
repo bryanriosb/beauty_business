@@ -438,7 +438,7 @@ export default function InvoiceModal({
             {isSaving
               ? 'Guardando'
               : isEditing
-              ? 'Guardar cambios'
+              ? 'Actualizar'
               : 'Crear Factura'}
           </Button>
         </DialogFooter>

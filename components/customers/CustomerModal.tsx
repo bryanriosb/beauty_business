@@ -440,7 +440,7 @@ export default function CustomerModal({
             {isSaving
               ? 'Guardando'
               : isEditing
-              ? 'Guardar cambios'
+              ? 'Actualizar'
               : 'Crear Cliente'}
           </Button>
         </DialogFooter>

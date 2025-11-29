@@ -1,6 +1,7 @@
 export const USER_ROLES = {
   COMPANY_ADMIN: 'company_admin', // Admin de la empresa (crea negocios/salones)
   BUSINESS_ADMIN: 'business_admin', // Admin de un negocio/salón específico
+  PROFESSIONAL: 'professional', // Profesional/Especialista con acceso limitado
   EMPLOYEE: 'business_monitor', // Empleado/Especialista
   CUSTOMER: 'customer', // Cliente
 } as const
@@ -59,6 +60,33 @@ export const ROLE_PERMISSIONS = {
     canCreateInventoryMovement: true,
     canAdjustStock: true,
   },
+  [USER_ROLES.PROFESSIONAL]: {
+    canManageBusinesses: false,
+    canManageUsers: false,
+    canViewAllBusinesses: false,
+    canManageSettings: false,
+    canManageOwnBusiness: false,
+    canManageEmployees: false,
+    canViewDashboard: true,
+    canViewAppointments: true,
+    canManageAppointments: true,
+    canCreateService: true,
+    canEditService: true,
+    canDeleteService: false,
+    canCreateProduct: true,
+    canEditProduct: true,
+    canDeleteProduct: false,
+    canManageInventory: true,
+    canViewInventory: true,
+    canCreateInventoryMovement: true,
+    canAdjustStock: true,
+    canViewOwnSpecialistData: true,
+    canViewOwnGoals: true,
+    canViewCustomers: true,
+    canViewInvoices: true,
+    canViewReports: false,
+    canManageInvoiceSettings: false,
+  },
   [USER_ROLES.EMPLOYEE]: {
     canManageBusinesses: false,
     canManageUsers: false,
@@ -68,8 +96,8 @@ export const ROLE_PERMISSIONS = {
     canManageEmployees: false,
     canManageServices: false,
     canManageAppointments: false,
-    canViewOwnAppointments: true, // Ver sus propias citas
-    canManageOwnProfile: true, // Gestionar su perfil
+    canViewOwnAppointments: true,
+    canManageOwnProfile: true,
   },
   [USER_ROLES.CUSTOMER]: {
     canManageBusinesses: false,
@@ -94,14 +122,18 @@ export function hasPermission(role: UserRole, permission: string): boolean {
 
 // Enlaces del sidebar por rol
 export const SIDEBAR_ACCESS = {
-  dashboard: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
-  appointments: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
-  businesses: [USER_ROLES.COMPANY_ADMIN], // Solo company admin
-  services: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
-  specialists: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
-  customers: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  dashboard: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  appointments: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  businesses: [USER_ROLES.COMPANY_ADMIN],
+  services: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  products: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  inventory: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  specialists: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  customers: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  invoices: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
   reports: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   settings: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  invoiceSettings: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
 } as const
 
 export function canAccessRoute(

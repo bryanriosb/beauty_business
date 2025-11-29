@@ -27,7 +27,7 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form'
-import { Loader2, Clock, Briefcase, ChevronDown } from 'lucide-react'
+import { Loader2, Clock, Briefcase, ChevronDown, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -46,16 +46,39 @@ import type { ServiceCategory } from '@/lib/models/service/service'
 import type { DayOfWeek } from '@/lib/types/enums'
 import { ServiceCategorySelector } from './ServiceCategorySelector'
 
-const formSchema = z.object({
+function generatePassword(length = 10): string {
+  const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let password = ''
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return password
+}
+
+const baseSchema = {
   first_name: z.string().min(1, 'El nombre es requerido'),
   last_name: z.string().optional().or(z.literal('')),
   specialty: z.string().optional().or(z.literal('')),
   bio: z.string().optional().or(z.literal('')),
   profile_picture_url: z.string().optional().or(z.literal('')),
   is_featured: z.boolean(),
+}
+
+const createSchema = z.object({
+  ...baseSchema,
+  email: z.string().email('Email inválido').min(1, 'El email es requerido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
 })
 
-type SpecialistFormValues = z.infer<typeof formSchema>
+const editSchema = z.object({
+  ...baseSchema,
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  newPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional().or(z.literal('')),
+})
+
+type CreateFormValues = z.infer<typeof createSchema>
+type EditFormValues = z.infer<typeof editSchema>
+type SpecialistFormValues = CreateFormValues | EditFormValues
 
 interface DaySchedule {
   enabled: boolean
@@ -85,6 +108,16 @@ const DEFAULT_SCHEDULE: WeekSchedule = {
   '6': { enabled: true, start_time: '09:00', end_time: '13:00' },
 }
 
+export interface SpecialistCredentials {
+  email: string
+  password: string
+}
+
+export interface SpecialistCredentialsUpdate {
+  newEmail?: string
+  newPassword?: string
+}
+
 interface SpecialistModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -93,7 +126,9 @@ interface SpecialistModalProps {
   onSave: (
     data: SpecialistInsert | SpecialistUpdate,
     availability: Omit<SpecialistAvailability, 'id' | 'specialist_id'>[],
-    categoryIds: string[]
+    categoryIds: string[],
+    credentials?: SpecialistCredentials,
+    credentialsUpdate?: SpecialistCredentialsUpdate
   ) => Promise<void>
   initialAvailability?: SpecialistAvailability[]
   initialCategoryIds?: string[]
@@ -118,12 +153,19 @@ export function SpecialistModal({
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
   const [servicesOpen, setServicesOpen] = useState(true)
   const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [showPassword, setShowPassword] = useState(true)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+
+  const isEditing = !!specialist
+  const formSchema = isEditing ? editSchema : createSchema
 
   const form = useForm<SpecialistFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       first_name: '',
       last_name: '',
+      email: '',
+      password: '',
       specialty: '',
       bio: '',
       profile_picture_url: '',
@@ -131,18 +173,26 @@ export function SpecialistModal({
     },
   })
 
+  const regeneratePassword = useCallback(() => {
+    const newPass = generatePassword()
+    form.setValue('password', newPass)
+  }, [form])
+
   useEffect(() => {
     if (specialist) {
       form.reset({
         first_name: specialist.first_name,
         last_name: specialist.last_name || '',
+        email: specialist.email || '',
         specialty: specialist.specialty || '',
         bio: specialist.bio || '',
         profile_picture_url: specialist.profile_picture_url || '',
         is_featured: specialist.is_featured,
-      })
+        newPassword: '',
+      } as EditFormValues)
 
       setSelectedCategoryIds(initialCategoryIds || [])
+      setShowNewPassword(false)
 
       if (initialAvailability && initialAvailability.length > 0) {
         const newSchedule = { ...DEFAULT_SCHEDULE }
@@ -165,16 +215,20 @@ export function SpecialistModal({
         setSchedule(DEFAULT_SCHEDULE)
       }
     } else {
+      const suggestedPassword = generatePassword()
       form.reset({
         first_name: '',
         last_name: '',
+        email: '',
+        password: suggestedPassword,
         specialty: '',
         bio: '',
         profile_picture_url: '',
         is_featured: false,
-      })
+      } as CreateFormValues)
       setSchedule(DEFAULT_SCHEDULE)
       setSelectedCategoryIds([])
+      setShowPassword(true)
     }
   }, [specialist, form, open, initialAvailability, initialCategoryIds])
 
@@ -222,12 +276,14 @@ export function SpecialistModal({
         : data.specialty || null
 
       const saveData: SpecialistInsert | SpecialistUpdate = {
-        ...data,
+        first_name: data.first_name,
         last_name: data.last_name || null,
+        email: data.email || null,
         specialty: specialtyFromCategories,
         bio: data.bio || null,
         profile_picture_url: data.profile_picture_url || null,
         business_id: businessId,
+        is_featured: data.is_featured,
       }
 
       const availabilityData: Omit<SpecialistAvailability, 'id' | 'specialist_id'>[] =
@@ -238,7 +294,27 @@ export function SpecialistModal({
           is_available: config.enabled,
         }))
 
-      await onSave(saveData, availabilityData, selectedCategoryIds)
+      let credentials: SpecialistCredentials | undefined
+      let credentialsUpdate: SpecialistCredentialsUpdate | undefined
+
+      if (!isEditing && data.email && 'password' in data && data.password) {
+        credentials = { email: data.email, password: data.password }
+      }
+
+      if (isEditing && specialist?.user_profile_id) {
+        const editData = data as EditFormValues
+        const emailChanged = editData.email && editData.email !== specialist.email
+        const hasNewPassword = editData.newPassword && editData.newPassword.length >= 6
+
+        if (emailChanged || hasNewPassword) {
+          credentialsUpdate = {
+            newEmail: emailChanged ? editData.email : undefined,
+            newPassword: hasNewPassword ? editData.newPassword : undefined,
+          }
+        }
+      }
+
+      await onSave(saveData, availabilityData, selectedCategoryIds, credentials, credentialsUpdate)
       onOpenChange(false)
     } catch (error) {
       console.error('Error saving specialist:', error)
@@ -294,6 +370,117 @@ export function SpecialistModal({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Email {!isEditing && <span className="text-destructive">*</span>}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="maria@ejemplo.com"
+                      disabled={isSubmitting}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {!isEditing ? (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Contraseña <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <div className="relative flex-1">
+                          <Input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="••••••••"
+                            disabled={isSubmitting}
+                            className="pr-20"
+                            {...field}
+                          />
+                          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={regeneratePassword}
+                        disabled={isSubmitting}
+                        title="Generar nueva contraseña"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <FormDescription className="text-xs">
+                      Contraseña sugerida. Puedes modificarla o regenerar una nueva.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : specialist?.user_profile_id && (
+              <FormField
+                control={form.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nueva Contraseña (opcional)</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <div className="relative flex-1">
+                          <Input
+                            type={showNewPassword ? 'text' : 'password'}
+                            placeholder="Dejar vacío para no cambiar"
+                            disabled={isSubmitting}
+                            className="pr-10"
+                            {...field}
+                          />
+                          <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                            >
+                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      </FormControl>
+                    </div>
+                    <FormDescription className="text-xs">
+                      Solo completa si deseas cambiar la contraseña actual.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* Service Categories - Collapsible */}
             <Collapsible open={servicesOpen} onOpenChange={setServicesOpen}>
