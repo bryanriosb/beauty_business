@@ -271,11 +271,11 @@ export default function AppointmentDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-3xl flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Detalles de la Cita</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4 flex-1 overflow-y-auto min-h-0 scrollbar-none">
           <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-2">
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Pago:</span>
@@ -297,7 +297,7 @@ export default function AppointmentDetailsModal({
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-2">
+          <div className="grid lg:grid-cols-2 gap-6">
             <div>
               <div className="grid gap-6">
                 <div className="flex items-start gap-3">
@@ -386,21 +386,26 @@ export default function AppointmentDetailsModal({
                 {appointment.appointment_services &&
                   appointment.appointment_services.length > 0 && (
                     <div className="flex items-start gap-3">
-                      <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="font-medium mb-2">Servicios</p>
-                        <div className="space-y-2">
+                      <Package className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium mb-2">
+                          Servicios
+                          <span className="ml-1.5 text-xs text-muted-foreground">
+                            ({appointment.appointment_services.length})
+                          </span>
+                        </p>
+                        <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin">
                           {appointment.appointment_services.map(
                             (appointmentService) => (
                               <div
                                 key={appointmentService.id}
                                 className="flex justify-between text-sm border-b pb-2"
                               >
-                                <div className="flex-1">
-                                  <p className="font-medium">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">
                                     {appointmentService.service.name}
                                   </p>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
                                     {appointmentService.service
                                       .service_category && (
                                       <Badge
@@ -418,12 +423,12 @@ export default function AppointmentDetailsModal({
                                     </span>
                                   </div>
                                   {appointmentService.service.description && (
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                       {appointmentService.service.description}
                                     </p>
                                   )}
                                 </div>
-                                <p className="font-medium ml-2">
+                                <p className="font-medium ml-2 flex-shrink-0">
                                   $
                                   {(
                                     appointmentService.price_at_booking_cents /
@@ -437,55 +442,60 @@ export default function AppointmentDetailsModal({
                       </div>
                     </div>
                   )}
-              </div>
 
-              {appointment.appointment_supplies &&
-                appointment.appointment_supplies.length > 0 && (
-                  <div className="flex items-start gap-3">
-                    <Syringe className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium mb-2">Insumos</p>
-                      <div className="space-y-2">
-                        {appointment.appointment_supplies.map((supply) => {
-                          const unitAbbr =
-                            supply.product?.unit_of_measure?.abbreviation ||
-                            'und'
-                          return (
-                            <div
-                              key={supply.id}
-                              className="flex justify-between text-sm pb-2"
-                            >
-                              <div className="flex-1">
-                                <p className="font-medium">
-                                  {supply.product?.name || 'Producto'}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                  <span>
-                                    {supply.quantity_used} {unitAbbr}
-                                  </span>
-                                  <span>•</span>
-                                  <span>
-                                    $
-                                    {(
-                                      supply.unit_price_cents / 100
-                                    ).toLocaleString('es-CO')}
-                                    /{unitAbbr}
-                                  </span>
+                {appointment.appointment_supplies &&
+                  appointment.appointment_supplies.length > 0 && (
+                    <div className="flex items-start gap-3">
+                      <Syringe className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium mb-2">
+                          Insumos
+                          <span className="ml-1.5 text-xs text-muted-foreground">
+                            ({appointment.appointment_supplies.length})
+                          </span>
+                        </p>
+                        <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-thin">
+                          {appointment.appointment_supplies.map((supply) => {
+                            const unitAbbr =
+                              supply.product?.unit_of_measure?.abbreviation ||
+                              'und'
+                            return (
+                              <div
+                                key={supply.id}
+                                className="flex justify-between text-sm pb-2"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">
+                                    {supply.product?.name || 'Producto'}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                    <span>
+                                      {supply.quantity_used} {unitAbbr}
+                                    </span>
+                                    <span>•</span>
+                                    <span>
+                                      $
+                                      {(
+                                        supply.unit_price_cents / 100
+                                      ).toLocaleString('es-CO')}
+                                      /{unitAbbr}
+                                    </span>
+                                  </div>
                                 </div>
+                                <p className="font-medium ml-2 flex-shrink-0">
+                                  $
+                                  {(
+                                    supply.total_price_cents / 100
+                                  ).toLocaleString('es-CO')}
+                                </p>
                               </div>
-                              <p className="font-medium ml-2">
-                                $
-                                {(
-                                  supply.total_price_cents / 100
-                                ).toLocaleString('es-CO')}
-                              </p>
-                            </div>
-                          )
-                        })}
+                            )
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+              </div>
             </div>
 
             <div>
@@ -629,7 +639,7 @@ export default function AppointmentDetailsModal({
             </div>
           )}
 
-          {/* <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-4">
             <Button
               variant="outline"
               className="flex-1"
@@ -642,21 +652,21 @@ export default function AppointmentDetailsModal({
             >
               Editar
             </Button>
-            <Button
-              variant="outline"
-              className="flex-1 text-destructive hover:text-destructive"
-              onClick={() => {
-                if (appointment && onCancel) {
-                  onCancel(appointment.id)
-                }
-              }}
-              disabled={appointment?.status === 'CANCELLED'}
-            >
-              {appointment?.status === 'CANCELLED'
-                ? 'Cancelada'
-                : 'Cancelar Cita'}
-            </Button>
-          </div> */}
+            {appointment?.status !== 'COMPLETED' &&
+              appointment?.status !== 'CANCELLED' && (
+                <Button
+                  variant="outline"
+                  className="flex-1 text-destructive hover:text-destructive"
+                  onClick={() => {
+                    if (appointment && onCancel) {
+                      onCancel(appointment.id)
+                    }
+                  }}
+                >
+                  Cancelar Cita
+                </Button>
+              )}
+          </div>
         </div>
       </DialogContent>
 

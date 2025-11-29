@@ -329,7 +329,12 @@ export async function createAppointmentAction(
 export async function updateAppointmentAction(
   id: string,
   data: AppointmentUpdate,
-  options?: { generateInvoice?: boolean; businessData?: { name: string; address?: string; phone?: string; nit?: string } }
+  options?: {
+    generateInvoice?: boolean
+    businessData?: { name: string; address?: string; phone?: string; nit?: string }
+    services?: AppointmentServiceInput[]
+    supplies?: AppointmentSupplyInput[]
+  }
 ): Promise<{ success: boolean; data?: Appointment; error?: string; invoiceGenerated?: boolean; stockDeducted?: boolean }> {
   try {
     const supabase = await getSupabaseAdminClient()
@@ -344,6 +349,51 @@ export async function updateAppointmentAction(
 
     if (!appointment) {
       return { success: false, error: 'Error al actualizar la cita' }
+    }
+
+    // Update services if provided
+    if (options?.services) {
+      await supabase.from('appointment_services').delete().eq('appointment_id', id)
+
+      if (options.services.length > 0) {
+        const appointmentServices = options.services.map((service) => ({
+          appointment_id: id,
+          service_id: service.service_id,
+          price_at_booking_cents: service.price_at_booking_cents,
+          duration_minutes: service.duration_minutes,
+        }))
+
+        const { error: servicesError } = await supabase
+          .from('appointment_services')
+          .insert(appointmentServices)
+
+        if (servicesError) {
+          console.error('Error updating appointment services:', servicesError)
+        }
+      }
+    }
+
+    // Update supplies if provided
+    if (options?.supplies) {
+      await supabase.from('appointment_supplies').delete().eq('appointment_id', id)
+
+      if (options.supplies.length > 0) {
+        const appointmentSupplies = options.supplies.map((supply) => ({
+          appointment_id: id,
+          product_id: supply.product_id,
+          quantity_used: supply.quantity_used,
+          unit_price_cents: supply.unit_price_cents,
+          total_price_cents: Math.round(supply.quantity_used * supply.unit_price_cents),
+        }))
+
+        const { error: suppliesError } = await supabase
+          .from('appointment_supplies')
+          .insert(appointmentSupplies)
+
+        if (suppliesError) {
+          console.error('Error updating appointment supplies:', suppliesError)
+        }
+      }
     }
 
     let invoiceGenerated = false

@@ -45,22 +45,32 @@ import { cn } from '@/lib/utils'
 import AppointmentService from '@/lib/services/appointment/appointment-service'
 import { fetchServicesAction } from '@/lib/actions/service'
 import { validateAppointmentAction } from '@/lib/actions/availability'
-import type { Appointment, AppointmentWithDetails } from '@/lib/models/appointment/appointment'
+import type {
+  Appointment,
+  AppointmentWithDetails,
+} from '@/lib/models/appointment/appointment'
 import type { Service } from '@/lib/models/service/service'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import { useServiceStockCheck } from '@/hooks/use-service-stock-check'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 import { USER_ROLES } from '@/const/roles'
 import CustomerSelector from './CustomerSelector'
 import TimeSlotPicker from './TimeSlotPicker'
 import SpecialistPicker from './SpecialistPicker'
-import { MultiServiceSelector, type SelectedService } from './MultiServiceSelector'
+import {
+  MultiServiceSelector,
+  type SelectedService,
+} from './MultiServiceSelector'
 import {
   AppointmentSuppliesSection,
   calculateSuppliesTotal,
   hasInsufficientStock,
 } from './AppointmentSuppliesSection'
 import type { AvailableSpecialist } from '@/lib/actions/availability'
-import type { AppointmentServiceInput, AppointmentSupplyInput } from '@/lib/actions/appointment'
+import type {
+  AppointmentServiceInput,
+  AppointmentSupplyInput,
+} from '@/lib/actions/appointment'
 import type { SelectedSupply } from '@/lib/models/product'
 import { validateStockForSuppliesAction } from '@/lib/actions/inventory'
 
@@ -98,8 +108,12 @@ export default function AppointmentFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [services, setServices] = useState<Service[]>([])
   const [isLoadingServices, setIsLoadingServices] = useState(false)
-  const [availableSpecialistIds, setAvailableSpecialistIds] = useState<string[]>([])
-  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
+  const [availableSpecialistIds, setAvailableSpecialistIds] = useState<
+    string[]
+  >([])
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>(
+    []
+  )
   const [supplies, setSupplies] = useState<SelectedSupply[]>([])
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [discountPercent, setDiscountPercent] = useState(0)
@@ -107,6 +121,7 @@ export default function AppointmentFormModal({
 
   const { role, businesses } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
+  const { checkService, stockStatusMap, clearCache } = useServiceStockCheck()
   const appointmentService = new AppointmentService()
 
   const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
@@ -140,7 +155,8 @@ export default function AppointmentFormModal({
     return { subtotal, tax, discount, total, suppliesCost: totalSuppliesPrice }
   }, [totalServicesPrice, totalSuppliesPrice, discountPercent])
 
-  const firstServiceId = selectedServices.length > 0 ? selectedServices[0].id : ''
+  const firstServiceId =
+    selectedServices.length > 0 ? selectedServices[0].id : ''
 
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentFormSchema),
@@ -181,20 +197,22 @@ export default function AppointmentFormModal({
       // Load services from appointment_services first
       const appointmentWithDetails = appointment as AppointmentWithDetails
       if (appointmentWithDetails.appointment_services?.length) {
-        const servicesFromAppointment: SelectedService[] = appointmentWithDetails.appointment_services.map((as) => ({
-          id: as.service_id,
-          name: as.service.name,
-          duration_minutes: as.duration_minutes,
-          price_cents: as.price_at_booking_cents,
-          original_price_cents: as.price_at_booking_cents, // Use booking price as original since we don't have service base price here
-          has_custom_price: false,
-        }))
+        const servicesFromAppointment: SelectedService[] =
+          appointmentWithDetails.appointment_services.map((as) => ({
+            id: as.service_id,
+            name: as.service.name,
+            duration_minutes: as.duration_minutes,
+            price_cents: as.price_at_booking_cents,
+            original_price_cents: as.price_at_booking_cents, // Use booking price as original since we don't have service base price here
+            has_custom_price: false,
+          }))
         setSelectedServices(servicesFromAppointment)
       }
 
       form.reset({
         business_id: appointment.business_id,
-        service_id: appointmentWithDetails.appointment_services?.[0]?.service_id || '',
+        service_id:
+          appointmentWithDetails.appointment_services?.[0]?.service_id || '',
         specialist_id: appointment.specialist_id,
         customer_id: appointment.users_profile_id,
         date: format(appointmentDate, 'yyyy-MM-dd'),
@@ -213,7 +231,9 @@ export default function AppointmentFormModal({
 
       // Calculate discount percent from existing values
       if (appointment.subtotal_cents > 0 && appointment.discount_cents > 0) {
-        const percent = Math.round((appointment.discount_cents / appointment.subtotal_cents) * 100)
+        const percent = Math.round(
+          (appointment.discount_cents / appointment.subtotal_cents) * 100
+        )
         setDiscountPercent(percent)
       } else {
         setDiscountPercent(0)
@@ -272,8 +292,9 @@ export default function AppointmentFormModal({
       setSupplies([])
       setAvailableSpecialistIds([])
       setDiscountPercent(0)
+      clearCache()
     }
-  }, [open, effectiveBusinessId, form])
+  }, [open, effectiveBusinessId, form, clearCache])
 
   // Clear dependent fields when services change (skip during edit initialization)
   useEffect(() => {
@@ -313,7 +334,9 @@ export default function AppointmentFormModal({
       const endTotalMinutes = hours * 60 + minutes + totalDuration
       const endHours = Math.floor(endTotalMinutes / 60)
       const endMinutes = endTotalMinutes % 60
-      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes
+        .toString()
+        .padStart(2, '0')}`
       form.setValue('end_time', endTime)
     }
   }
@@ -368,7 +391,10 @@ export default function AppointmentFormModal({
 
         if (!stockValidation.valid) {
           const insufficientItems = stockValidation.insufficientStock
-            .map((item) => `${item.product_name} (faltan ${item.shortage.toFixed(2)})`)
+            .map(
+              (item) =>
+                `${item.product_name} (faltan ${item.shortage.toFixed(2)})`
+            )
             .join(', ')
           toast.error(`Stock insuficiente: ${insufficientItems}`)
           setIsSubmitting(false)
@@ -395,11 +421,13 @@ export default function AppointmentFormModal({
         total_price_cents: priceCalculations.total,
       }
 
-      const servicesData: AppointmentServiceInput[] = selectedServices.map((s) => ({
-        service_id: s.id,
-        price_at_booking_cents: s.price_cents,
-        duration_minutes: s.duration_minutes,
-      }))
+      const servicesData: AppointmentServiceInput[] = selectedServices.map(
+        (s) => ({
+          service_id: s.id,
+          price_at_booking_cents: s.price_cents,
+          duration_minutes: s.duration_minutes,
+        })
+      )
 
       const suppliesData: AppointmentSupplyInput[] = supplies.map((s) => ({
         product_id: s.product_id,
@@ -409,12 +437,22 @@ export default function AppointmentFormModal({
 
       let result
       if (appointment?.id) {
-        result = await appointmentService.updateItem({
-          ...appointmentData,
-          id: appointment.id,
-        })
+        result = await appointmentService.updateItem(
+          {
+            ...appointmentData,
+            id: appointment.id,
+          },
+          {
+            services: servicesData,
+            supplies: suppliesData,
+          }
+        )
       } else {
-        result = await appointmentService.createItem(appointmentData, servicesData, suppliesData)
+        result = await appointmentService.createItem(
+          appointmentData,
+          servicesData,
+          suppliesData
+        )
       }
 
       if (result.success) {
@@ -442,380 +480,443 @@ export default function AppointmentFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[100dvh] sm:max-h-[90vh] !grid !grid-rows-[auto_1fr]">
+        <DialogHeader className="shrink-0">
           <DialogTitle>
             {appointment ? 'Editar Cita' : 'Nueva Cita'}
           </DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Business selector (only for company admin) */}
-            {isCompanyAdmin && availableBusinesses.length > 0 && (
-              <FormField
-                control={form.control}
-                name="business_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Negocio</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isSubmitting}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona un negocio" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableBusinesses.map((business) => (
-                          <SelectItem key={business.id} value={business.id}>
-                            {business.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Step 1: Customer */}
-            <FormField
-              control={form.control}
-              name="customer_id"
-              render={() => (
-                <FormItem>
-                  <FormLabel>1. Cliente</FormLabel>
-                  <CustomerSelector
-                    businessId={currentBusinessId || effectiveBusinessId}
-                    value={form.watch('customer_id')}
-                    onSelect={handleCustomerSelect}
-                    disabled={
-                      isSubmitting ||
-                      (!currentBusinessId && !effectiveBusinessId)
-                    }
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Step 2: Services */}
-            <FormItem className="flex flex-col">
-              <FormLabel>2. Servicios</FormLabel>
-              <MultiServiceSelector
-                services={services}
-                selectedServices={selectedServices}
-                onChange={setSelectedServices}
-                disabled={isSubmitting}
-                isLoading={isLoadingServices}
-              />
-              {selectedServices.length === 0 && (
-                <p className="text-sm text-destructive">
-                  Selecciona al menos un servicio
-                </p>
-              )}
-            </FormItem>
-
-            {/* Supplies Section */}
-            <AppointmentSuppliesSection
-              serviceIds={selectedServices.map((s) => s.id)}
-              supplies={supplies}
-              onChange={setSupplies}
-              disabled={isSubmitting}
-            />
-
-            {/* Price Summary */}
-            {selectedServices.length > 0 && (
-              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Resumen de Precios</span>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Servicios (sin IVA)</span>
-                    <span>${(Math.round(totalServicesPrice / 1.19) / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
-                  </div>
-                  {priceCalculations.suppliesCost > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Insumos</span>
-                      <span>${(priceCalculations.suppliesCost / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">IVA (19%)</span>
-                    <span>${(priceCalculations.tax / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Descuento</span>
-                      <div className="relative w-20">
-                        <NumericInput
-                          min={0}
-                          value={discountPercent}
-                          onChange={(val) => {
-                            const value = Math.min(100, Math.max(0, val ?? 0))
-                            setDiscountPercent(value)
-                          }}
-                          className="h-7 pr-7 text-right text-sm"
+        <div className="flex flex-col min-h-0 overflow-hidden">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col h-full"
+            >
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-4">
+                {/* Business selector (only for company admin) */}
+                {isCompanyAdmin && availableBusinesses.length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="business_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Negocio</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
                           disabled={isSubmitting}
-                          allowDecimals={false}
-                        />
-                        <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecciona un negocio" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {availableBusinesses.map((business) => (
+                              <SelectItem key={business.id} value={business.id}>
+                                {business.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* Step 1: Customer */}
+                <FormField
+                  control={form.control}
+                  name="customer_id"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>1. Cliente</FormLabel>
+                      <CustomerSelector
+                        businessId={currentBusinessId || effectiveBusinessId}
+                        value={form.watch('customer_id')}
+                        onSelect={handleCustomerSelect}
+                        disabled={
+                          isSubmitting ||
+                          (!currentBusinessId && !effectiveBusinessId)
+                        }
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Step 2: Services */}
+                <FormItem className="flex flex-col">
+                  <FormLabel>2. Servicios</FormLabel>
+                  <MultiServiceSelector
+                    services={services}
+                    selectedServices={selectedServices}
+                    onChange={setSelectedServices}
+                    disabled={isSubmitting}
+                    isLoading={isLoadingServices}
+                    stockStatusMap={stockStatusMap}
+                    onServiceSelect={checkService}
+                  />
+                  {selectedServices.length === 0 && (
+                    <p className="text-sm text-destructive">
+                      Selecciona al menos un servicio
+                    </p>
+                  )}
+                </FormItem>
+
+                {/* Supplies Section */}
+                <AppointmentSuppliesSection
+                  serviceIds={selectedServices.map((s) => s.id)}
+                  supplies={supplies}
+                  onChange={setSupplies}
+                  disabled={isSubmitting}
+                />
+
+                {/* Price Summary */}
+                {selectedServices.length > 0 && (
+                  <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Resumen de Precios
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          Servicios (sin IVA)
+                        </span>
+                        <span>
+                          $
+                          {(
+                            Math.round(totalServicesPrice / 1.19) / 100
+                          ).toLocaleString('es-CO', {
+                            minimumFractionDigits: 0,
+                          })}
+                        </span>
+                      </div>
+                      {priceCalculations.suppliesCost > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Insumos</span>
+                          <span>
+                            $
+                            {(
+                              priceCalculations.suppliesCost / 100
+                            ).toLocaleString('es-CO', {
+                              minimumFractionDigits: 0,
+                            })}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">IVA (19%)</span>
+                        <span>
+                          $
+                          {(priceCalculations.tax / 100).toLocaleString(
+                            'es-CO',
+                            { minimumFractionDigits: 0 }
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">
+                            Descuento
+                          </span>
+                          <div className="relative w-20">
+                            <NumericInput
+                              min={0}
+                              value={discountPercent}
+                              onChange={(val) => {
+                                const value = Math.min(
+                                  100,
+                                  Math.max(0, val ?? 0)
+                                )
+                                setDiscountPercent(value)
+                              }}
+                              className="h-7 pr-7 text-right text-sm"
+                              disabled={isSubmitting}
+                              allowDecimals={false}
+                            />
+                            <Percent className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          </div>
+                        </div>
+                        {priceCalculations.discount > 0 && (
+                          <span className="text-green-600">
+                            -$
+                            {(priceCalculations.discount / 100).toLocaleString(
+                              'es-CO',
+                              { minimumFractionDigits: 0 }
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between font-semibold text-base">
+                        <span>Total</span>
+                        <span>
+                          $
+                          {(priceCalculations.total / 100).toLocaleString(
+                            'es-CO',
+                            { minimumFractionDigits: 0 }
+                          )}
+                        </span>
                       </div>
                     </div>
-                    {priceCalculations.discount > 0 && (
-                      <span className="text-green-600">
-                        -${(priceCalculations.discount / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}
-                      </span>
+                  </div>
+                )}
+
+                {/* Step 3: Date */}
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>3. Fecha</FormLabel>
+                      <Popover
+                        open={calendarOpen}
+                        onOpenChange={setCalendarOpen}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className={cn(
+                              'w-full justify-start text-left font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                            disabled={
+                              isSubmitting || selectedServices.length === 0
+                            }
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? (
+                              format(
+                                new Date(field.value + 'T00:00:00'),
+                                "EEEE, d 'de' MMMM 'de' yyyy",
+                                { locale: es }
+                              )
+                            ) : (
+                              <span>Selecciona una fecha</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDateObj}
+                            onSelect={handleDateSelect}
+                            disabled={(date) =>
+                              date < new Date(new Date().setHours(0, 0, 0, 0))
+                            }
+                            initialFocus
+                            locale={es}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Step 4: Time Slot */}
+                {selectedServices.length > 0 && currentDate && (
+                  <FormField
+                    control={form.control}
+                    name="start_time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>4. Horario</FormLabel>
+                        <TimeSlotPicker
+                          businessId={currentBusinessId || effectiveBusinessId}
+                          serviceId={firstServiceId}
+                          date={currentDate}
+                          value={field.value}
+                          onChange={handleTimeSlotSelect}
+                          disabled={isSubmitting}
+                          excludeAppointmentId={appointment?.id}
+                        />
+                        <FormMessage />
+                      </FormItem>
                     )}
+                  />
+                )}
+
+                {/* Step 5: Specialist */}
+                {currentStartTime && (
+                  <FormField
+                    control={form.control}
+                    name="specialist_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>5. Especialista</FormLabel>
+                        <SpecialistPicker
+                          businessId={currentBusinessId || effectiveBusinessId}
+                          serviceId={firstServiceId}
+                          date={currentDate}
+                          time={currentStartTime}
+                          availableSpecialistIds={availableSpecialistIds}
+                          value={field.value}
+                          onChange={handleSpecialistSelect}
+                          disabled={isSubmitting}
+                          excludeAppointmentId={appointment?.id}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <Separator />
+
+                {/* Additional Options */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Estado
+                  </h4>
+
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isSubmitting}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecciona un estado" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="PENDING">Pendiente</SelectItem>
+                            <SelectItem value="CONFIRMED">
+                              Confirmada
+                            </SelectItem>
+                            <SelectItem value="COMPLETED">
+                              Completada
+                            </SelectItem>
+                            <SelectItem value="CANCELLED">Cancelada</SelectItem>
+                            <SelectItem value="NO_SHOW">No Asistió</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="payment_method"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Método de Pago</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isSubmitting}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecciona método de pago" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="AT_VENUE">
+                                En el local
+                              </SelectItem>
+                              <SelectItem value="CREDIT_CARD">
+                                Tarjeta de Crédito
+                              </SelectItem>
+                              <SelectItem value="PAYPAL">PayPal</SelectItem>
+                              <SelectItem value="NEQUI">Nequi</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="payment_status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estado de Pago</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isSubmitting}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecciona estado de pago" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="UNPAID">Sin Pagar</SelectItem>
+                              <SelectItem value="PAID">Pagado</SelectItem>
+                              <SelectItem value="REFUNDED">
+                                Reembolsado
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold text-base">
-                    <span>Total</span>
-                    <span>${(priceCalculations.total / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
-                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="customer_note"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nota del Cliente (Opcional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Escribe alguna nota o solicitud especial..."
+                            disabled={isSubmitting}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
-            )}
-
-            {/* Step 3: Date */}
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>3. Fecha</FormLabel>
-                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                        disabled={isSubmitting || selectedServices.length === 0}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {field.value ? (
-                          format(
-                            new Date(field.value + 'T00:00:00'),
-                            "EEEE, d 'de' MMMM 'de' yyyy",
-                            { locale: es }
-                          )
-                        ) : (
-                          <span>Selecciona una fecha</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDateObj}
-                        onSelect={handleDateSelect}
-                        disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
-                        }
-                        initialFocus
-                        locale={es}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Step 4: Time Slot */}
-            {selectedServices.length > 0 && currentDate && (
-              <FormField
-                control={form.control}
-                name="start_time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>4. Horario</FormLabel>
-                    <TimeSlotPicker
-                      businessId={currentBusinessId || effectiveBusinessId}
-                      serviceId={firstServiceId}
-                      date={currentDate}
-                      value={field.value}
-                      onChange={handleTimeSlotSelect}
-                      disabled={isSubmitting}
-                      excludeAppointmentId={appointment?.id}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Step 5: Specialist */}
-            {currentStartTime && (
-              <FormField
-                control={form.control}
-                name="specialist_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>5. Especialista</FormLabel>
-                    <SpecialistPicker
-                      businessId={currentBusinessId || effectiveBusinessId}
-                      serviceId={firstServiceId}
-                      date={currentDate}
-                      time={currentStartTime}
-                      availableSpecialistIds={availableSpecialistIds}
-                      value={field.value}
-                      onChange={handleSpecialistSelect}
-                      disabled={isSubmitting}
-                      excludeAppointmentId={appointment?.id}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <Separator />
-
-            {/* Additional Options */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-muted-foreground">
-                Estado
-              </h4>
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isSubmitting}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona un estado" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="PENDING">Pendiente</SelectItem>
-                        <SelectItem value="CONFIRMED">Confirmada</SelectItem>
-                        <SelectItem value="COMPLETED">Completada</SelectItem>
-                        <SelectItem value="CANCELLED">Cancelada</SelectItem>
-                        <SelectItem value="NO_SHOW">No Asistió</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="payment_method"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Método de Pago</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isSubmitting}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecciona método de pago" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="AT_VENUE">En el local</SelectItem>
-                          <SelectItem value="CREDIT_CARD">
-                            Tarjeta de Crédito
-                          </SelectItem>
-                          <SelectItem value="PAYPAL">PayPal</SelectItem>
-                          <SelectItem value="NEQUI">Nequi</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="payment_status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado de Pago</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isSubmitting}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecciona estado de pago" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="UNPAID">Sin Pagar</SelectItem>
-                          <SelectItem value="PAID">Pagado</SelectItem>
-                          <SelectItem value="REFUNDED">Reembolsado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="customer_note"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nota del Cliente (Opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Escribe alguna nota o solicitud especial..."
-                        disabled={isSubmitting}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || (!appointment && hasInsufficientStock(supplies))}
-              >
-                {isSubmitting
-                  ? 'Guardando...'
-                  : appointment
-                  ? 'Actualizar Cita'
-                  : 'Crear Cita'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <DialogFooter className="shrink-0 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={
+                    isSubmitting ||
+                    (!appointment && hasInsufficientStock(supplies))
+                  }
+                >
+                  {isSubmitting
+                    ? 'Guardando...'
+                    : appointment
+                    ? 'Actualizar Cita'
+                    : 'Crear Cita'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )

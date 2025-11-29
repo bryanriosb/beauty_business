@@ -73,6 +73,8 @@ export default class AppointmentService {
         phone?: string
         nit?: string
       }
+      services?: AppointmentServiceInput[]
+      supplies?: AppointmentSupplyInput[]
     }
   ): Promise<{
     success: boolean
