@@ -81,7 +81,11 @@ export function BusinessSwitcher() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <div className={`flex items-center justify-center rounded-lg p-2 ${isCollapsed ? 'size-8' : 'w-full gap-2'}`}>
+          <div
+            className={`flex items-center justify-center rounded-lg p-2 ${
+              isCollapsed ? 'size-8' : 'w-full gap-2'
+            }`}
+          >
             <div className="bg-muted flex aspect-square size-8 items-center justify-center rounded-lg">
               <Loader2 className="size-4 animate-spin" />
             </div>
@@ -164,9 +168,7 @@ export function BusinessSwitcher() {
         className="gap-2 p-2"
         disabled={isLoading}
       >
-        <RefreshCw
-          className={`size-4 ${isLoading ? 'animate-spin' : ''}`}
-        />
+        <RefreshCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
         <span className="text-muted-foreground">Actualizar lista</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
@@ -174,12 +176,14 @@ export function BusinessSwitcher() {
 
   return (
     <SidebarMenu>
-      <SidebarMenuItem className={isCollapsed ? '' : 'border rounded-lg'}>
+      <SidebarMenuItem>
         <DropdownMenu modal={false}>
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>{triggerButton}</DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild>
+                  {triggerButton}
+                </DropdownMenuTrigger>
               </TooltipTrigger>
               <TooltipContent side="right" align="center">
                 {activeBusiness?.name || 'Sucursales'}

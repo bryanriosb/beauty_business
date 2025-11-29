@@ -112,7 +112,7 @@ export default function AddPaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="!min-w-[800px]">
         <DialogHeader>
           <DialogTitle>Registrar Abono</DialogTitle>
         </DialogHeader>

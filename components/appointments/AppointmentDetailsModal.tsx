@@ -271,7 +271,7 @@ export default function AppointmentDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Detalles de la Cita</DialogTitle>
         </DialogHeader>
@@ -297,276 +297,298 @@ export default function AppointmentDetailsModal({
             </div>
           </div>
 
-          <div className="grid gap-4">
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="font-medium">Fecha</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatDate(appointment.start_time)}
-                </p>
-              </div>
-            </div>
+          <div className="grid lg:grid-cols-2">
+            <div>
+              <div className="grid gap-6">
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="font-medium">Fecha</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(appointment.start_time)}
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="font-medium">Horario</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatTime(appointment.start_time)} -{' '}
-                  {formatTime(appointment.end_time)}
-                </p>
-              </div>
-            </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="font-medium">Horario</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatTime(appointment.start_time)} -{' '}
+                      {formatTime(appointment.end_time)}
+                    </p>
+                  </div>
+                </div>
 
-            {appointment.user_profile && (
-              <div className="flex items-start gap-3">
-                <User className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium">Cliente</p>
-                  {appointment.user_profile.user && (
-                    <div className="space-y-1 mt-1">
-                      {appointment.user_profile.user.name && (
-                        <p className="text-sm text-muted-foreground">
-                          {appointment.user_profile.user.name}
-                        </p>
-                      )}
-                      {appointment.user_profile.user.email && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Mail className="h-3 w-3" />
-                          <span>{appointment.user_profile.user.email}</span>
-                        </div>
-                      )}
-                      {appointment.user_profile.user.phone && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Phone className="h-3 w-3" />
-                          <span>{appointment.user_profile.user.phone}</span>
+                {appointment.user_profile && (
+                  <div className="flex items-start gap-3">
+                    <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium">Cliente</p>
+                      {appointment.user_profile.user && (
+                        <div className="space-y-1 mt-1">
+                          {appointment.user_profile.user.name && (
+                            <p className="text-sm text-muted-foreground">
+                              {appointment.user_profile.user.name}
+                            </p>
+                          )}
+                          {appointment.user_profile.user.email && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Mail className="h-3 w-3" />
+                              <span>{appointment.user_profile.user.email}</span>
+                            </div>
+                          )}
+                          {appointment.user_profile.user.phone && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Phone className="h-3 w-3" />
+                              <span>{appointment.user_profile.user.phone}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
+                  </div>
+                )}
 
-            {appointment.specialist && (
+                {appointment.specialist && (
+                  <div className="flex items-start gap-3">
+                    <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        {appointment.specialist.profile_picture_url ? (
+                          <img
+                            src={appointment.specialist.profile_picture_url}
+                            alt={appointment.specialist.first_name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
+                            {appointment.specialist.first_name[0]}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {appointment.specialist.first_name}{' '}
+                          {appointment.specialist.last_name}
+                        </p>
+                        {appointment.specialist.specialty && (
+                          <p className="text-xs text-muted-foreground">
+                            {appointment.specialist.specialty}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {appointment.appointment_services &&
+                  appointment.appointment_services.length > 0 && (
+                    <div className="flex items-start gap-3">
+                      <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-medium mb-2">Servicios</p>
+                        <div className="space-y-2">
+                          {appointment.appointment_services.map(
+                            (appointmentService) => (
+                              <div
+                                key={appointmentService.id}
+                                className="flex justify-between text-sm border-b pb-2"
+                              >
+                                <div className="flex-1">
+                                  <p className="font-medium">
+                                    {appointmentService.service.name}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                    {appointmentService.service
+                                      .service_category && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs px-1.5 py-0"
+                                      >
+                                        {
+                                          appointmentService.service
+                                            .service_category.name
+                                        }
+                                      </Badge>
+                                    )}
+                                    <span>
+                                      {appointmentService.duration_minutes} min
+                                    </span>
+                                  </div>
+                                  {appointmentService.service.description && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {appointmentService.service.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <p className="font-medium ml-2">
+                                  $
+                                  {(
+                                    appointmentService.price_at_booking_cents /
+                                    100
+                                  ).toFixed(2)}
+                                </p>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+              </div>
+
+              {appointment.appointment_supplies &&
+                appointment.appointment_supplies.length > 0 && (
+                  <div className="flex items-start gap-3">
+                    <Syringe className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium mb-2">Insumos</p>
+                      <div className="space-y-2">
+                        {appointment.appointment_supplies.map((supply) => {
+                          const unitAbbr =
+                            supply.product?.unit_of_measure?.abbreviation ||
+                            'und'
+                          return (
+                            <div
+                              key={supply.id}
+                              className="flex justify-between text-sm pb-2"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium">
+                                  {supply.product?.name || 'Producto'}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                  <span>
+                                    {supply.quantity_used} {unitAbbr}
+                                  </span>
+                                  <span>•</span>
+                                  <span>
+                                    $
+                                    {(
+                                      supply.unit_price_cents / 100
+                                    ).toLocaleString('es-CO')}
+                                    /{unitAbbr}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="font-medium ml-2">
+                                $
+                                {(
+                                  supply.total_price_cents / 100
+                                ).toLocaleString('es-CO')}
+                              </p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+            </div>
+
+            <div>
               <div className="flex items-start gap-3">
-                <User className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0">
-                    {appointment.specialist.profile_picture_url ? (
-                      <img
-                        src={appointment.specialist.profile_picture_url}
-                        alt={appointment.specialist.first_name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                        {appointment.specialist.first_name[0]}
+                <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div className="flex-1 gap-2">
+                  <p className="font-medium mb-2">Resumen de Pago</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span>
+                        $
+                        {(appointment.subtotal_cents / 100).toLocaleString(
+                          'es-CO'
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Impuesto</span>
+                      <span>
+                        ${(appointment.tax_cents / 100).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                    {appointment.discount_cents > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Descuento</span>
+                        <span>
+                          -$
+                          {(appointment.discount_cents / 100).toLocaleString(
+                            'es-CO'
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-bold text-base pt-2 border-t">
+                      <span>Total</span>
+                      <span>
+                        $
+                        {(appointment.total_price_cents / 100).toLocaleString(
+                          'es-CO'
+                        )}
+                      </span>
+                    </div>
+                    {(appointment.amount_paid_cents || 0) > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Abonado</span>
+                        <span>
+                          -$
+                          {(
+                            (appointment.amount_paid_cents || 0) / 100
+                          ).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    )}
+                    {balanceDueCents > 0 && (
+                      <div className="flex justify-between font-bold text-secondary pt-1">
+                        <span>Saldo Pendiente</span>
+                        <span>
+                          ${(balanceDueCents / 100).toLocaleString('es-CO')}
+                        </span>
                       </div>
                     )}
                   </div>
-                  <div>
-                    <p className="font-medium">
-                      {appointment.specialist.first_name}{' '}
-                      {appointment.specialist.last_name}
-                    </p>
-                    {appointment.specialist.specialty && (
-                      <p className="text-xs text-muted-foreground">
-                        {appointment.specialist.specialty}
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
-            )}
 
-            {appointment.appointment_services &&
-              appointment.appointment_services.length > 0 && (
+              {payments.length > 0 && appointment.payment_status === 'PAID' && (
                 <div className="flex items-start gap-3">
-                  <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <Wallet className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-medium mb-2">Servicios</p>
-                    <div className="space-y-2">
-                      {appointment.appointment_services.map(
-                        (appointmentService) => (
-                          <div
-                            key={appointmentService.id}
-                            className="flex justify-between text-sm border-b pb-2"
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium">
-                                {appointmentService.service.name}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                {appointmentService.service
-                                  .service_category && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs px-1.5 py-0"
-                                  >
-                                    {
-                                      appointmentService.service
-                                        .service_category.name
-                                    }
-                                  </Badge>
-                                )}
-                                <span>
-                                  {appointmentService.duration_minutes} min
-                                </span>
-                              </div>
-                              {appointmentService.service.description && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {appointmentService.service.description}
-                                </p>
-                              )}
-                            </div>
-                            <p className="font-medium ml-2">
-                              $
-                              {(
-                                appointmentService.price_at_booking_cents / 100
-                              ).toFixed(2)}
-                            </p>
-                          </div>
-                        )
-                      )}
-                    </div>
+                    <p className="font-medium mb-2">Historial de Abonos</p>
+                    <PaymentHistorySection
+                      payments={payments}
+                      showDelete={false}
+                    />
                   </div>
                 </div>
               )}
 
-            {appointment.appointment_supplies &&
-              appointment.appointment_supplies.length > 0 && (
-                <div className="flex items-start gap-3">
-                  <Syringe className="h-5 w-5 text-muted-foreground mt-0.5" />
+              {appointment.payment_status !== 'PAID' && balanceDueCents > 0 && (
+                <div className="flex items-start gap-3 mt-6">
+                  <Wallet className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-medium mb-2">Insumos</p>
-                    <div className="space-y-2">
-                      {appointment.appointment_supplies.map((supply) => {
-                        const unitAbbr =
-                          supply.product?.unit_of_measure?.abbreviation || 'und'
-                        return (
-                          <div
-                            key={supply.id}
-                            className="flex justify-between text-sm border-b pb-2"
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium">
-                                {supply.product?.name || 'Producto'}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                <span>
-                                  {supply.quantity_used} {unitAbbr}
-                                </span>
-                                <span>•</span>
-                                <span>
-                                  $
-                                  {(
-                                    supply.unit_price_cents / 100
-                                  ).toLocaleString('es-CO')}
-                                  /{unitAbbr}
-                                </span>
-                              </div>
-                            </div>
-                            <p className="font-medium ml-2">
-                              $
-                              {(supply.total_price_cents / 100).toLocaleString(
-                                'es-CO'
-                              )}
-                            </p>
-                          </div>
-                        )
-                      })}
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium">Abonos</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddPaymentModal(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Agregar Abono
+                      </Button>
                     </div>
+                    <PaymentHistorySection
+                      payments={payments}
+                      onDeletePayment={handleDeletePayment}
+                      isDeleting={isDeletingPayment}
+                    />
                   </div>
                 </div>
               )}
-
-            <div className="flex items-start gap-3">
-              <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div className="flex-1">
-                <p className="font-medium mb-2">Resumen de Pago</p>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>
-                      ${(appointment.subtotal_cents / 100).toLocaleString('es-CO')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Impuesto</span>
-                    <span>${(appointment.tax_cents / 100).toLocaleString('es-CO')}</span>
-                  </div>
-                  {appointment.discount_cents > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Descuento</span>
-                      <span>
-                        -${(appointment.discount_cents / 100).toLocaleString('es-CO')}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-bold text-base pt-2 border-t">
-                    <span>Total</span>
-                    <span>
-                      ${(appointment.total_price_cents / 100).toLocaleString('es-CO')}
-                    </span>
-                  </div>
-                  {(appointment.amount_paid_cents || 0) > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Abonado</span>
-                      <span>
-                        -${((appointment.amount_paid_cents || 0) / 100).toLocaleString('es-CO')}
-                      </span>
-                    </div>
-                  )}
-                  {balanceDueCents > 0 && (
-                    <div className="flex justify-between font-bold text-amber-600 pt-1">
-                      <span>Saldo Pendiente</span>
-                      <span>
-                        ${(balanceDueCents / 100).toLocaleString('es-CO')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
-
-            {appointment.payment_status !== 'PAID' && balanceDueCents > 0 && (
-              <div className="flex items-start gap-3">
-                <Wallet className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium">Abonos</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowAddPaymentModal(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Agregar Abono
-                    </Button>
-                  </div>
-                  <PaymentHistorySection
-                    payments={payments}
-                    onDeletePayment={handleDeletePayment}
-                    isDeleting={isDeletingPayment}
-                  />
-                </div>
-              </div>
-            )}
-
-            {payments.length > 0 && appointment.payment_status === 'PAID' && (
-              <div className="flex items-start gap-3">
-                <Wallet className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium mb-2">Historial de Abonos</p>
-                  <PaymentHistorySection
-                    payments={payments}
-                    showDelete={false}
-                  />
-                </div>
-              </div>
-            )}
 
             {appointment.customer_note && (
               <div className="border-t pt-4">
@@ -607,7 +629,7 @@ export default function AppointmentDetailsModal({
             </div>
           )}
 
-          <div className="flex gap-2 pt-4">
+          {/* <div className="flex gap-2 pt-4">
             <Button
               variant="outline"
               className="flex-1"
@@ -634,7 +656,7 @@ export default function AppointmentDetailsModal({
                 ? 'Cancelada'
                 : 'Cancelar Cita'}
             </Button>
-          </div>
+          </div> */}
         </div>
       </DialogContent>
 

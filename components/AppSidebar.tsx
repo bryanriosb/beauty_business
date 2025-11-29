@@ -18,6 +18,7 @@ import { useCurrentUser } from '@/hooks/use-current-user'
 import { NavMain } from './NavMain'
 import { BusinessSwitcher } from './BusinessSwitcher'
 import { LowStockAlertBadge } from './inventory/LowStockAlert'
+import Image from 'next/image'
 
 export function AppSidebar() {
   const { role } = useCurrentUser()
@@ -46,7 +47,16 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <Logo />
+        <div className="border-b w-full mb-2">
+          <Image
+            className="relative mx-auto mb-4"
+            alt="logo"
+            src="/logo.png"
+            width={150}
+            height={40}
+          />
+        </div>
+
         <BusinessSwitcher />
       </SidebarHeader>
       <SidebarContent>
