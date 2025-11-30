@@ -221,10 +221,12 @@ export async function createFullCustomerAction(
         email: input.email,
         password: tempPassword,
         email_confirm: true,
+        phone: input.phone || undefined,
+        phone_confirm: input.phone ? true : undefined,
         user_metadata: {
+          name: `${input.first_name} ${input.last_name || ''}`.trim(),
           first_name: input.first_name,
           last_name: input.last_name || '',
-          phone: input.phone || '',
         },
       })
 

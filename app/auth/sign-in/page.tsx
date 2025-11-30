@@ -166,6 +166,7 @@ export default function SignInPage() {
           src="/photo-login.png"
           alt="Beauty salon"
           className="absolute inset-0 h-full w-full object-cover"
+          fill
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30" />
         <div className="relative flex h-full items-center justify-center p-8">

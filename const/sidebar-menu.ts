@@ -124,8 +124,9 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
         url: '/admin/settings/scheduler',
       },
       {
-        title: 'Facturación',
-        url: '/admin/settings/invoicing',
+        title: 'WhatsApp',
+        url: '/admin/settings/whatsapp',
+        allowedRoles: [USER_ROLES.COMPANY_ADMIN],
       },
     ],
   },

@@ -4,7 +4,13 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import {
@@ -73,7 +79,9 @@ export default function InvoiceSettingsPage() {
     }
   }
 
-  const previewNumber = `${prefix.toUpperCase() || 'FAC'}-${nextNumber.toString().padStart(4, '0')}`
+  const previewNumber = `${prefix.toUpperCase() || 'FAC'}-${nextNumber
+    .toString()
+    .padStart(4, '0')}`
 
   if (!activeBusinessId) {
     return (
@@ -165,7 +173,7 @@ export default function InvoiceSettingsPage() {
           {canEdit && (
             <Button onClick={handleSave} disabled={isSaving} className="w-full">
               {isSaving && <Loading className="mr-2 h-4 w-4" />}
-              {isSaving ? 'Guardando...' : 'Guardar configuración'}
+              {isSaving ? 'Guardando...' : 'Guardar'}
             </Button>
           )}
         </CardContent>

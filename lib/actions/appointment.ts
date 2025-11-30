@@ -267,10 +267,15 @@ export async function getAppointmentByIdAction(
   }
 }
 
+export interface CreateAppointmentOptions {
+  sendWhatsAppNotification?: boolean
+}
+
 export async function createAppointmentAction(
   data: AppointmentInsert,
   services?: AppointmentServiceInput[],
-  supplies?: AppointmentSupplyInput[]
+  supplies?: AppointmentSupplyInput[],
+  options?: CreateAppointmentOptions
 ): Promise<{ success: boolean; data?: Appointment; error?: string }> {
   try {
     const supabase = await getSupabaseAdminClient()
@@ -321,10 +326,154 @@ export async function createAppointmentAction(
       }
     }
 
+    // Enviar notificacion WhatsApp y programar recordatorio
+    if (options?.sendWhatsAppNotification !== false) {
+      try {
+        await sendAppointmentNotifications(supabase, appointment, services || [])
+      } catch (notificationError) {
+        console.error('Error sending appointment notifications:', notificationError)
+        // No fallar la creacion de cita por error de notificacion
+      }
+    }
+
     return { success: true, data: appointment as Appointment }
   } catch (error: any) {
     console.error('Error creating appointment:', error)
     return { success: false, error: error.message || 'Error desconocido' }
+  }
+}
+
+async function sendAppointmentNotifications(
+  supabase: any,
+  appointment: any,
+  services: AppointmentServiceInput[]
+) {
+  // Obtener datos del negocio
+  const { data: business, error: businessError } = await supabase
+    .from('businesses')
+    .select('id, name, business_account_id, address, phone_number')
+    .eq('id', appointment.business_id)
+    .single()
+
+  if (businessError) {
+    console.error('Error fetching business:', businessError)
+    return
+  }
+
+  if (!business?.business_account_id) {
+    console.log('No business_account_id found for business:', appointment.business_id)
+    return
+  }
+
+  // Obtener datos del especialista
+  const { data: specialist } = await supabase
+    .from('specialists')
+    .select('first_name, last_name')
+    .eq('id', appointment.specialist_id)
+    .single()
+
+  // Obtener datos del cliente desde business_customers
+  const { data: customer } = await supabase
+    .from('business_customers')
+    .select('first_name, last_name, phone, email')
+    .eq('user_profile_id', appointment.users_profile_id)
+    .eq('business_id', appointment.business_id)
+    .single()
+
+  // Si no hay cliente en business_customers, intentar con users_profile + auth
+  let customerPhone: string | null = customer?.phone || null
+  let customerName: string = customer
+    ? `${customer.first_name} ${customer.last_name || ''}`.trim()
+    : 'Cliente'
+
+  if (!customerPhone) {
+    // Fallback: buscar en users_profile y auth
+    const { data: userProfile } = await supabase
+      .from('users_profile')
+      .select('user_id')
+      .eq('id', appointment.users_profile_id)
+      .single()
+
+    if (userProfile?.user_id) {
+      const { data: authData } = await supabase.auth.admin.getUserById(userProfile.user_id)
+      const authUser = authData?.user
+      // Buscar phone en auth.users.phone o en user_metadata.phone
+      customerPhone = authUser?.phone || authUser?.user_metadata?.phone || null
+      if (!customerName || customerName === 'Cliente') {
+        customerName = authUser?.user_metadata?.name || 'Cliente'
+      }
+    }
+  }
+
+  if (!customerPhone) {
+    console.log('No phone found for customer with profile:', appointment.users_profile_id)
+    return
+  }
+
+  // Obtener nombres de servicios
+  const serviceIds = services.map((s) => s.service_id)
+  const { data: serviceData } = await supabase
+    .from('services')
+    .select('id, name')
+    .in('id', serviceIds)
+
+  const serviceMap = new Map(serviceData?.map((s: any) => [s.id, s.name]) || [])
+
+  const servicesWithNames = services.map((s) => ({
+    name: (serviceMap.get(s.service_id) as string) || 'Servicio',
+    duration_minutes: s.duration_minutes,
+    price_cents: s.price_at_booking_cents,
+  }))
+
+  const specialistName = specialist
+    ? `${specialist.first_name} ${specialist.last_name || ''}`.trim()
+    : 'Especialista'
+
+  // Importar dinamicamente para evitar dependencias circulares
+  const { createScheduledReminderAction } = await import('./whatsapp')
+  const WhatsAppService = (await import('@/lib/services/whatsapp/whatsapp-service')).default
+
+  const whatsappService = new WhatsAppService()
+
+  console.log('📱 Sending WhatsApp notification:', {
+    business_account_id: business.business_account_id,
+    business_id: appointment.business_id,
+    customer_phone: customerPhone,
+    customer_name: customerName,
+  })
+
+  // Enviar confirmacion de cita
+  const result = await whatsappService.sendAppointmentConfirmation({
+    business_account_id: business.business_account_id,
+    business_id: appointment.business_id,
+    customer_phone: customerPhone,
+    customer_name: customerName,
+    appointment_date: new Date(appointment.start_time),
+    services: servicesWithNames,
+    specialist_name: specialistName,
+    business_name: business.name,
+    business_address: business.address,
+    business_phone: business.phone_number,
+    total_price_cents: appointment.total_price_cents || 0,
+  })
+
+  console.log('📱 WhatsApp notification result:', result)
+
+  // Programar recordatorio 2 horas antes
+  const appointmentDate = new Date(appointment.start_time)
+  const reminderDate = new Date(appointmentDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
+
+  // Solo programar si la cita es en el futuro (mas de 2 horas)
+  if (reminderDate > new Date()) {
+    await createScheduledReminderAction({
+      appointment_id: appointment.id,
+      business_account_id: business.business_account_id,
+      business_id: appointment.business_id,
+      customer_phone: customerPhone,
+      customer_name: customerName,
+      scheduled_for: reminderDate.toISOString(),
+      reminder_type: 'appointment_reminder',
+    })
   }
 }
 
