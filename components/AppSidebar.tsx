@@ -49,7 +49,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="border-b w-full mb-2">
           <Image
-            className="relative mx-auto mb-4"
+            className="relative mx-auto mb-4 dark:brightness-0 dark:invert"
             alt="logo"
             src="/logo.png"
             width={150}

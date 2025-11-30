@@ -9,9 +9,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <html className="h-screen w-full" suppressHydrationWarning>
       <body className="h-full">
         <SessionProvider>
-          <main className="grid place-items-center overflow-hidden">
-            {children}
-          </main>
+          {children}
         </SessionProvider>
         <Toaster />
       </body>

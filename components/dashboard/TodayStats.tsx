@@ -141,7 +141,7 @@ export function TodayStats({ businessId }: TodayStatsProps) {
     <div className="space-y-4">
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <StatCard
-          title="Citas de Hoy"
+          title="Citas de hoy confirmadas"
           value={stats?.total_appointments || 0}
           subtitle={`${stats?.completed_appointments || 0} completadas`}
           icon={Calendar}
@@ -186,8 +186,12 @@ export function TodayStats({ businessId }: TodayStatsProps) {
         />
         <StatCard
           title="Cartera Pendiente"
-          value={formatCurrency((pendingBalance?.total_pending_cents || 0) / 100)}
-          subtitle={`${pendingBalance?.appointments_with_balance || 0} citas con saldo`}
+          value={formatCurrency(
+            (pendingBalance?.total_pending_cents || 0) / 100
+          )}
+          subtitle={`${
+            pendingBalance?.appointments_with_balance || 0
+          } citas con saldo`}
           icon={Wallet}
           loading={loading}
           highlight={hasPendingBalance ? 'warning' : 'default'}

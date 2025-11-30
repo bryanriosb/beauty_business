@@ -19,24 +19,30 @@ interface SpecialistDetailPanelProps {
 }
 
 const DAYS_MAP: Record<string, string> = {
-  monday: 'Lun',
-  tuesday: 'Mar',
-  wednesday: 'Mié',
-  thursday: 'Jue',
-  friday: 'Vie',
-  saturday: 'Sáb',
-  sunday: 'Dom',
+  '0': 'Dom',
+  '1': 'Lun',
+  '2': 'Mar',
+  '3': 'Mié',
+  '4': 'Jue',
+  '5': 'Vie',
+  '6': 'Sáb',
 }
 
-const DAYS_ORDER = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-]
+const DAYS_ORDER = ['1', '2', '3', '4', '5', '6', '0']
+
+const STATUS_CONFIG: Record<
+  string,
+  {
+    label: string
+    variant: 'default' | 'secondary' | 'destructive' | 'outline'
+  }
+> = {
+  PENDING: { label: 'Pendiente', variant: 'secondary' },
+  CONFIRMED: { label: 'Confirmada', variant: 'default' },
+  COMPLETED: { label: 'Completada', variant: 'outline' },
+  CANCELLED: { label: 'Cancelada', variant: 'destructive' },
+  NO_SHOW: { label: 'No asistió', variant: 'destructive' },
+}
 
 function formatTime(time: string) {
   const [hours, minutes] = time.split(':')
@@ -115,7 +121,7 @@ export function SpecialistDetailPanel({
 
   const availabilityByDay = specialist?.availability?.reduce((acc, avail) => {
     if (avail.is_available) {
-      acc[avail.day_of_week] = {
+      acc[String(avail.day_of_week)] = {
         start: formatTime(avail.start_time),
         end: formatTime(avail.end_time),
       }
@@ -191,9 +197,15 @@ export function SpecialistDetailPanel({
             {/* Today's Events */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-sm font-medium">Citas de hoy</h3>
+                <h3 className="text-sm font-medium">
+                  Citas de hoy confirmadas
+                </h3>
                 <Badge variant="secondary" className="text-xs">
-                  {todayAppointments.length}
+                  {
+                    todayAppointments.filter(
+                      (apt) => apt.status !== 'CANCELLED'
+                    ).length
+                  }
                 </Badge>
               </div>
 
@@ -202,9 +214,12 @@ export function SpecialistDetailPanel({
                   Sin citas programadas para hoy
                 </p>
               ) : (
-                <div className="space-y-3">
-                  {todayAppointments.map((apt, index) => {
+                <div className="space-y-3 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
+                  {todayAppointments.map((apt) => {
                     const isNow = currentAppointment?.id === apt.id
+                    const isCancelled = apt.status === 'CANCELLED'
+                    const statusConfig =
+                      STATUS_CONFIG[apt.status] || STATUS_CONFIG.PENDING
                     const startTime = new Date(
                       apt.start_time
                     ).toLocaleTimeString('es-CO', {
@@ -224,22 +239,30 @@ export function SpecialistDetailPanel({
                     return (
                       <div
                         key={apt.id}
-                        className="flex items-center justify-between gap-3 py-2"
+                        className={`flex items-center justify-between gap-3 py-2 ${
+                          isCancelled ? 'opacity-50' : ''
+                        }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4" />
+                            <Clock className="h-4 w-4 shrink-0" />
                             <span
-                              className={
+                              className={`${
                                 isNow ? 'font-medium text-foreground' : ''
-                              }
+                              } ${isCancelled ? 'line-through' : ''}`}
                             >
                               {isNow && '(Ahora) '}
                               {startTime} - {endTime}
                             </span>
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-1 justify-end">
+                        <div className="flex flex-wrap gap-1 justify-end shrink-0">
+                          <Badge
+                            variant={statusConfig.variant}
+                            className="text-xs"
+                          >
+                            {statusConfig.label}
+                          </Badge>
                           {apt.services?.name && (
                             <Badge variant="outline" className="text-xs">
                               {apt.services.name}
@@ -267,10 +290,8 @@ export function SpecialistDetailPanel({
               <div className="space-y-2">
                 {DAYS_ORDER.map((day) => {
                   const schedule = availabilityByDay?.[day]
-                  const dayNumber = new Date().getDay()
-                  const dayIndex = DAYS_ORDER.indexOf(day)
-                  const adjustedDayIndex = dayIndex === 6 ? 0 : dayIndex + 1
-                  const isToday = adjustedDayIndex === dayNumber
+                  const todayNumber = new Date().getDay()
+                  const isToday = String(todayNumber) === day
 
                   return (
                     <div

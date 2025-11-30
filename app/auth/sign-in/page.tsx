@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import Loading from '@/components/ui/loading'
 import { LogIn } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 const formSchema = z.object({
   username: z
@@ -77,7 +78,11 @@ export default function SignInPage() {
   return (
     <div className="w-full min-h-screen grid md:grid-cols-2">
       {/* Columna izquierda - Formulario */}
-      <div className="flex items-center justify-center p-6 md:p-8 bg-card">
+      <div className="relative flex items-center justify-center p-6 md:p-8 bg-card">
+        <Link href="/" className="absolute top-6 left-6">
+          <Image src="/logo.png" alt="Beluvio" width={120} height={36} priority />
+        </Link>
+
         <div className="w-full max-w-md space-y-6">
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-bold">Bienvenido de vuelta</h1>
@@ -170,11 +175,15 @@ export default function SignInPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30" />
         <div className="relative flex h-full items-center justify-center p-8">
-          <div className="space-y-4 text-center text-white">
-            <h2 className="text-3xl font-bold tracking-tight drop-shadow-lg">
-              Beauty Business
-            </h2>
-            <p className="text-lg drop-shadow-md">
+          <div className="space-y-6 text-center">
+            <Image
+              src="/logo.png"
+              alt="Beluvio"
+              width={200}
+              height={60}
+              className="mx-auto drop-shadow-lg brightness-0 invert"
+            />
+            <p className="text-lg text-white drop-shadow-md max-w-sm">
               Gestiona tu negocio de belleza de manera eficiente
             </p>
           </div>
