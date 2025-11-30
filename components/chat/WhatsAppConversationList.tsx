@@ -209,7 +209,7 @@ export function WhatsAppConversationList({ businessAccountId, businessId }: What
           <div className="flex items-center gap-3 flex-1">
             <Avatar className="h-10 w-10">
               <AvatarFallback className="bg-secondary/20 text-secondary font-medium">
-                {getInitials(selectedConversation.customerName, selectedPhone)}
+                {getInitials(selectedConversation.customerName, selectedConversation.phone)}
               </AvatarFallback>
             </Avatar>
             <div>
