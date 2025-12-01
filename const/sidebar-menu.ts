@@ -124,6 +124,10 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
         url: '/admin/settings/scheduler',
       },
       {
+        title: 'Asistente IA',
+        url: '/admin/settings/ai-agent',
+      },
+      {
         title: 'WhatsApp',
         url: '/admin/settings/whatsapp',
         allowedRoles: [USER_ROLES.COMPANY_ADMIN],
