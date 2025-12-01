@@ -33,7 +33,17 @@ import {
   shouldRetry,
   formatErrorForAgent,
 } from './error-handler'
+import {
+  getThinkingIndicator,
+  type FeedbackEvent,
+} from './feedback-generator'
 import type { ErrorInfo } from './state'
+
+export type StreamEvent =
+  | { type: 'chunk'; content: string }
+  | { type: 'feedback'; event: FeedbackEvent }
+  | { type: 'tool_start'; toolName: string }
+  | { type: 'tool_end'; toolName: string; success: boolean }
 
 export interface BusinessAgentConfig {
   businessId: string
@@ -457,6 +467,212 @@ export async function* streamAgentResponse(
   for (const word of words) {
     if (word.trim()) {
       yield word + ' '
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    }
+  }
+}
+
+export async function* streamAgentResponseWithFeedback(
+  businessId: string,
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>
+): AsyncGenerator<StreamEvent> {
+  console.log('[AI Agent] streamAgentResponseWithFeedback started, messages:', messages.length)
+
+  const context = await getBusinessContext(businessId)
+  console.log('[AI Agent] Business context loaded:', context.businessName)
+
+  const tools = [
+    createGetServicesTool(businessId, handleGetServices),
+    createGetSpecialistsTool(businessId, handleGetSpecialists),
+    createGetAvailableSlotsTool(businessId, handleGetAvailableSlots),
+    createGetAppointmentsByPhoneTool(businessId, handleGetAppointmentsByPhone),
+    createCreateAppointmentTool(businessId, handleCreateAppointment),
+    createCancelAppointmentTool(handleCancelAppointment),
+    createRescheduleAppointmentTool(handleRescheduleAppointment),
+  ]
+
+  const model = createModel().bindTools(tools)
+
+  const formattedMessages: BaseMessage[] = [
+    new SystemMessage(createSystemPrompt(context)),
+    ...messages.map((msg) =>
+      msg.role === 'user'
+        ? new HumanMessage(msg.content)
+        : new AIMessage(msg.content)
+    ),
+  ]
+
+  let response = await model.invoke(formattedMessages)
+  let loopCount = 0
+  const maxLoops = 5
+  const retryState: Map<string, { count: number; lastError: ErrorInfo | null }> = new Map()
+
+  while (
+    'tool_calls' in response &&
+    Array.isArray(response.tool_calls) &&
+    response.tool_calls.length > 0 &&
+    loopCount < maxLoops
+  ) {
+    loopCount++
+    console.log(`[AI Agent] Tool loop iteration ${loopCount}`)
+
+    const toolResults: BaseMessage[] = []
+
+    for (const toolCall of response.tool_calls) {
+      const [emoji, thinkingText] = getThinkingIndicator(toolCall.name)
+
+      // Emit tool start with thinking indicator
+      yield {
+        type: 'tool_start',
+        toolName: toolCall.name,
+      }
+
+      yield {
+        type: 'feedback',
+        event: {
+          type: 'thinking',
+          message: `${emoji} ${thinkingText}`,
+          toolName: toolCall.name,
+          elapsedMs: 0,
+        },
+      }
+
+      const tool = tools.find((t) => t.name === toolCall.name)
+      if (tool) {
+        const toolRetryKey = `${toolCall.name}_${JSON.stringify(toolCall.args)}`
+        let retryInfo = retryState.get(toolRetryKey) || { count: 0, lastError: null }
+        let result: string | null = null
+        let lastError: ErrorInfo | null = null
+        let success = true
+
+        const startTime = Date.now()
+        const maxRetries = 2
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const rawResult = await (tool as any).invoke(toolCall.args)
+            result = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult)
+
+            // Check elapsed time and emit feedback if needed
+            const elapsed = Date.now() - startTime
+            if (elapsed > 5000) {
+              yield {
+                type: 'feedback',
+                event: {
+                  type: 'progress',
+                  message: 'Gracias por tu paciencia, ya casi termino...',
+                  toolName: toolCall.name,
+                  elapsedMs: elapsed,
+                },
+              }
+            }
+
+            if (result.toLowerCase().includes('error')) {
+              const errorInfo = createErrorInfo(toolCall.name, result, toolCall.args)
+
+              if (errorInfo.errorType === 'temporary' && attempt < maxRetries) {
+                yield {
+                  type: 'feedback',
+                  event: {
+                    type: 'waiting',
+                    message: 'Un momento, reintentando...',
+                    toolName: toolCall.name,
+                    elapsedMs: Date.now() - startTime,
+                  },
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+                continue
+              }
+
+              lastError = errorInfo
+              result = formatErrorForAgent(errorInfo)
+              success = false
+            }
+
+            break
+          } catch (toolError) {
+            const errorMessage = toolError instanceof Error ? toolError.message : 'Error desconocido'
+            const errorInfo = createErrorInfo(toolCall.name, errorMessage, toolCall.args)
+
+            if (shouldRetry(errorInfo, attempt) && attempt < maxRetries) {
+              yield {
+                type: 'feedback',
+                event: {
+                  type: 'waiting',
+                  message: 'Hubo un pequeño problema, reintentando...',
+                  toolName: toolCall.name,
+                  elapsedMs: Date.now() - startTime,
+                },
+              }
+              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+              continue
+            }
+
+            lastError = errorInfo
+            result = formatErrorForAgent(errorInfo)
+            success = false
+            break
+          }
+        }
+
+        if (lastError) {
+          retryInfo = { count: retryInfo.count + 1, lastError }
+          retryState.set(toolRetryKey, retryInfo)
+        }
+
+        yield {
+          type: 'tool_end',
+          toolName: toolCall.name,
+          success,
+        }
+
+        toolResults.push(
+          new ToolMessage({
+            content: result || 'Error: No se obtuvo resultado',
+            tool_call_id: toolCall.id || `call_${toolCall.name}_${Date.now()}`,
+            name: toolCall.name,
+          })
+        )
+      }
+    }
+
+    formattedMessages.push(response)
+    formattedMessages.push(...toolResults)
+
+    try {
+      response = await model.invoke(formattedMessages)
+    } catch (modelError) {
+      console.error('[AI Agent] Model invocation error:', modelError)
+      throw modelError
+    }
+  }
+
+  let content =
+    typeof response.content === 'string'
+      ? response.content
+      : JSON.stringify(response.content)
+
+  content = content
+    .replace(/\[.*?esperando.*?\]/gi, '')
+    .replace(/\[.*?waiting.*?\]/gi, '')
+    .replace(/\[.*?respuesta.*?\]/gi, '')
+    .replace(/\[.*?response.*?\]/gi, '')
+    .replace(/\[.*?proceso.*?\]/gi, '')
+    .replace(/\[.*?processing.*?\]/gi, '')
+    .replace(/\(.*?waiting.*?\)/gi, '')
+    .replace(/\(.*?esperando.*?\)/gi, '')
+    .trim()
+
+  if (!content) {
+    content = '¿En qué más puedo ayudarte?'
+  }
+
+  // Emit response chunks
+  const words = content.split(' ')
+  for (const word of words) {
+    if (word.trim()) {
+      yield { type: 'chunk', content: word + ' ' }
       await new Promise((resolve) => setTimeout(resolve, 30))
     }
   }

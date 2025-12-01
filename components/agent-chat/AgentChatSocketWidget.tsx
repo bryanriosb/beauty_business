@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Loader2, X, Bot, StopCircle, Square } from 'lucide-react'
+import { Loader2, X, Bot, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { ChatMessage } from './ChatMessage'
 import { AgentChatInput } from './AgentChatInput'
+import { FeedbackIndicator } from './FeedbackIndicator'
 import { useAgentSocket } from '@/hooks/useAgentSocket'
 import { useDeepgramSTT } from '@/hooks/useDeepgramSTT'
 import { cn } from '@/lib/utils'
@@ -25,12 +26,14 @@ export function AgentChatSocketWidget({
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const [inputValue, setInputValue] = useState('')
   const [voiceMode, setVoiceMode] = useState(false)
+  const [isNearBottom, setIsNearBottom] = useState(true)
 
   const {
     isConnected,
     isConnecting,
     isProcessing,
     messages,
+    feedback,
     sendMessage,
     interruptAgent,
     connect,
@@ -62,26 +65,62 @@ export function AgentChatSocketWidget({
     language: 'es-419',
   })
 
-  // Scroll interno del ScrollArea (no de la página)
+  // Scroll interno del ScrollArea
   const scrollToBottom = useCallback(() => {
-    if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector(
-        '[data-radix-scroll-area-viewport]'
-      )
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight
-      }
+    if (!scrollAreaRef.current) return
+    const viewport = scrollAreaRef.current.querySelector(
+      '[data-radix-scroll-area-viewport]'
+    )
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight
     }
   }, [])
 
-  // Solo scroll cuando se agrega un nuevo mensaje
-  const prevMessagesLengthRef = useRef(messages.length)
-  useEffect(() => {
-    if (messages.length !== prevMessagesLengthRef.current) {
-      scrollToBottom()
-      prevMessagesLengthRef.current = messages.length
+  // Detectar si el usuario está cerca del fondo
+  const checkIfNearBottom = useCallback(() => {
+    if (!scrollAreaRef.current) return
+    const viewport = scrollAreaRef.current.querySelector(
+      '[data-radix-scroll-area-viewport]'
+    )
+    if (viewport) {
+      const threshold = 100
+      const isNear =
+        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <
+        threshold
+      setIsNearBottom(isNear)
     }
-  }, [messages.length, scrollToBottom])
+  }, [])
+
+  // Solo auto-scroll si el usuario está cerca del fondo
+  const lastMessageContent = messages[messages.length - 1]?.content || ''
+  useEffect(() => {
+    if (isNearBottom) {
+      scrollToBottom()
+    }
+  }, [messages.length, lastMessageContent, isNearBottom, scrollToBottom])
+
+  // Scroll al enviar mensaje (siempre)
+  useEffect(() => {
+    if (isProcessing) {
+      scrollToBottom()
+      setIsNearBottom(true)
+    }
+  }, [isProcessing, scrollToBottom])
+
+  // Listener para detectar scroll manual del usuario
+  useEffect(() => {
+    const scrollArea = scrollAreaRef.current
+    if (!scrollArea) return
+
+    const viewport = scrollArea.querySelector(
+      '[data-radix-scroll-area-viewport]'
+    )
+    if (!viewport) return
+
+    const handleScroll = () => checkIfNearBottom()
+    viewport.addEventListener('scroll', handleScroll)
+    return () => viewport.removeEventListener('scroll', handleScroll)
+  }, [checkIfNearBottom])
 
   useEffect(() => {
     connect()
@@ -146,10 +185,9 @@ export function AgentChatSocketWidget({
         <div className="flex items-center gap-1">
           {isProcessing && (
             <Button
-              variant="ghost"
               size="icon"
               onClick={interruptAgent}
-              className="text-destructive hover:text-destructive"
+              className="text-destructive hover:text-destructive rounded-full"
             >
               <Square className="!h-5 !w-5" />
             </Button>
@@ -181,11 +219,19 @@ export function AgentChatSocketWidget({
             {agentTyping && !isProcessing && (
               <ChatMessage role="assistant" content="" isTyping />
             )}
+            {isProcessing && (
+              <FeedbackIndicator
+                feedback={
+                  feedback || { type: 'thinking', message: 'Procesando...' }
+                }
+                className="mx-2 mt-2"
+              />
+            )}
           </div>
         </ScrollArea>
       </div>
 
-      <div className="border-t p-4 pt-8">
+      <div className="p-4 pt-8">
         <AgentChatInput
           value={inputValue}
           onChange={setInputValue}

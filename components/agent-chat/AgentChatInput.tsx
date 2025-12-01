@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import {
   ArrowUp,
@@ -91,16 +92,24 @@ export function AgentChatInput({
         mode === 'voice' && 'mt-10 transition-all duration-300'
       )}
     >
-      {mode === 'voice' && (
-        <div className="absolute -bottom-22 left-1/2 -translate-x-1/2 z-5 transition-all duration-1000">
-          <VoiceVisualizer
-            state={getVoiceState()}
-            volume={volume}
-            outputVolume={outputVolume}
-            size={500}
-          />
-        </div>
-      )}
+      <AnimatePresence>
+        {mode === 'voice' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="absolute -bottom-22 left-1/2 -translate-x-1/2 z-5"
+          >
+            <VoiceVisualizer
+              state={getVoiceState()}
+              volume={volume}
+              outputVolume={outputVolume}
+              size={500}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="relative z-20">
         <textarea

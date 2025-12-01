@@ -10,11 +10,18 @@ interface Message {
   content: string
 }
 
+interface FeedbackMessage {
+  type: 'thinking' | 'progress' | 'waiting'
+  message: string
+  toolName?: string
+}
+
 interface UseAgentSocketOptions {
   token: string
   onMessage?: (message: Message) => void
   onError?: (error: string) => void
   onSessionStart?: (session: AgentSession, welcomeMessage: string) => void
+  onFeedback?: (feedback: FeedbackMessage) => void
 }
 
 interface UseAgentSocketReturn {
@@ -23,6 +30,8 @@ interface UseAgentSocketReturn {
   isProcessing: boolean
   session: AgentSession | null
   messages: Message[]
+  feedback: FeedbackMessage | null
+  currentTool: string | null
   sendMessage: (message: string) => Promise<void>
   interruptAgent: () => void
   connect: () => void
@@ -36,6 +45,7 @@ export function useAgentSocket({
   onMessage,
   onError,
   onSessionStart,
+  onFeedback,
 }: UseAgentSocketOptions): UseAgentSocketReturn {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -43,6 +53,8 @@ export function useAgentSocket({
   const [session, setSession] = useState<AgentSession | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [agentTyping, setAgentTyping] = useState(false)
+  const [feedback, setFeedback] = useState<FeedbackMessage | null>(null)
+  const [currentTool, setCurrentTool] = useState<string | null>(null)
 
   const socketRef = useRef<AgentClientSocket | null>(null)
   const currentMessageRef = useRef<string>('')
@@ -131,6 +143,8 @@ export function useAgentSocket({
         }
         onMessage?.(finalMessage)
         setIsProcessing(false)
+        setFeedback(null)
+        setCurrentTool(null)
         currentMessageRef.current = ''
         currentMessageIdRef.current = ''
       }
@@ -138,7 +152,24 @@ export function useAgentSocket({
 
     socket.on('agent:error', ({ error }) => {
       setIsProcessing(false)
+      setFeedback(null)
+      setCurrentTool(null)
       onError?.(error)
+    })
+
+    socket.on('agent:feedback', ({ type, message, toolName }) => {
+      const feedbackData = { type, message, toolName }
+      setFeedback(feedbackData)
+      onFeedback?.(feedbackData)
+    })
+
+    socket.on('agent:tool', ({ status, toolName }) => {
+      if (status === 'start') {
+        setCurrentTool(toolName)
+      } else {
+        setCurrentTool(null)
+        setFeedback(null)
+      }
     })
 
     socket.on('agent:interrupted', () => {
@@ -213,6 +244,8 @@ export function useAgentSocket({
     isProcessing,
     session,
     messages,
+    feedback,
+    currentTool,
     sendMessage,
     interruptAgent,
     connect,

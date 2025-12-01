@@ -44,6 +44,7 @@
     "date-fns": "^4.1.0",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
+    "framer-motion": "^12.23.25",
     "jose": "^6.1.0",
     "langchain": "^1.1.1",
     "lottie-react": "^2.4.1",

@@ -1,6 +1,6 @@
 import type { AgentServer, AgentSocket, AgentSession } from './types'
 import { startAgentSession } from '@/lib/services/ai-agent'
-import { streamAgentResponse } from '@/lib/ai/graph/appointment-graph'
+import { streamAgentResponseWithFeedback } from '@/lib/ai/graph/appointment-graph'
 import {
   addMessageAction,
   fetchConversationMessagesAction,
@@ -89,19 +89,46 @@ export function setupSocketHandlers(io: AgentServer) {
         socket.emit('agent:typing', { isTyping: true })
 
         let fullResponse = ''
-        console.log('[Socket] Starting streamAgentResponse for business:', session.businessId)
+        console.log('[Socket] Starting streamAgentResponseWithFeedback for business:', session.businessId)
 
         try {
-          const responseStream = streamAgentResponse(session.businessId, chatHistory)
+          const responseStream = streamAgentResponseWithFeedback(session.businessId, chatHistory)
 
-          for await (const chunk of responseStream) {
+          for await (const event of responseStream) {
             if (socket.data.abortController?.signal.aborted) {
               socket.emit('agent:interrupted')
               break
             }
 
-            fullResponse += chunk
-            socket.emit('agent:message', { chunk, isComplete: false })
+            switch (event.type) {
+              case 'chunk':
+                fullResponse += event.content
+                socket.emit('agent:message', { chunk: event.content, isComplete: false })
+                break
+
+              case 'feedback':
+                socket.emit('agent:feedback', {
+                  type: event.event.type,
+                  message: event.event.message,
+                  toolName: event.event.toolName,
+                })
+                break
+
+              case 'tool_start':
+                socket.emit('agent:tool', {
+                  status: 'start',
+                  toolName: event.toolName,
+                })
+                break
+
+              case 'tool_end':
+                socket.emit('agent:tool', {
+                  status: 'end',
+                  toolName: event.toolName,
+                  success: event.success,
+                })
+                break
+            }
           }
 
           console.log('[Socket] Stream completed. Full response length:', fullResponse.length)
