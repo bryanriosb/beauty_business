@@ -28,6 +28,12 @@ import {
   handleRescheduleAppointment,
 } from '../tools/handlers'
 import { getSupabaseAdminClient } from '@/lib/actions/supabase'
+import {
+  createErrorInfo,
+  shouldRetry,
+  formatErrorForAgent,
+} from './error-handler'
+import type { ErrorInfo } from './state'
 
 export interface BusinessAgentConfig {
   businessId: string
@@ -141,7 +147,7 @@ function createSystemPrompt(
   })
 
   return `You are the virtual assistant for ${context.businessName}. Your ONLY goal is to book appointments.
-You MUST respond in Spanish (Colombia). Be friendly and warm.
+You MUST respond in Spanish (Colombia). Be friendly and warm Reasoning HIGH.
 
 CURRENT DATE/TIME (Bogotá): ${bogotaDate}
 
@@ -155,15 +161,15 @@ AVAILABLE SPECIALISTS (use these exact IDs):
 ${specialistsInfo}
 
 MANDATORY BOOKING FLOW (follow IN ORDER):
-1. Greet and ask for name: "¡Hola! Soy el asistente de ${context.businessName}. ¿Cómo te llamas?"
-2. Ask to TYPE phone number: "¡Mucho gusto, [NAME]! Por favor, escribe tu número de celular aquí:"
-3. Confirm phone: "Tu número es [NUMBER], ¿está correcto?"
+1. Greet and ask for name: "¡Hola! Soy el asistente de ${context.businessName}. Para agendar una cita, es necesario conocer tu nombre. Por favor dime Cómo te llamas?"
+2. Ask to TYPE phone number: "¡Mucho gusto, [NAME]! Por favor, escribe en el campo de texto tu número de celular para evitar confusiones:"
+3. Confirm phone: "El número ingresado es [NUMBER], ¿está correcto?"
 4. Ask to TYPE email: "Perfecto. Ahora escribe tu correo electrónico:"
-5. Confirm email: "Tu correo es [EMAIL], ¿está correcto?"
-6. Ask for service: "¿Qué servicio te gustaría?"
-7. Ask for date/time: "¿Para qué día y hora?"
+5. Confirm email: "Y el correo [EMAIL], ¿está correcto?"
+6. Ask for service: "¿Por favor me puedes indicar qué servicios te gustaría?"
+7. Ask for date/time: "Eres tan amable de confirmar, ¿para qué día y hora quieres agendar?"
 8. Use get_available_slots tool, then offer times: "Tenemos disponible: [times]. ¿Cuál prefieres?"
-9. Ask for specialist: "¿Con qué especialista te gustaría?"
+9. Ask for specialist: "¿Ya tienes un especialista en mente con el que quieres agendar? ¿O desea saber cuales estan disponibles?"
 10. Show summary and confirm: "Resumen: [NAME], [PHONE], [EMAIL], [SERVICE], [DATE/TIME], con [SPECIALIST]. ¿Confirmo?"
 11. Use create_appointment tool: "¡Listo! Tu cita está agendada."
 
@@ -176,6 +182,22 @@ CRITICAL RULES:
 - ALWAYS ask the next question immediately
 - One question per message, max 2 sentences
 
+CONVERSATIONAL EFFICIENCY (VERY IMPORTANT):
+- If user gives a SPECIFIC answer, do NOT ask again. Move to next step.
+- Example: User says "a las 3pm" → verify availability, if available proceed to ask specialist, do NOT ask "¿prefieres las 3pm?"
+- Example: User says "con Bryan" → proceed to summary, do NOT ask "¿te gustaría con Bryan?"
+- Be CONCISE: If user already chose, just CONFIRM and move on
+- When time is available, say: "Perfecto, las 3pm está disponible. ¿Con qué especialista te gustaría?"
+
+TOOL ERROR HANDLING (EXTREMELY IMPORTANT):
+- If a tool result starts with "[ERROR]", the operation FAILED - read the [ACCIÓN] for guidance
+- NEVER say "¡Listo!" or "Tu cita está agendada" if create_appointment returned an error
+- If you see "[ACCIÓN] Informa al usuario...", follow that instruction exactly
+- A successful appointment will return "¡Cita agendada exitosamente!" - only then confirm to user
+- For temporary errors: The system already retried, inform user of the issue
+- For user_input errors: Ask user to verify/change their input
+- For permanent errors: Apologize and suggest contacting the business directly
+
 DATA EXTRACTION (VERY IMPORTANT):
 - When user writes phone "3152181292", use THAT EXACT number in tools
 - NEVER invent phone numbers - copy exactly what user wrote
@@ -183,7 +205,7 @@ DATA EXTRACTION (VERY IMPORTANT):
 - Check conversation history for real data
 
 CORRECT TOOL USAGE:
-User: "3152181292"
+User: "3152181492"
 → Call get_appointments_by_phone with phone: "3152181292" (EXACT number)
 
 NEVER DO THIS:
@@ -244,7 +266,10 @@ export async function* streamAgentResponse(
   businessId: string,
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
 ): AsyncGenerator<string> {
-  console.log('[AI Agent] streamAgentResponse started, messages:', messages.length)
+  console.log(
+    '[AI Agent] streamAgentResponse started, messages:',
+    messages.length
+  )
 
   const context = await getBusinessContext(businessId)
   console.log('[AI Agent] Business context loaded:', context.businessName)
@@ -272,7 +297,8 @@ export async function* streamAgentResponse(
 
   let response = await model.invoke(formattedMessages)
   let loopCount = 0
-  const maxLoops = 5 // Prevenir loops infinitos
+  const maxLoops = 5
+  const retryState: Map<string, { count: number; lastError: ErrorInfo | null }> = new Map()
 
   while (
     'tool_calls' in response &&
@@ -296,39 +322,71 @@ export async function* streamAgentResponse(
       )
       const tool = tools.find((t) => t.name === toolCall.name)
       if (tool) {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const result = await (tool as any).invoke(toolCall.args)
-          console.log(
-            '[AI Agent] Tool result:',
-            toolCall.name,
-            'result:',
-            typeof result === 'string' ? result.substring(0, 200) : result
-          )
-          toolResults.push(
-            new ToolMessage({
-              content:
-                typeof result === 'string' ? result : JSON.stringify(result),
-              tool_call_id:
-                toolCall.id || `call_${toolCall.name}_${Date.now()}`,
-              name: toolCall.name,
-            })
-          )
-        } catch (toolError) {
-          console.error('[AI Agent] Tool error:', toolCall.name, toolError)
-          toolResults.push(
-            new ToolMessage({
-              content: `Error al ejecutar ${toolCall.name}: ${
-                toolError instanceof Error
-                  ? toolError.message
-                  : 'Error desconocido'
-              }`,
-              tool_call_id:
-                toolCall.id || `call_${toolCall.name}_${Date.now()}`,
-              name: toolCall.name,
-            })
-          )
+        const toolRetryKey = `${toolCall.name}_${JSON.stringify(toolCall.args)}`
+        let retryInfo = retryState.get(toolRetryKey) || { count: 0, lastError: null }
+        let result: string | null = null
+        let lastError: ErrorInfo | null = null
+
+        const maxRetries = 2
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const rawResult = await (tool as any).invoke(toolCall.args)
+            result = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult)
+
+            // Check if result contains error (some tools return error strings)
+            if (result.toLowerCase().includes('error')) {
+              const errorInfo = createErrorInfo(toolCall.name, result, toolCall.args)
+              console.log('[AI Agent] Tool returned error:', errorInfo.errorType, '-', result.substring(0, 100))
+
+              if (errorInfo.errorType === 'temporary' && attempt < maxRetries) {
+                console.log(`[AI Agent] Retrying ${toolCall.name} (attempt ${attempt + 1}/${maxRetries})`)
+                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+                continue
+              }
+
+              // Not retryable or max retries reached
+              lastError = errorInfo
+              result = formatErrorForAgent(errorInfo)
+            }
+
+            break // Success or non-retryable error
+          } catch (toolError) {
+            const errorMessage = toolError instanceof Error ? toolError.message : 'Error desconocido'
+            const errorInfo = createErrorInfo(toolCall.name, errorMessage, toolCall.args)
+            console.error('[AI Agent] Tool exception:', toolCall.name, errorInfo.errorType, errorMessage)
+
+            if (shouldRetry(errorInfo, attempt) && attempt < maxRetries) {
+              console.log(`[AI Agent] Retrying ${toolCall.name} after exception (attempt ${attempt + 1}/${maxRetries})`)
+              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+              continue
+            }
+
+            lastError = errorInfo
+            result = formatErrorForAgent(errorInfo)
+            break
+          }
         }
+
+        if (lastError) {
+          retryInfo = { count: retryInfo.count + 1, lastError }
+          retryState.set(toolRetryKey, retryInfo)
+        }
+
+        console.log(
+          '[AI Agent] Tool result:',
+          toolCall.name,
+          'result:',
+          result ? result.substring(0, 200) : 'null'
+        )
+
+        toolResults.push(
+          new ToolMessage({
+            content: result || 'Error: No se obtuvo resultado',
+            tool_call_id: toolCall.id || `call_${toolCall.name}_${Date.now()}`,
+            name: toolCall.name,
+          })
+        )
       }
     }
 
@@ -345,11 +403,20 @@ export async function* streamAgentResponse(
     }
 
     // Log intermedio del contenido de respuesta
-    const intermediateContent = typeof response.content === 'string'
-      ? response.content
-      : JSON.stringify(response.content)
-    console.log('[AI Agent] Intermediate response:', intermediateContent.substring(0, 200))
-    console.log('[AI Agent] Has tool_calls:', 'tool_calls' in response && Array.isArray(response.tool_calls) ? response.tool_calls.length : 0)
+    const intermediateContent =
+      typeof response.content === 'string'
+        ? response.content
+        : JSON.stringify(response.content)
+    console.log(
+      '[AI Agent] Intermediate response:',
+      intermediateContent.substring(0, 200)
+    )
+    console.log(
+      '[AI Agent] Has tool_calls:',
+      'tool_calls' in response && Array.isArray(response.tool_calls)
+        ? response.tool_calls.length
+        : 0
+    )
   }
 
   if (loopCount >= maxLoops) {
@@ -378,7 +445,10 @@ export async function* streamAgentResponse(
 
   // Si después de filtrar queda vacío, el modelo no respondió correctamente
   if (!content) {
-    console.warn('[AI Agent] Response was empty after filtering. Original:', originalContent)
+    console.warn(
+      '[AI Agent] Response was empty after filtering. Original:',
+      originalContent
+    )
     // Proporcionar una respuesta de fallback
     content = '¿En qué más puedo ayudarte?'
   }

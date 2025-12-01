@@ -24,6 +24,7 @@ const sourceLabels: Record<CustomerSource, string> = {
   referral: 'Referido',
   social_media: 'Redes sociales',
   website: 'Sitio web',
+  ai_agent: 'Asistente IA',
   other: 'Otro',
 }
 

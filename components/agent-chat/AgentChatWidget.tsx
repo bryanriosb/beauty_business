@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Loader2, X, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { ChatMessage } from './ChatMessage'
 import { AgentChatInput } from './AgentChatInput'
 import { useDeepgramSTT } from '@/hooks/useDeepgramSTT'
@@ -268,17 +269,20 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
 
   return (
     <div className={cn('flex h-full flex-col bg-background', className)}>
-      {onClose && (
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
-            <span className="font-medium">Asistente Virtual</span>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Bot className="h-5 w-5 text-primary" />
+          <span className="font-medium">Asistente Virtual</span>
         </div>
-      )}
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          {onClose && (
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
 
       <ScrollArea className="flex-1 p-2">
         <div className="flex flex-col gap-1 pb-4">

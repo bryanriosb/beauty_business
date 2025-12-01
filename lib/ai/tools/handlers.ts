@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient } from '@/lib/actions/supabase'
 import { getAvailableSlotsForServiceAction } from '@/lib/actions/availability'
+import { createFullCustomerAction } from '@/lib/actions/business-customer'
 import {
   type GetAvailableSlotsInput,
   type GetServicesInput,
@@ -199,47 +200,25 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
       const firstName = nameParts[0]
       const lastName = nameParts.slice(1).join(' ') || null
 
-      // Primero crear un user_profile para el cliente
-      const { data: newProfile, error: profileError } = await supabase
-        .from('users_profile')
-        .insert({
-          first_name: firstName,
-          last_name: lastName,
-          phone_number: input.customerPhone,
-          email: input.customerEmail || null,
-        })
-        .select('id')
-        .single()
+      const email = input.customerEmail || `${input.customerPhone}@guest.ai-agent.local`
 
-      if (profileError) {
-        console.error('[AI Agent] Error creating user profile:', profileError)
-        throw profileError
+      const result = await createFullCustomerAction({
+        business_id: input.businessId,
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        phone: input.customerPhone,
+        source: 'ai_agent',
+      })
+
+      if (!result.success || !result.data) {
+        console.error('[AI Agent] Error creating customer:', result.error)
+        throw new Error(result.error || 'Error al crear cliente')
       }
-      console.log('[AI Agent] Created user profile:', newProfile.id)
-      userProfileId = newProfile.id
 
-      // Ahora crear el business_customer con el user_profile_id
-      const { data: newCustomer, error: createError } = await supabase
-        .from('business_customers')
-        .insert({
-          business_id: input.businessId,
-          user_profile_id: userProfileId,
-          first_name: firstName,
-          last_name: lastName,
-          phone: input.customerPhone,
-          email: input.customerEmail || null,
-          source: 'ai_agent',
-          status: 'active',
-        })
-        .select('id')
-        .single()
-
-      if (createError) {
-        console.error('[AI Agent] Error creating customer:', createError)
-        throw createError
-      }
-      console.log('[AI Agent] Created customer:', newCustomer.id)
-      customerId = newCustomer.id
+      console.log('[AI Agent] Created customer:', result.data.id)
+      customerId = result.data.id
+      userProfileId = result.userProfileId!
     }
 
     console.log('[AI Agent] Looking for services:', input.serviceIds)

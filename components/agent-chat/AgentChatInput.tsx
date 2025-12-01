@@ -85,9 +85,14 @@ export function AgentChatInput({
   }
 
   return (
-    <div className="w-full bg-background border border-border rounded-2xl shadow-lg relative">
+    <div
+      className={cn(
+        'w-full bg-background border border-border rounded-2xl shadow-lg relative',
+        mode === 'voice' && 'mt-10 transition-all duration-300'
+      )}
+    >
       {mode === 'voice' && (
-        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 z-5">
+        <div className="absolute -bottom-22 left-1/2 -translate-x-1/2 z-5 transition-all duration-1000">
           <VoiceVisualizer
             state={getVoiceState()}
             volume={volume}

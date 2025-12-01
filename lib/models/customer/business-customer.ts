@@ -1,6 +1,6 @@
 import type { UsersProfile, UserGender } from '@/lib/models/user/users-profile'
 
-export type CustomerSource = 'walk_in' | 'referral' | 'social_media' | 'website' | 'other'
+export type CustomerSource = 'walk_in' | 'referral' | 'social_media' | 'website' | 'ai_agent' | 'other'
 export type CustomerStatus = 'active' | 'inactive' | 'vip' | 'blocked'
 
 export interface CustomerMetadata {

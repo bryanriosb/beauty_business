@@ -47,16 +47,24 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
             <pre className="mb-3 overflow-hidden rounded-lg">{children}</pre>
           ),
           h1: ({ children }) => (
-            <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>
+            <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">
+              {children}
+            </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-lg font-bold mb-3 mt-4 first:mt-0">{children}</h2>
+            <h2 className="text-lg font-bold mb-3 mt-4 first:mt-0">
+              {children}
+            </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-base font-semibold mb-2 mt-3 first:mt-0">{children}</h3>
+            <h3 className="text-base font-semibold mb-2 mt-3 first:mt-0">
+              {children}
+            </h3>
           ),
           h4: ({ children }) => (
-            <h4 className="text-sm font-semibold mb-2 mt-3 first:mt-0">{children}</h4>
+            <h4 className="text-sm font-semibold mb-2 mt-3 first:mt-0">
+              {children}
+            </h4>
           ),
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-3 italic text-muted-foreground">
@@ -64,13 +72,15 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
             </blockquote>
           ),
           strong: ({ children }) => (
-            <strong className="font-semibold text-foreground">{children}</strong>
+            <strong className="font-semibold text-foreground">
+              {children}
+            </strong>
           ),
           em: ({ children }) => <em className="italic">{children}</em>,
           a: ({ href, children }) => (
             <a
               href={href}
-              className="text-primary underline hover:text-primary/80 transition-colors"
+              className="text-secondary underline hover:text-secondary/80 transition-colors"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -80,13 +90,21 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
           hr: () => <hr className="my-4 border-t border-border" />,
           table: ({ children }) => (
             <div className="overflow-x-auto my-3">
-              <table className="w-full border-collapse border border-border">{children}</table>
+              <table className="w-full border-collapse border border-border">
+                {children}
+              </table>
             </div>
           ),
-          thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
+          thead: ({ children }) => (
+            <thead className="bg-muted">{children}</thead>
+          ),
           tbody: ({ children }) => <tbody>{children}</tbody>,
-          tr: ({ children }) => <tr className="border-b border-border">{children}</tr>,
-          th: ({ children }) => <th className="px-3 py-2 text-left font-semibold">{children}</th>,
+          tr: ({ children }) => (
+            <tr className="border-b border-border">{children}</tr>
+          ),
+          th: ({ children }) => (
+            <th className="px-3 py-2 text-left font-semibold">{children}</th>
+          ),
           td: ({ children }) => <td className="px-3 py-2">{children}</td>,
         }}
       >

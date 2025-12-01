@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Loader2, X, Bot, StopCircle } from 'lucide-react'
+import { Loader2, X, Bot, StopCircle, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { ChatMessage } from './ChatMessage'
 import { AgentChatInput } from './AgentChatInput'
 import { useAgentSocket } from '@/hooks/useAgentSocket'
@@ -39,10 +40,13 @@ export function AgentChatSocketWidget({
     onError: (error) => console.error('Socket error:', error),
   })
 
-  const handleUtteranceEnd = useCallback(async (text: string) => {
-    if (!text.trim()) return
-    await sendMessage(text.trim())
-  }, [sendMessage])
+  const handleUtteranceEnd = useCallback(
+    async (text: string) => {
+      if (!text.trim()) return
+      await sendMessage(text.trim())
+    },
+    [sendMessage]
+  )
 
   const {
     isListening,
@@ -61,7 +65,9 @@ export function AgentChatSocketWidget({
   // Scroll interno del ScrollArea (no de la página)
   const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      const viewport = scrollAreaRef.current.querySelector(
+        '[data-radix-scroll-area-viewport]'
+      )
       if (viewport) {
         viewport.scrollTop = viewport.scrollHeight
       }
@@ -103,7 +109,9 @@ export function AgentChatSocketWidget({
       <div className={cn('flex h-full items-center justify-center', className)}>
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Conectando con el asistente...</p>
+          <p className="text-sm text-muted-foreground">
+            Conectando con el asistente...
+          </p>
         </div>
       </div>
     )
@@ -127,32 +135,33 @@ export function AgentChatSocketWidget({
 
   return (
     <div className={cn('flex h-full flex-col bg-background', className)}>
-      {onClose && (
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
-            <span className="font-medium">Asistente Virtual</span>
-            {isConnected && (
-              <span className="flex h-2 w-2 rounded-full bg-green-500" />
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {isProcessing && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={interruptAgent}
-                className="text-destructive hover:text-destructive"
-              >
-                <StopCircle className="h-4 w-4" />
-              </Button>
-            )}
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Bot className="h-5 w-5 text-primary" />
+          <span className="font-medium">Asistente Virtual</span>
+          {isConnected && (
+            <span className="flex h-2 w-2 rounded-full bg-green-500" />
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {isProcessing && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={interruptAgent}
+              className="text-destructive hover:text-destructive"
+            >
+              <Square className="!h-5 !w-5" />
+            </Button>
+          )}
+          {onClose && (
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
-          </div>
+          )}
+          <ThemeToggle />
         </div>
-      )}
+      </div>
 
       <div ref={scrollAreaRef} className="flex-1 overflow-hidden">
         <ScrollArea className="h-full p-2">
