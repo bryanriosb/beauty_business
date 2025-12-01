@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const responseStream = await streamAgentResponse(session.businessId, chatHistory)
+          const responseStream = await streamAgentResponse(session.businessId, session.sessionId, chatHistory)
 
           for await (const chunk of responseStream) {
             fullResponse += chunk

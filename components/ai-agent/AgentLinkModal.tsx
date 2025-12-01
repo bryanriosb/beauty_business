@@ -24,7 +24,11 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Loader2 } from 'lucide-react'
-import type { AgentLink, AgentLinkInsert, AgentLinkUpdate } from '@/lib/models/ai-conversation'
+import type {
+  AgentLink,
+  AgentLinkInsert,
+  AgentLinkUpdate,
+} from '@/lib/models/ai-conversation'
 
 const formSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -32,6 +36,7 @@ const formSchema = z.object({
   max_uses: z.number().nullable(),
   max_minutes: z.number().nullable(),
   expires_at: z.string().nullable(),
+  assistant_name: z.string().optional(),
   welcome_message: z.string().optional(),
   require_phone_verification: z.boolean(),
 })
@@ -69,6 +74,7 @@ export function AgentLinkModal({
       max_uses: null,
       max_minutes: null,
       expires_at: null,
+      assistant_name: '',
       welcome_message: '',
       require_phone_verification: false,
     },
@@ -84,8 +90,10 @@ export function AgentLinkModal({
         max_uses: link.max_uses,
         max_minutes: link.max_minutes,
         expires_at: link.expires_at ? link.expires_at.split('T')[0] : null,
+        assistant_name: link.settings?.assistant_name || '',
         welcome_message: link.settings?.welcome_message || '',
-        require_phone_verification: link.settings?.require_phone_verification || false,
+        require_phone_verification:
+          link.settings?.require_phone_verification || false,
       })
     } else {
       reset({
@@ -94,6 +102,7 @@ export function AgentLinkModal({
         max_uses: null,
         max_minutes: null,
         expires_at: null,
+        assistant_name: '',
         welcome_message: '',
         require_phone_verification: false,
       })
@@ -106,19 +115,24 @@ export function AgentLinkModal({
       const payload: AgentLinkInsert | AgentLinkUpdate = {
         name: data.name,
         type: data.type,
-        max_uses: data.type === 'multi_use' || data.type === 'single_use' ? data.max_uses : null,
+        max_uses:
+          data.type === 'multi_use' || data.type === 'single_use'
+            ? data.max_uses
+            : null,
         max_minutes: data.type === 'minute_limited' ? data.max_minutes : null,
-        expires_at: data.type === 'time_limited' && data.expires_at
-          ? new Date(data.expires_at).toISOString()
-          : null,
+        expires_at:
+          data.type === 'time_limited' && data.expires_at
+            ? new Date(data.expires_at).toISOString()
+            : null,
         settings: {
+          assistant_name: data.assistant_name || undefined,
           welcome_message: data.welcome_message || undefined,
           require_phone_verification: data.require_phone_verification,
         },
       }
 
       if (!link) {
-        (payload as AgentLinkInsert).business_id = businessId
+        ;(payload as AgentLinkInsert).business_id = businessId
       }
 
       await onSave(payload)
@@ -138,7 +152,8 @@ export function AgentLinkModal({
             {link ? 'Editar Enlace' : 'Crear Enlace de Agente'}
           </DialogTitle>
           <DialogDescription>
-            Configura un enlace para compartir el asistente virtual con tus clientes.
+            Configura un enlace para compartir el asistente virtual con tus
+            clientes.
           </DialogDescription>
         </DialogHeader>
 
@@ -156,19 +171,40 @@ export function AgentLinkModal({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="assistant_name">
+              Nombre del asistente (opcional)
+            </Label>
+            <Input
+              id="assistant_name"
+              placeholder="Ej: Ana, Sofía, etc."
+              {...register('assistant_name')}
+            />
+            <p className="text-xs text-muted-foreground">
+              Este nombre se mostrará en el chat y el agente se presentará con
+              él
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="type">Tipo de enlace</Label>
             <Select
               value={linkType}
-              onValueChange={(value) => setValue('type', value as FormData['type'])}
+              onValueChange={(value) =>
+                setValue('type', value as FormData['type'])
+              }
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona el tipo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="single_use">Un solo uso</SelectItem>
                 <SelectItem value="multi_use">Múltiples usos</SelectItem>
-                <SelectItem value="time_limited">Con fecha de expiración</SelectItem>
-                <SelectItem value="minute_limited">Con límite de minutos</SelectItem>
+                <SelectItem value="time_limited">
+                  Con fecha de expiración
+                </SelectItem>
+                <SelectItem value="minute_limited">
+                  Con límite de minutos
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -202,16 +238,14 @@ export function AgentLinkModal({
           {linkType === 'time_limited' && (
             <div className="space-y-2">
               <Label htmlFor="expires_at">Fecha de expiración</Label>
-              <Input
-                id="expires_at"
-                type="date"
-                {...register('expires_at')}
-              />
+              <Input id="expires_at" type="date" {...register('expires_at')} />
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="welcome_message">Mensaje de bienvenida (opcional)</Label>
+            <Label htmlFor="welcome_message">
+              Mensaje de bienvenida (opcional)
+            </Label>
             <Textarea
               id="welcome_message"
               placeholder="Hola! Soy el asistente virtual..."
@@ -230,7 +264,9 @@ export function AgentLinkModal({
             <Switch
               id="require_phone"
               checked={watch('require_phone_verification')}
-              onCheckedChange={(checked) => setValue('require_phone_verification', checked)}
+              onCheckedChange={(checked) =>
+                setValue('require_phone_verification', checked)
+              }
             />
           </div>
 

@@ -33,10 +33,17 @@ import {
   shouldRetry,
   formatErrorForAgent,
 } from './error-handler'
+import { getThinkingIndicator, type FeedbackEvent } from './feedback-generator'
+import { routeIntent, getConversationContext, type Intent } from './router'
 import {
-  getThinkingIndicator,
-  type FeedbackEvent,
-} from './feedback-generator'
+  createBookingPrompt,
+  createInquiryPrompt,
+  createAvailabilityPrompt,
+  createReschedulePrompt,
+  createCancelPrompt,
+  createGeneralPrompt,
+  type BusinessContext,
+} from './prompts'
 import type { ErrorInfo } from './state'
 
 export type StreamEvent =
@@ -44,19 +51,21 @@ export type StreamEvent =
   | { type: 'feedback'; event: FeedbackEvent }
   | { type: 'tool_start'; toolName: string }
   | { type: 'tool_end'; toolName: string; success: boolean }
+  | { type: 'intent'; intent: Intent }
 
 export interface BusinessAgentConfig {
   businessId: string
+  sessionId: string
 }
 
-function createModel() {
+function createMainModel() {
   const apiKey = process.env.DEEPINFRA_API_KEY
   if (!apiKey) {
     throw new Error('DEEPINFRA_API_KEY environment variable is not set')
   }
 
   return new ChatOpenAI({
-    model: 'Qwen/Qwen3-235B-A22B-Instruct-2507',
+    model: 'Qwen/Qwen3-235B-A22B-Instruct-2507', //'openai/gpt-oss-120b',
     temperature: 0.3,
     maxTokens: 1024,
     apiKey: apiKey,
@@ -66,7 +75,9 @@ function createModel() {
   })
 }
 
-async function getBusinessContext(businessId: string) {
+async function getBusinessContext(
+  businessId: string
+): Promise<BusinessContext> {
   const supabase = await getSupabaseAdminClient()
 
   const { data: business } = await supabase
@@ -109,6 +120,16 @@ async function getBusinessContext(businessId: string) {
       .map((h) => `${daysMap[h.day]}: ${h.open_time} - ${h.close_time}`)
       .join('\n') || 'No especificado'
 
+  const bogotaDate = new Date().toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
   return {
     businessName: business?.name || 'Negocio',
     businessType: business?.type || 'Salón de belleza',
@@ -127,123 +148,96 @@ async function getBusinessContext(businessId: string) {
         specialty: s.specialty || 'General',
       })) || [],
     operatingHours,
+    currentDateTime: bogotaDate,
   }
 }
 
-function createSystemPrompt(
-  context: Awaited<ReturnType<typeof getBusinessContext>>
-) {
-  const servicesInfo = context.services
-    .map(
-      (s) =>
-        `- ${s.name} (ID: ${s.id}): ${s.duration} min, $${(
-          s.price / 100
-        ).toFixed(2)}`
-    )
-    .join('\n')
+function getPromptForIntent(intent: Intent, context: BusinessContext): string {
+  switch (intent) {
+    case 'BOOKING':
+      return createBookingPrompt(context)
+    case 'INQUIRY':
+      return createInquiryPrompt(context)
+    case 'AVAILABILITY':
+      return createAvailabilityPrompt(context)
+    case 'RESCHEDULE':
+      return createReschedulePrompt(context)
+    case 'CANCEL':
+      return createCancelPrompt(context)
+    case 'GENERAL':
+    default:
+      return createGeneralPrompt(context)
+  }
+}
 
-  const specialistsInfo = context.specialists
-    .map((s) => `- ${s.name} (ID: ${s.id}) - ${s.specialty}`)
-    .join('\n')
+function getToolsForIntent(intent: Intent, businessId: string, sessionId: string) {
+  const ctx = { businessId, sessionId }
 
-  const bogotaDate = new Date().toLocaleString('es-CO', {
-    timeZone: 'America/Bogota',
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const allTools = [
+    createGetServicesTool(ctx, handleGetServices),
+    createGetSpecialistsTool(ctx, handleGetSpecialists),
+    createGetAvailableSlotsTool(ctx, handleGetAvailableSlots),
+    createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
+    createCreateAppointmentTool(ctx, handleCreateAppointment),
+    createCancelAppointmentTool(ctx, handleCancelAppointment),
+    createRescheduleAppointmentTool(ctx, handleRescheduleAppointment),
+  ]
 
-  return `You are the virtual assistant for ${context.businessName}. Your ONLY goal is to book appointments.
-You MUST respond in Spanish (Colombia). Be friendly and warm Reasoning HIGH.
-
-CURRENT DATE/TIME (Bogotá): ${bogotaDate}
-
-BUSINESS: ${context.businessName}
-HOURS: ${context.operatingHours}
-
-AVAILABLE SERVICES (use these exact IDs):
-${servicesInfo}
-
-AVAILABLE SPECIALISTS (use these exact IDs):
-${specialistsInfo}
-
-MANDATORY BOOKING FLOW (follow IN ORDER):
-1. Greet and ask for name: "¡Hola! Soy el asistente de ${context.businessName}. Para agendar una cita, es necesario conocer tu nombre. Por favor dime Cómo te llamas?"
-2. Ask to TYPE phone number: "¡Mucho gusto, [NAME]! Por favor, escribe en el campo de texto tu número de celular para evitar confusiones:"
-3. Confirm phone: "El número ingresado es [NUMBER], ¿está correcto?"
-4. Ask to TYPE email: "Perfecto. Ahora escribe tu correo electrónico:"
-5. Confirm email: "Y el correo [EMAIL], ¿está correcto?"
-6. Ask for service: "¿Por favor me puedes indicar qué servicios te gustaría?"
-7. Ask for date/time: "Eres tan amable de confirmar, ¿para qué día y hora quieres agendar?"
-8. Use get_available_slots tool, then offer times: "Tenemos disponible: [times]. ¿Cuál prefieres?"
-9. Ask for specialist: "¿Ya tienes un especialista en mente con el que quieres agendar? ¿O desea saber cuales estan disponibles?"
-10. Show summary and confirm: "Resumen: [NAME], [PHONE], [EMAIL], [SERVICE], [DATE/TIME], con [SPECIALIST]. ¿Confirmo?"
-11. Use create_appointment tool: "¡Listo! Tu cita está agendada."
-
-CRITICAL RULES:
-- ALWAYS respond with natural Spanish text ONLY
-- NEVER output status messages like "[Waiting]", "[Processing]", "(Esperando)"
-- NEVER use brackets [] or parentheses () for internal states
-- NEVER say goodbye until appointment is complete
-- NEVER invent data - use EXACTLY what user wrote
-- ALWAYS ask the next question immediately
-- One question per message, max 2 sentences
-
-CONVERSATIONAL EFFICIENCY (VERY IMPORTANT):
-- If user gives a SPECIFIC answer, do NOT ask again. Move to next step.
-- Example: User says "a las 3pm" → verify availability, if available proceed to ask specialist, do NOT ask "¿prefieres las 3pm?"
-- Example: User says "con Bryan" → proceed to summary, do NOT ask "¿te gustaría con Bryan?"
-- Be CONCISE: If user already chose, just CONFIRM and move on
-- When time is available, say: "Perfecto, las 3pm está disponible. ¿Con qué especialista te gustaría?"
-
-TOOL ERROR HANDLING (EXTREMELY IMPORTANT):
-- If a tool result starts with "[ERROR]", the operation FAILED - read the [ACCIÓN] for guidance
-- NEVER say "¡Listo!" or "Tu cita está agendada" if create_appointment returned an error
-- If you see "[ACCIÓN] Informa al usuario...", follow that instruction exactly
-- A successful appointment will return "¡Cita agendada exitosamente!" - only then confirm to user
-- For temporary errors: The system already retried, inform user of the issue
-- For user_input errors: Ask user to verify/change their input
-- For permanent errors: Apologize and suggest contacting the business directly
-
-DATA EXTRACTION (VERY IMPORTANT):
-- When user writes phone "3152181292", use THAT EXACT number in tools
-- NEVER invent phone numbers - copy exactly what user wrote
-- If user says "me llamo Juan", name is "Juan" - don't invent another
-- Check conversation history for real data
-
-CORRECT TOOL USAGE:
-User: "3152181492"
-→ Call get_appointments_by_phone with phone: "3152181292" (EXACT number)
-
-NEVER DO THIS:
-❌ Invent numbers like "3115551234" when user wrote "3152181292"
-❌ Use placeholders like "placeholder", "unknown", "TBD"
-❌ Output "[Waiting for response]" or any status text
-❌ Say goodbye before completing appointment`
+  switch (intent) {
+    case 'BOOKING':
+      return allTools
+    case 'INQUIRY':
+      return [
+        createGetServicesTool(ctx, handleGetServices),
+        createGetSpecialistsTool(ctx, handleGetSpecialists),
+        createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
+      ]
+    case 'AVAILABILITY':
+      return [
+        createGetServicesTool(ctx, handleGetServices),
+        createGetAvailableSlotsTool(ctx, handleGetAvailableSlots),
+        createGetSpecialistsTool(ctx, handleGetSpecialists),
+      ]
+    case 'RESCHEDULE':
+      return [
+        createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
+        createGetAvailableSlotsTool(ctx, handleGetAvailableSlots),
+        createRescheduleAppointmentTool(ctx, handleRescheduleAppointment),
+        createGetSpecialistsTool(ctx, handleGetSpecialists),
+      ]
+    case 'CANCEL':
+      return [
+        createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
+        createCancelAppointmentTool(ctx, handleCancelAppointment),
+      ]
+    case 'GENERAL':
+    default:
+      return [
+        createGetServicesTool(ctx, handleGetServices),
+        createGetSpecialistsTool(ctx, handleGetSpecialists),
+      ]
+  }
 }
 
 export async function createAppointmentAgent(config: BusinessAgentConfig) {
   const context = await getBusinessContext(config.businessId)
-  const businessId = config.businessId
+  const ctx = { businessId: config.businessId, sessionId: config.sessionId }
 
   const tools = [
-    createGetServicesTool(businessId, handleGetServices),
-    createGetSpecialistsTool(businessId, handleGetSpecialists),
-    createGetAvailableSlotsTool(businessId, handleGetAvailableSlots),
-    createGetAppointmentsByPhoneTool(businessId, handleGetAppointmentsByPhone),
-    createCreateAppointmentTool(businessId, handleCreateAppointment),
-    createCancelAppointmentTool(handleCancelAppointment),
-    createRescheduleAppointmentTool(handleRescheduleAppointment),
+    createGetServicesTool(ctx, handleGetServices),
+    createGetSpecialistsTool(ctx, handleGetSpecialists),
+    createGetAvailableSlotsTool(ctx, handleGetAvailableSlots),
+    createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
+    createCreateAppointmentTool(ctx, handleCreateAppointment),
+    createCancelAppointmentTool(ctx, handleCancelAppointment),
+    createRescheduleAppointmentTool(ctx, handleRescheduleAppointment),
   ]
 
-  const model = createModel().bindTools(tools)
+  const model = createMainModel().bindTools(tools)
   const toolNode = new ToolNode(tools)
 
   async function agentNode(state: AgentStateType) {
-    const systemMessage = new SystemMessage(createSystemPrompt(context))
+    const systemMessage = new SystemMessage(createBookingPrompt(context))
     const messages = [systemMessage, ...state.messages]
     const response = await model.invoke(messages)
     return { messages: [response] }
@@ -272,43 +266,38 @@ export async function createAppointmentAgent(config: BusinessAgentConfig) {
   return workflow.compile()
 }
 
-export async function* streamAgentResponse(
-  businessId: string,
+async function detectIntent(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
-): AsyncGenerator<string> {
+): Promise<Intent> {
+  if (messages.length === 0) return 'GENERAL'
+
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')
+  if (!lastUserMessage) return 'GENERAL'
+
+  const conversationContext = getConversationContext(messages.slice(0, -1))
+  const result = await routeIntent(lastUserMessage.content, conversationContext)
+
   console.log(
-    '[AI Agent] streamAgentResponse started, messages:',
-    messages.length
+    `[Router] Intent: ${result.intent} (confidence: ${result.confidence})`
   )
+  return result.intent
+}
 
-  const context = await getBusinessContext(businessId)
-  console.log('[AI Agent] Business context loaded:', context.businessName)
-
-  const tools = [
-    createGetServicesTool(businessId, handleGetServices),
-    createGetSpecialistsTool(businessId, handleGetSpecialists),
-    createGetAvailableSlotsTool(businessId, handleGetAvailableSlots),
-    createGetAppointmentsByPhoneTool(businessId, handleGetAppointmentsByPhone),
-    createCreateAppointmentTool(businessId, handleCreateAppointment),
-    createCancelAppointmentTool(handleCancelAppointment),
-    createRescheduleAppointmentTool(handleRescheduleAppointment),
-  ]
-
-  const model = createModel().bindTools(tools)
-
-  const formattedMessages: BaseMessage[] = [
-    new SystemMessage(createSystemPrompt(context)),
-    ...messages.map((msg) =>
-      msg.role === 'user'
-        ? new HumanMessage(msg.content)
-        : new AIMessage(msg.content)
-    ),
-  ]
-
-  let response = await model.invoke(formattedMessages)
+async function processWithTools(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  model: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tools: any[],
+  formattedMessages: BaseMessage[],
+  maxLoops: number = 5
+): Promise<{ response: AIMessage; toolResults: ToolMessage[] }> {
+  const retryState: Map<
+    string,
+    { count: number; lastError: ErrorInfo | null }
+  > = new Map()
+  let response = (await model.invoke(formattedMessages)) as AIMessage
   let loopCount = 0
-  const maxLoops = 5
-  const retryState: Map<string, { count: number; lastError: ErrorInfo | null }> = new Map()
+  const allToolResults: ToolMessage[] = []
 
   while (
     'tool_calls' in response &&
@@ -326,14 +315,16 @@ export async function* streamAgentResponse(
         '[AI Agent] Tool call:',
         toolCall.name,
         'args:',
-        JSON.stringify(toolCall.args),
-        'id:',
-        toolCall.id
+        JSON.stringify(toolCall.args)
       )
       const tool = tools.find((t) => t.name === toolCall.name)
+
       if (tool) {
         const toolRetryKey = `${toolCall.name}_${JSON.stringify(toolCall.args)}`
-        let retryInfo = retryState.get(toolRetryKey) || { count: 0, lastError: null }
+        let retryInfo = retryState.get(toolRetryKey) || {
+          count: 0,
+          lastError: null,
+        }
         let result: string | null = null
         let lastError: ErrorInfo | null = null
 
@@ -342,33 +333,58 @@ export async function* streamAgentResponse(
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const rawResult = await (tool as any).invoke(toolCall.args)
-            result = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult)
+            result =
+              typeof rawResult === 'string'
+                ? rawResult
+                : JSON.stringify(rawResult)
 
-            // Check if result contains error (some tools return error strings)
             if (result.toLowerCase().includes('error')) {
-              const errorInfo = createErrorInfo(toolCall.name, result, toolCall.args)
-              console.log('[AI Agent] Tool returned error:', errorInfo.errorType, '-', result.substring(0, 100))
+              const errorInfo = createErrorInfo(
+                toolCall.name,
+                result,
+                toolCall.args
+              )
+              console.log(
+                '[AI Agent] Tool returned error:',
+                errorInfo.errorType
+              )
 
               if (errorInfo.errorType === 'temporary' && attempt < maxRetries) {
-                console.log(`[AI Agent] Retrying ${toolCall.name} (attempt ${attempt + 1}/${maxRetries})`)
-                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+                console.log(
+                  `[AI Agent] Retrying ${toolCall.name} (attempt ${
+                    attempt + 1
+                  }/${maxRetries})`
+                )
+                await new Promise((resolve) =>
+                  setTimeout(resolve, 1000 * (attempt + 1))
+                )
                 continue
               }
 
-              // Not retryable or max retries reached
               lastError = errorInfo
               result = formatErrorForAgent(errorInfo)
             }
-
-            break // Success or non-retryable error
+            break
           } catch (toolError) {
-            const errorMessage = toolError instanceof Error ? toolError.message : 'Error desconocido'
-            const errorInfo = createErrorInfo(toolCall.name, errorMessage, toolCall.args)
-            console.error('[AI Agent] Tool exception:', toolCall.name, errorInfo.errorType, errorMessage)
+            const errorMessage =
+              toolError instanceof Error
+                ? toolError.message
+                : 'Error desconocido'
+            const errorInfo = createErrorInfo(
+              toolCall.name,
+              errorMessage,
+              toolCall.args
+            )
+            console.error(
+              '[AI Agent] Tool exception:',
+              toolCall.name,
+              errorInfo.errorType
+            )
 
             if (shouldRetry(errorInfo, attempt) && attempt < maxRetries) {
-              console.log(`[AI Agent] Retrying ${toolCall.name} after exception (attempt ${attempt + 1}/${maxRetries})`)
-              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+              await new Promise((resolve) =>
+                setTimeout(resolve, 1000 * (attempt + 1))
+              )
               continue
             }
 
@@ -383,66 +399,26 @@ export async function* streamAgentResponse(
           retryState.set(toolRetryKey, retryInfo)
         }
 
-        console.log(
-          '[AI Agent] Tool result:',
-          toolCall.name,
-          'result:',
-          result ? result.substring(0, 200) : 'null'
-        )
-
-        toolResults.push(
-          new ToolMessage({
-            content: result || 'Error: No se obtuvo resultado',
-            tool_call_id: toolCall.id || `call_${toolCall.name}_${Date.now()}`,
-            name: toolCall.name,
-          })
-        )
+        const toolMessage = new ToolMessage({
+          content: result || 'Error: No se obtuvo resultado',
+          tool_call_id: toolCall.id || `call_${toolCall.name}_${Date.now()}`,
+          name: toolCall.name,
+        })
+        toolResults.push(toolMessage)
+        allToolResults.push(toolMessage)
       }
     }
 
     formattedMessages.push(response)
     formattedMessages.push(...toolResults)
-
-    console.log('[AI Agent] Invoking model after tool results...')
-    try {
-      response = await model.invoke(formattedMessages)
-      console.log('[AI Agent] Model response received')
-    } catch (modelError) {
-      console.error('[AI Agent] Model invocation error:', modelError)
-      throw modelError
-    }
-
-    // Log intermedio del contenido de respuesta
-    const intermediateContent =
-      typeof response.content === 'string'
-        ? response.content
-        : JSON.stringify(response.content)
-    console.log(
-      '[AI Agent] Intermediate response:',
-      intermediateContent.substring(0, 200)
-    )
-    console.log(
-      '[AI Agent] Has tool_calls:',
-      'tool_calls' in response && Array.isArray(response.tool_calls)
-        ? response.tool_calls.length
-        : 0
-    )
+    response = (await model.invoke(formattedMessages)) as AIMessage
   }
 
-  if (loopCount >= maxLoops) {
-    console.warn('[AI Agent] Max tool loops reached, forcing response')
-  }
+  return { response, toolResults: allToolResults }
+}
 
-  let content =
-    typeof response.content === 'string'
-      ? response.content
-      : JSON.stringify(response.content)
-
-  console.log('[AI Agent] Raw response content:', content)
-
-  // Filtrar mensajes de estado que el modelo no debería generar
-  const originalContent = content
-  content = content
+function cleanResponseContent(content: string): string {
+  let cleaned = content
     .replace(/\[.*?esperando.*?\]/gi, '')
     .replace(/\[.*?waiting.*?\]/gi, '')
     .replace(/\[.*?respuesta.*?\]/gi, '')
@@ -453,15 +429,50 @@ export async function* streamAgentResponse(
     .replace(/\(.*?esperando.*?\)/gi, '')
     .trim()
 
-  // Si después de filtrar queda vacío, el modelo no respondió correctamente
-  if (!content) {
-    console.warn(
-      '[AI Agent] Response was empty after filtering. Original:',
-      originalContent
-    )
-    // Proporcionar una respuesta de fallback
-    content = '¿En qué más puedo ayudarte?'
+  if (!cleaned) {
+    cleaned = '¿En qué más puedo ayudarte?'
   }
+
+  return cleaned
+}
+
+export async function* streamAgentResponse(
+  businessId: string,
+  sessionId: string,
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>
+): AsyncGenerator<string> {
+  console.log(
+    '[AI Agent] streamAgentResponse started, messages:',
+    messages.length,
+    'sessionId:',
+    sessionId
+  )
+
+  const context = await getBusinessContext(businessId)
+  const intent = await detectIntent(messages)
+  console.log(`[AI Agent] Detected intent: ${intent}`)
+
+  const tools = getToolsForIntent(intent, businessId, sessionId)
+  const model = createMainModel().bindTools(tools)
+  const systemPrompt = getPromptForIntent(intent, context)
+
+  const formattedMessages: BaseMessage[] = [
+    new SystemMessage(systemPrompt),
+    ...messages.map((msg) =>
+      msg.role === 'user'
+        ? new HumanMessage(msg.content)
+        : new AIMessage(msg.content)
+    ),
+  ]
+
+  const { response } = await processWithTools(model, tools, formattedMessages)
+
+  let content =
+    typeof response.content === 'string'
+      ? response.content
+      : JSON.stringify(response.content)
+
+  content = cleanResponseContent(content)
 
   const words = content.split(' ')
   for (const word of words) {
@@ -474,27 +485,28 @@ export async function* streamAgentResponse(
 
 export async function* streamAgentResponseWithFeedback(
   businessId: string,
+  sessionId: string,
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
 ): AsyncGenerator<StreamEvent> {
-  console.log('[AI Agent] streamAgentResponseWithFeedback started, messages:', messages.length)
+  console.log(
+    '[AI Agent] streamAgentResponseWithFeedback started, messages:',
+    messages.length,
+    'sessionId:',
+    sessionId
+  )
 
   const context = await getBusinessContext(businessId)
-  console.log('[AI Agent] Business context loaded:', context.businessName)
+  const intent = await detectIntent(messages)
+  console.log(`[AI Agent] Detected intent: ${intent}`)
 
-  const tools = [
-    createGetServicesTool(businessId, handleGetServices),
-    createGetSpecialistsTool(businessId, handleGetSpecialists),
-    createGetAvailableSlotsTool(businessId, handleGetAvailableSlots),
-    createGetAppointmentsByPhoneTool(businessId, handleGetAppointmentsByPhone),
-    createCreateAppointmentTool(businessId, handleCreateAppointment),
-    createCancelAppointmentTool(handleCancelAppointment),
-    createRescheduleAppointmentTool(handleRescheduleAppointment),
-  ]
+  yield { type: 'intent', intent }
 
-  const model = createModel().bindTools(tools)
+  const tools = getToolsForIntent(intent, businessId, sessionId)
+  const model = createMainModel().bindTools(tools)
+  const systemPrompt = getPromptForIntent(intent, context)
 
   const formattedMessages: BaseMessage[] = [
-    new SystemMessage(createSystemPrompt(context)),
+    new SystemMessage(systemPrompt),
     ...messages.map((msg) =>
       msg.role === 'user'
         ? new HumanMessage(msg.content)
@@ -502,10 +514,25 @@ export async function* streamAgentResponseWithFeedback(
     ),
   ]
 
-  let response = await model.invoke(formattedMessages)
+  let response = (await model.invoke(formattedMessages)) as AIMessage
   let loopCount = 0
   const maxLoops = 5
-  const retryState: Map<string, { count: number; lastError: ErrorInfo | null }> = new Map()
+  const retryState: Map<
+    string,
+    { count: number; lastError: ErrorInfo | null }
+  > = new Map()
+
+  // Debug: Log response structure
+  console.log(
+    '[AI Agent] Initial response tool_calls:',
+    JSON.stringify(response.tool_calls, null, 2)
+  )
+  console.log(
+    '[AI Agent] Response content preview:',
+    typeof response.content === 'string'
+      ? response.content.substring(0, 200)
+      : 'non-string'
+  )
 
   while (
     'tool_calls' in response &&
@@ -515,18 +542,21 @@ export async function* streamAgentResponseWithFeedback(
   ) {
     loopCount++
     console.log(`[AI Agent] Tool loop iteration ${loopCount}`)
+    console.log(
+      `[AI Agent] Tool calls in this iteration:`,
+      JSON.stringify(response.tool_calls, null, 2)
+    )
 
     const toolResults: BaseMessage[] = []
 
     for (const toolCall of response.tool_calls) {
+      console.log(
+        `[AI Agent] Processing tool call: ${toolCall.name}`,
+        JSON.stringify(toolCall.args)
+      )
       const [emoji, thinkingText] = getThinkingIndicator(toolCall.name)
 
-      // Emit tool start with thinking indicator
-      yield {
-        type: 'tool_start',
-        toolName: toolCall.name,
-      }
-
+      yield { type: 'tool_start', toolName: toolCall.name }
       yield {
         type: 'feedback',
         event: {
@@ -538,9 +568,19 @@ export async function* streamAgentResponseWithFeedback(
       }
 
       const tool = tools.find((t) => t.name === toolCall.name)
+      console.log(
+        `[AI Agent] Available tools:`,
+        tools.map((t) => t.name)
+      )
+      console.log(
+        `[AI Agent] Looking for tool: ${toolCall.name}, found: ${!!tool}`
+      )
       if (tool) {
         const toolRetryKey = `${toolCall.name}_${JSON.stringify(toolCall.args)}`
-        let retryInfo = retryState.get(toolRetryKey) || { count: 0, lastError: null }
+        let retryInfo = retryState.get(toolRetryKey) || {
+          count: 0,
+          lastError: null,
+        }
         let result: string | null = null
         let lastError: ErrorInfo | null = null
         let success = true
@@ -550,11 +590,21 @@ export async function* streamAgentResponseWithFeedback(
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
           try {
+            console.log(
+              `[AI Agent] Invoking tool ${toolCall.name} with args:`,
+              JSON.stringify(toolCall.args)
+            )
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const rawResult = await (tool as any).invoke(toolCall.args)
-            result = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult)
+            result =
+              typeof rawResult === 'string'
+                ? rawResult
+                : JSON.stringify(rawResult)
+            console.log(
+              `[AI Agent] Tool ${toolCall.name} result:`,
+              result.substring(0, 500)
+            )
 
-            // Check elapsed time and emit feedback if needed
             const elapsed = Date.now() - startTime
             if (elapsed > 5000) {
               yield {
@@ -569,7 +619,11 @@ export async function* streamAgentResponseWithFeedback(
             }
 
             if (result.toLowerCase().includes('error')) {
-              const errorInfo = createErrorInfo(toolCall.name, result, toolCall.args)
+              const errorInfo = createErrorInfo(
+                toolCall.name,
+                result,
+                toolCall.args
+              )
 
               if (errorInfo.errorType === 'temporary' && attempt < maxRetries) {
                 yield {
@@ -581,7 +635,9 @@ export async function* streamAgentResponseWithFeedback(
                     elapsedMs: Date.now() - startTime,
                   },
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+                await new Promise((resolve) =>
+                  setTimeout(resolve, 1000 * (attempt + 1))
+                )
                 continue
               }
 
@@ -589,11 +645,17 @@ export async function* streamAgentResponseWithFeedback(
               result = formatErrorForAgent(errorInfo)
               success = false
             }
-
             break
           } catch (toolError) {
-            const errorMessage = toolError instanceof Error ? toolError.message : 'Error desconocido'
-            const errorInfo = createErrorInfo(toolCall.name, errorMessage, toolCall.args)
+            const errorMessage =
+              toolError instanceof Error
+                ? toolError.message
+                : 'Error desconocido'
+            const errorInfo = createErrorInfo(
+              toolCall.name,
+              errorMessage,
+              toolCall.args
+            )
 
             if (shouldRetry(errorInfo, attempt) && attempt < maxRetries) {
               yield {
@@ -605,7 +667,9 @@ export async function* streamAgentResponseWithFeedback(
                   elapsedMs: Date.now() - startTime,
                 },
               }
-              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+              await new Promise((resolve) =>
+                setTimeout(resolve, 1000 * (attempt + 1))
+              )
               continue
             }
 
@@ -621,11 +685,7 @@ export async function* streamAgentResponseWithFeedback(
           retryState.set(toolRetryKey, retryInfo)
         }
 
-        yield {
-          type: 'tool_end',
-          toolName: toolCall.name,
-          success,
-        }
+        yield { type: 'tool_end', toolName: toolCall.name, success }
 
         toolResults.push(
           new ToolMessage({
@@ -641,7 +701,7 @@ export async function* streamAgentResponseWithFeedback(
     formattedMessages.push(...toolResults)
 
     try {
-      response = await model.invoke(formattedMessages)
+      response = (await model.invoke(formattedMessages)) as AIMessage
     } catch (modelError) {
       console.error('[AI Agent] Model invocation error:', modelError)
       throw modelError
@@ -653,22 +713,8 @@ export async function* streamAgentResponseWithFeedback(
       ? response.content
       : JSON.stringify(response.content)
 
-  content = content
-    .replace(/\[.*?esperando.*?\]/gi, '')
-    .replace(/\[.*?waiting.*?\]/gi, '')
-    .replace(/\[.*?respuesta.*?\]/gi, '')
-    .replace(/\[.*?response.*?\]/gi, '')
-    .replace(/\[.*?proceso.*?\]/gi, '')
-    .replace(/\[.*?processing.*?\]/gi, '')
-    .replace(/\(.*?waiting.*?\)/gi, '')
-    .replace(/\(.*?esperando.*?\)/gi, '')
-    .trim()
+  content = cleanResponseContent(content)
 
-  if (!content) {
-    content = '¿En qué más puedo ayudarte?'
-  }
-
-  // Emit response chunks
   const words = content.split(' ')
   for (const word of words) {
     if (word.trim()) {
@@ -680,10 +726,11 @@ export async function* streamAgentResponseWithFeedback(
 
 export async function invokeAgent(
   businessId: string,
+  sessionId: string,
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   _modelConfig?: Record<string, unknown>
 ) {
-  const agent = await createAppointmentAgent({ businessId })
+  const agent = await createAppointmentAgent({ businessId, sessionId })
 
   const formattedMessages: BaseMessage[] = messages.map((msg) =>
     msg.role === 'user'

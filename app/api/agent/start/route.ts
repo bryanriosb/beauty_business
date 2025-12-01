@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         sessionId: result.session?.sessionId,
         conversationId: result.session?.conversationId,
         businessId: result.session?.businessId,
+        settings: result.session?.settings,
       },
     })
   } catch (error) {

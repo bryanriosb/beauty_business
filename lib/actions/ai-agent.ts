@@ -317,7 +317,31 @@ export async function endConversationAction(
       .eq('id', id)
 
     if (conversation.agent_link_id) {
-      await incrementLinkUsage(conversation.agent_link_id, minutesUsed)
+      // Obtener tipo de enlace para evitar doble incremento en single_use
+      const { data: link } = await supabase
+        .from('agent_links')
+        .select('type')
+        .eq('id', conversation.agent_link_id)
+        .single()
+
+      // single_use ya fue consumido al iniciar, solo actualizar minutos
+      if (link?.type === 'single_use') {
+        const { data: currentLink } = await supabase
+          .from('agent_links')
+          .select('minutes_used')
+          .eq('id', conversation.agent_link_id)
+          .single()
+
+        await supabase
+          .from('agent_links')
+          .update({
+            minutes_used: (currentLink?.minutes_used || 0) + minutesUsed,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', conversation.agent_link_id)
+      } else {
+        await incrementLinkUsage(conversation.agent_link_id, minutesUsed)
+      }
     }
 
     return { success: true }

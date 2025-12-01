@@ -31,6 +31,7 @@ export function setupSocketHandlers(io: AgentServer) {
           sessionId: result.session.sessionId,
           conversationId: result.session.conversationId,
           businessId: result.session.businessId,
+          settings: result.session.settings,
         }
 
         socket.join(`session:${result.session.sessionId}`)
@@ -89,10 +90,10 @@ export function setupSocketHandlers(io: AgentServer) {
         socket.emit('agent:typing', { isTyping: true })
 
         let fullResponse = ''
-        console.log('[Socket] Starting streamAgentResponseWithFeedback for business:', session.businessId)
+        console.log('[Socket] Starting streamAgentResponseWithFeedback for business:', session.businessId, 'session:', session.sessionId)
 
         try {
-          const responseStream = streamAgentResponseWithFeedback(session.businessId, chatHistory)
+          const responseStream = streamAgentResponseWithFeedback(session.businessId, session.sessionId, chatHistory)
 
           for await (const event of responseStream) {
             if (socket.data.abortController?.signal.aborted) {

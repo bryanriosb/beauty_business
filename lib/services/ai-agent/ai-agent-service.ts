@@ -6,6 +6,7 @@ import {
   addMessageAction,
   endConversationAction,
   fetchConversationMessagesAction,
+  incrementLinkUsage,
 } from '@/lib/actions/ai-agent'
 import type { AIConfig } from '@/lib/ai/config'
 import type { AgentLink, AgentMessage } from '@/lib/models/ai-conversation'
@@ -40,6 +41,12 @@ export async function startAgentSession(
   }
 
   const link = validation.link
+
+  // Para enlaces single_use, consumir inmediatamente al iniciar sesión
+  if (link.type === 'single_use') {
+    await incrementLinkUsage(link.id, 0)
+  }
+
   const sessionId = uuidv4()
 
   const conversationResult = await createConversationAction({
@@ -52,8 +59,10 @@ export async function startAgentSession(
     return { success: false, error: conversationResult.error || 'Error al crear conversación' }
   }
 
+  const assistantName = link.settings?.assistant_name
+  const defaultMessage = '¡Hola! Soy el asistente virtual. ¿En qué puedo ayudarte hoy? Puedo ayudarte a agendar, consultar, reprogramar o cancelar citas.'
   const welcomeMessage = link.settings?.welcome_message ||
-    '¡Hola! Soy el asistente virtual. ¿En qué puedo ayudarte hoy? Puedo ayudarte a agendar, consultar, reprogramar o cancelar citas.'
+    (assistantName ? `¡Hola! Soy ${assistantName}. ¿En qué puedo ayudarte hoy? Puedo ayudarte a agendar, consultar, reprogramar o cancelar citas.` : defaultMessage)
 
   await addMessageAction({
     conversation_id: conversationResult.data.id,
@@ -109,7 +118,7 @@ export async function sendMessage(
       modelConfig.temperature = session.settings.temperature
     }
 
-    const result = await invokeAgent(session.businessId, chatHistory, modelConfig)
+    const result = await invokeAgent(session.businessId, session.sessionId, chatHistory, modelConfig)
 
     await addMessageAction({
       conversation_id: session.conversationId,

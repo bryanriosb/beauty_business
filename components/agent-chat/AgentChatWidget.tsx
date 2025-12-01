@@ -16,12 +16,18 @@ interface Message {
   content: string
 }
 
+interface AgentLinkSettings {
+  assistant_name?: string
+  welcome_message?: string
+  require_phone_verification?: boolean
+}
+
 interface AgentSession {
   sessionId: string
   conversationId: string
   businessId?: string
   linkId?: string | null
-  settings?: Record<string, unknown>
+  settings?: AgentLinkSettings
 }
 
 interface AgentChatWidgetProps {
@@ -205,6 +211,7 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
         sessionId: data.session.sessionId,
         conversationId: data.session.conversationId,
         businessId: data.session.businessId,
+        settings: data.session.settings,
       })
 
       if (data.message) {
@@ -272,7 +279,9 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
-          <span className="font-medium">Asistente Virtual</span>
+          <span className="font-medium">
+            {session?.settings?.assistant_name || 'Asistente Virtual'}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />

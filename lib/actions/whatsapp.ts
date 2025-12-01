@@ -74,6 +74,11 @@ async function callWhatsAppAPI(
   payload: Record<string, unknown>
 ): Promise<{ success: boolean; data?: WhatsAppAPIResponse; error?: string }> {
   try {
+    console.log('📤 WhatsApp API request:', {
+      phoneNumberId,
+      template: (payload.template as Record<string, unknown>)?.name,
+      language: (payload.template as Record<string, unknown>)?.language,
+    })
     const response = await fetch(
       `${WHATSAPP_API_URL}/${WHATSAPP_API_VERSION}/${phoneNumberId}/messages`,
       {
@@ -112,6 +117,29 @@ async function getOrCreateConversation(
 ): Promise<string> {
   const supabase = await getSupabaseAdminClient()
 
+  // Primero intentar buscar conversación activa existente
+  const { data: existingConversation } = await supabase
+    .from('whatsapp_conversations')
+    .select('id')
+    .eq('business_id', business_id)
+    .eq('phone', phone)
+    .eq('is_active', true)
+    .single()
+
+  if (existingConversation) {
+    // Actualizar last_message_at y customer_name si se proporciona
+    await supabase
+      .from('whatsapp_conversations')
+      .update({
+        last_message_at: new Date().toISOString(),
+        ...(customer_name && { customer_name }),
+      })
+      .eq('id', existingConversation.id)
+
+    return existingConversation.id
+  }
+
+  // Si no existe, intentar crear usando el RPC
   const { data, error } = await supabase.rpc('get_or_create_whatsapp_conversation', {
     p_business_account_id: business_account_id,
     p_business_id: business_id,
@@ -120,6 +148,20 @@ async function getOrCreateConversation(
   })
 
   if (error) {
+    // Si hay error de duplicado, buscar la conversación que ya existe
+    if (error.code === '23505') {
+      const { data: conversation } = await supabase
+        .from('whatsapp_conversations')
+        .select('id')
+        .eq('business_id', business_id)
+        .eq('phone', phone)
+        .eq('is_active', true)
+        .single()
+
+      if (conversation) {
+        return conversation.id
+      }
+    }
     console.error('Error getting/creating conversation:', error)
     throw error
   }
@@ -214,7 +256,9 @@ export async function sendWhatsAppTemplateMessageAction(
       type: 'template',
       template: {
         name: params.template_name,
-        language: { code: params.language_code || 'es' },
+        language: {
+          code: params.language_code || 'es',
+        },
         ...(params.components && { components: params.components }),
       },
     }

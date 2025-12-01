@@ -22,6 +22,7 @@ export interface AgentLink {
 }
 
 export interface AgentLinkSettings {
+  assistant_name?: string
   welcome_message?: string
   model_provider?: 'openai' | 'deepinfra'
   model?: string

@@ -10,29 +10,77 @@ import {
   type CancelAppointmentInput,
   type RescheduleAppointmentInput,
 } from './appointment-tools'
+import {
+  setCustomerData,
+  getCustomerData,
+  getFirstAppointment,
+  getAgentContext,
+} from '../graph/agent-context'
+import type { CustomerData } from '../graph/state'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export async function handleGetAvailableSlots(input: GetAvailableSlotsInput): Promise<string> {
   try {
-    const result = await getAvailableSlotsForServiceAction({
+    console.log('[AI Agent] handleGetAvailableSlots called with:', {
       businessId: input.businessId,
+      sessionId: input.sessionId,
       serviceId: input.serviceId,
       date: input.date,
     })
 
+    let serviceId = input.serviceId
+    let excludeAppointmentId: string | undefined
+
+    // Si no se proporciona serviceId, intentar obtenerlo del contexto (cita del cliente)
+    if (!serviceId) {
+      const customerAppointment = getFirstAppointment(input.sessionId)
+      if (customerAppointment) {
+        serviceId = customerAppointment.serviceId
+        excludeAppointmentId = customerAppointment.appointmentId
+        console.log('[AI Agent] Using serviceId from context:', {
+          serviceId,
+          excludeAppointmentId,
+          appointmentDetails: customerAppointment.serviceName,
+        })
+      }
+    }
+
+    if (!serviceId) {
+      return `[ERROR] No se proporcionó serviceId y no hay cita del cliente en el contexto. Primero busca las citas del cliente con get_appointments_by_phone o proporciona un serviceId.`
+    }
+
+    if (!input.date || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
+      return `[ERROR] Formato de fecha inválido: "${input.date}". Debe ser YYYY-MM-DD (ejemplo: 2025-12-05).`
+    }
+
+    const result = await getAvailableSlotsForServiceAction({
+      businessId: input.businessId,
+      serviceId: serviceId,
+      date: input.date,
+      excludeAppointmentId: excludeAppointmentId,
+    })
+
+    console.log('[AI Agent] getAvailableSlotsForServiceAction result:', {
+      success: result.success,
+      businessOpen: result.businessOpen,
+      slotsCount: result.slots?.length,
+      availableCount: result.slots?.filter(s => s.available).length,
+      error: result.error,
+    })
+
     if (!result.success) {
-      return `Error: ${result.error}`
+      return `[ERROR] ${result.error}`
     }
 
     if (!result.businessOpen) {
-      return `El negocio está cerrado el ${format(new Date(input.date), "EEEE d 'de' MMMM", { locale: es })}.`
+      return `El negocio está cerrado el ${format(new Date(input.date + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })}.`
     }
 
     const availableSlots = result.slots.filter((slot) => slot.available)
 
     if (availableSlots.length === 0) {
-      return `No hay horarios disponibles para el ${format(new Date(input.date), "EEEE d 'de' MMMM", { locale: es })}. Por favor, intenta con otra fecha.`
+      return `No hay horarios disponibles para el ${format(new Date(input.date + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })}. Por favor, intenta con otra fecha.`
     }
 
     const slotsFormatted = availableSlots.map((slot) => {
@@ -43,10 +91,11 @@ export async function handleGetAvailableSlots(input: GetAvailableSlotsInput): Pr
       return `${hour12}:${minutes} ${ampm}`
     })
 
-    return `Horarios disponibles para el ${format(new Date(input.date), "EEEE d 'de' MMMM", { locale: es })}:\n${slotsFormatted.join(', ')}`
+    return `Horarios disponibles para el ${format(new Date(input.date + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })} (${availableSlots.length} horarios):\n${slotsFormatted.join(', ')}`
   } catch (error: unknown) {
+    console.error('[AI Agent] handleGetAvailableSlots error:', error)
     const message = error instanceof Error ? error.message : 'Error desconocido'
-    return `Error al obtener disponibilidad: ${message}`
+    return `[ERROR] Error al obtener disponibilidad: ${message}`
   }
 }
 
@@ -57,7 +106,7 @@ export async function handleGetServices(input: GetServicesInput): Promise<string
 
     const { data: services, error } = await supabase
       .from('services')
-      .select('id, name, description, price_cents, duration_minutes')
+      .select('id, name, description, price_cents, duration_minutes, tax_rate')
       .eq('business_id', input.businessId)
       .order('name')
 
@@ -73,11 +122,21 @@ export async function handleGetServices(input: GetServicesInput): Promise<string
     }
 
     const servicesFormatted = services.map((s) => {
-      const price = (s.price_cents / 100).toFixed(2)
-      return `- ${s.name} (ID: ${s.id}): $${price} (${s.duration_minutes} min)${s.description ? ` - ${s.description}` : ''}`
+      const price = s.price_cents / 100
+      const taxRate = s.tax_rate || 0
+      const taxAmount = price * taxRate
+      const totalPrice = price + taxAmount
+      const priceStr = price.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+      const totalStr = totalPrice.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+
+      const priceInfo = taxRate > 0
+        ? `$${priceStr} + IVA = $${totalStr}`
+        : `$${priceStr}`
+
+      return `• ${s.name}: ${priceInfo} (${s.duration_minutes} min)${s.description ? `\n  ${s.description}` : ''}\n  [ID: ${s.id}]`
     })
 
-    return `Servicios disponibles:\n${servicesFormatted.join('\n')}`
+    return `📋 SERVICIOS DISPONIBLES:\n\n${servicesFormatted.join('\n\n')}`
   } catch (error: unknown) {
     console.error('[AI Agent] handleGetServices error:', error)
     const message = error instanceof Error ? error.message : 'Error desconocido'
@@ -89,13 +148,11 @@ export async function handleGetSpecialists(input: GetSpecialistsInput): Promise<
   try {
     const supabase = await getSupabaseAdminClient()
 
-    let query = supabase
+    const { data: specialists, error } = await supabase
       .from('specialists')
       .select('id, first_name, last_name, specialty, bio')
       .eq('business_id', input.businessId)
       .order('first_name')
-
-    const { data: specialists, error } = await query
 
     if (error) throw error
 
@@ -116,6 +173,13 @@ export async function handleGetSpecialists(input: GetSpecialistsInput): Promise<
 
 export async function handleGetAppointmentsByPhone(input: GetAppointmentsByPhoneInput): Promise<string> {
   try {
+    console.log('[AI Agent] handleGetAppointmentsByPhone called with:', {
+      phone: input.phone,
+      businessId: input.businessId,
+      sessionId: input.sessionId,
+    })
+
+    getAgentContext(input.sessionId, input.businessId)
     const supabase = await getSupabaseAdminClient()
 
     const { data: customer, error: customerError } = await supabase
@@ -132,10 +196,11 @@ export async function handleGetAppointmentsByPhone(input: GetAppointmentsByPhone
     const { data: appointments, error } = await supabase
       .from('appointments')
       .select(`
-        id, start_time, end_time, status,
-        specialists (first_name, last_name),
+        id, start_time, end_time, status, specialist_id,
+        specialists (id, first_name, last_name),
         appointment_services (
-          services (name)
+          service_id,
+          services (id, name)
         )
       `)
       .eq('business_id', input.businessId)
@@ -147,22 +212,64 @@ export async function handleGetAppointmentsByPhone(input: GetAppointmentsByPhone
     if (error) throw error
 
     if (!appointments || appointments.length === 0) {
+      const customerData: CustomerData = {
+        id: customer.id,
+        phone: input.phone,
+        firstName: customer.first_name,
+        lastName: customer.last_name,
+        appointments: [],
+      }
+      setCustomerData(input.sessionId, customerData)
       return `${customer.first_name} no tiene citas programadas. ¿Deseas agendar una nueva cita?`
     }
 
-    const appointmentsFormatted = appointments.map((apt) => {
-      const date = format(new Date(apt.start_time), "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es })
-      const specialist = apt.specialists as unknown as { first_name: string; last_name: string } | null
-      const appointmentServices = apt.appointment_services as unknown as Array<{ services: { name: string } | null }> | null
+    const customerAppointments = appointments.map((apt) => {
+      const specialist = apt.specialists as unknown as { id: string; first_name: string; last_name: string } | null
+      const appointmentServices = apt.appointment_services as unknown as Array<{ service_id: string; services: { id: string; name: string } | null }> | null
+      const firstService = appointmentServices?.find((as) => as.services)
       const servicesNames = appointmentServices
         ?.filter((as) => as.services)
         .map((as) => as.services!.name)
         .join(', ') || 'Sin servicios'
-      const specialistName = specialist ? `${specialist.first_name} ${specialist.last_name || ''}`.trim() : 'Sin especialista'
-      return `- ${date} con ${specialistName} - ${servicesNames} (${apt.status})`
+
+      return {
+        appointmentId: apt.id,
+        serviceId: firstService?.services?.id || '',
+        serviceName: servicesNames,
+        specialistId: specialist?.id || apt.specialist_id || '',
+        specialistName: specialist ? `${specialist.first_name} ${specialist.last_name || ''}`.trim() : 'Sin especialista',
+        startTime: apt.start_time,
+        status: apt.status,
+      }
     })
 
-    return `Citas de ${customer.first_name} ${customer.last_name || ''}:\n${appointmentsFormatted.join('\n')}`
+    const customerData: CustomerData = {
+      id: customer.id,
+      phone: input.phone,
+      firstName: customer.first_name,
+      lastName: customer.last_name,
+      appointments: customerAppointments,
+    }
+    setCustomerData(input.sessionId, customerData)
+
+    console.log('[AI Agent] Customer data saved to context:', {
+      sessionId: input.sessionId,
+      customerId: customer.id,
+      appointmentsCount: customerAppointments.length,
+    })
+
+    const appointmentsFormatted = customerAppointments.map((apt, index) => {
+      const date = format(new Date(apt.startTime), "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es })
+      return `${index + 1}. ${date}
+   Servicio: ${apt.serviceName}
+   Especialista: ${apt.specialistName}`
+    })
+
+    return `📅 Citas de ${customer.first_name} ${customer.last_name || ''}:
+
+${appointmentsFormatted.join('\n\n')}
+
+Los datos de las citas han sido guardados. Puedes reprogramar o cancelar directamente.`
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error desconocido'
     return `Error al buscar citas: ${message}`
@@ -175,15 +282,43 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
   try {
     const supabase = await getSupabaseAdminClient()
 
-    let customerId: string | null = null
+    // Primero intentar obtener datos del cliente desde el contexto
+    const customerFromContext = getCustomerData(input.sessionId)
+
+    // Determinar nombre y teléfono: del input o del contexto
+    let customerName = input.customerName
+    let customerPhone = input.customerPhone
+
+    if (customerFromContext) {
+      console.log('[AI Agent] Customer data found in context:', {
+        id: customerFromContext.id,
+        firstName: customerFromContext.firstName,
+        lastName: customerFromContext.lastName,
+        phone: customerFromContext.phone,
+      })
+
+      // Usar datos del contexto si no se proporcionan en el input
+      if (!customerName) {
+        customerName = `${customerFromContext.firstName} ${customerFromContext.lastName || ''}`.trim()
+      }
+      if (!customerPhone) {
+        customerPhone = customerFromContext.phone
+      }
+    }
+
+    // Validar que tenemos los datos necesarios
+    if (!customerName || !customerPhone) {
+      return '[ERROR] Se requiere nombre y teléfono del cliente. Si es un cliente existente, primero búscalo con get_appointments_by_phone.'
+    }
+
     let userProfileId: string | null = null
 
-    console.log('[AI Agent] Looking for existing customer with phone:', input.customerPhone)
+    console.log('[AI Agent] Looking for existing customer with phone:', customerPhone)
     const { data: existingCustomer, error: customerError } = await supabase
       .from('business_customers')
       .select('id, user_profile_id')
       .eq('business_id', input.businessId)
-      .eq('phone', input.customerPhone)
+      .eq('phone', customerPhone)
       .single()
 
     if (customerError && customerError.code !== 'PGRST116') {
@@ -192,22 +327,21 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
 
     if (existingCustomer) {
       console.log('[AI Agent] Found existing customer:', existingCustomer.id)
-      customerId = existingCustomer.id
       userProfileId = existingCustomer.user_profile_id
     } else {
-      console.log('[AI Agent] Creating new customer:', input.customerName)
-      const nameParts = input.customerName.split(' ')
+      console.log('[AI Agent] Creating new customer:', customerName)
+      const nameParts = customerName.split(' ')
       const firstName = nameParts[0]
       const lastName = nameParts.slice(1).join(' ') || null
 
-      const email = input.customerEmail || `${input.customerPhone}@guest.ai-agent.local`
+      const email = input.customerEmail || `${customerPhone}@guest.ai-agent.local`
 
       const result = await createFullCustomerAction({
         business_id: input.businessId,
         first_name: firstName,
         last_name: lastName,
         email: email,
-        phone: input.customerPhone,
+        phone: customerPhone,
         source: 'ai_agent',
       })
 
@@ -217,7 +351,6 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
       }
 
       console.log('[AI Agent] Created customer:', result.data.id)
-      customerId = result.data.id
       userProfileId = result.userProfileId!
     }
 
@@ -295,18 +428,33 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
       .eq('id', input.specialistId)
       .single()
 
+    const { data: serviceDetails } = await supabase
+      .from('services')
+      .select('name, price_cents')
+      .in('id', input.serviceIds)
+
     const dateFormatted = format(startTime, "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es })
-    const servicesNames = services.map((s) => s.id).join(', ')
+    const servicesNames = serviceDetails?.map((s) => s.name).join(', ') || 'Servicios seleccionados'
 
-    return `¡Cita agendada exitosamente!
+    const subtotalFormatted = (subtotal / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+    const taxFormatted = (taxTotal / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+    const totalFormatted = ((subtotal + taxTotal) / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 
-Detalles:
-- Cliente: ${input.customerName}
-- Fecha: ${dateFormatted}
-- Especialista: ${specialist?.first_name} ${specialist?.last_name || ''}
-- Total: $${((subtotal + taxTotal) / 100).toFixed(2)}
+    return `¡Cita agendada exitosamente! ✅
 
-Se ha enviado una confirmación. ¿Hay algo más en lo que pueda ayudarte?`
+📋 RESUMEN DE TU CITA:
+• Cliente: ${customerName}
+• Teléfono: ${customerPhone}
+• Servicio(s): ${servicesNames}
+• Fecha: ${dateFormatted}
+• Especialista: ${specialist?.first_name} ${specialist?.last_name || ''}
+
+💰 DETALLE DE PAGO:
+• Subtotal: $${subtotalFormatted}
+• IVA: $${taxFormatted}
+• TOTAL A PAGAR: $${totalFormatted}
+
+El pago se realizará en el establecimiento. ¿Hay algo más en lo que pueda ayudarte?`
   } catch (error: unknown) {
     console.error('[AI Agent] handleCreateAppointment error:', error)
     let message = 'Error desconocido'
@@ -323,6 +471,21 @@ Se ha enviado una confirmación. ¿Hay algo más en lo que pueda ayudarte?`
 
 export async function handleCancelAppointment(input: CancelAppointmentInput): Promise<string> {
   try {
+    console.log('[AI Agent] handleCancelAppointment called with:', {
+      sessionId: input.sessionId,
+      businessId: input.businessId,
+      reason: input.reason,
+    })
+
+    // Obtener appointmentId del contexto
+    const customerAppointment = getFirstAppointment(input.sessionId)
+    if (!customerAppointment) {
+      return '[ERROR] No hay cita identificada. Primero busca las citas del cliente con get_appointments_by_phone.'
+    }
+
+    const appointmentId = customerAppointment.appointmentId
+    console.log('[AI Agent] Using appointmentId from context:', appointmentId)
+
     const supabase = await getSupabaseAdminClient()
 
     const { data: appointment, error: fetchError } = await supabase
@@ -331,7 +494,7 @@ export async function handleCancelAppointment(input: CancelAppointmentInput): Pr
         id, start_time, status,
         specialists (first_name, last_name)
       `)
-      .eq('id', input.appointmentId)
+      .eq('id', appointmentId)
       .single()
 
     if (fetchError || !appointment) {
@@ -352,7 +515,7 @@ export async function handleCancelAppointment(input: CancelAppointmentInput): Pr
         status: 'CANCELLED',
         customer_note: input.reason ? `Cancelada: ${input.reason}` : 'Cancelada vía asistente virtual',
       })
-      .eq('id', input.appointmentId)
+      .eq('id', appointmentId)
 
     if (updateError) throw updateError
 
@@ -373,6 +536,22 @@ La cita del ${dateFormatted} con ${specialistName} ha sido cancelada.
 
 export async function handleRescheduleAppointment(input: RescheduleAppointmentInput): Promise<string> {
   try {
+    console.log('[AI Agent] handleRescheduleAppointment called with:', {
+      sessionId: input.sessionId,
+      businessId: input.businessId,
+      newStartTime: input.newStartTime,
+      newSpecialistId: input.newSpecialistId,
+    })
+
+    // Obtener appointmentId del contexto
+    const customerAppointment = getFirstAppointment(input.sessionId)
+    if (!customerAppointment) {
+      return '[ERROR] No hay cita identificada. Primero busca las citas del cliente con get_appointments_by_phone.'
+    }
+
+    const appointmentId = customerAppointment.appointmentId
+    console.log('[AI Agent] Using appointmentId from context:', appointmentId)
+
     const supabase = await getSupabaseAdminClient()
 
     const { data: appointment, error: fetchError } = await supabase
@@ -384,7 +563,7 @@ export async function handleRescheduleAppointment(input: RescheduleAppointmentIn
           services (duration_minutes)
         )
       `)
-      .eq('id', input.appointmentId)
+      .eq('id', appointmentId)
       .single()
 
     if (fetchError || !appointment) {
@@ -412,7 +591,7 @@ export async function handleRescheduleAppointment(input: RescheduleAppointmentIn
         end_time: newEndTime.toISOString(),
         specialist_id: specialistId,
       })
-      .eq('id', input.appointmentId)
+      .eq('id', appointmentId)
 
     if (updateError) throw updateError
 

@@ -3,7 +3,11 @@ import { ChatOpenAI } from '@langchain/openai'
 export type ModelProvider = 'openai' | 'deepinfra'
 
 export type OpenAIModel = 'gpt-4o' | 'gpt-4o-mini' | 'gpt-4-turbo'
-export type DeepInfraModel = 'meta-llama/Llama-3.3-70B-Instruct' | 'Qwen/Qwen2.5-72B-Instruct' | 'mistralai/Mixtral-8x22B-Instruct-v0.1'
+export type DeepInfraModel =
+  | 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo'
+  | 'openai/gpt-oss-120b'
+  | 'openai/gpt-oss-20b'
+  | 'Qwen/Qwen3-235B-A22B-Instruct-2507'
 
 export type ModelType = OpenAIModel | DeepInfraModel
 
@@ -16,12 +20,15 @@ export interface AIConfig {
 
 const defaultConfig: AIConfig = {
   provider: 'deepinfra',
-  model: 'meta-llama/Llama-3.3-70B-Instruct',
-  temperature: 0.7,
+  model: 'Qwen/Qwen3-235B-A22B-Instruct-2507',
+  temperature: 0.3,
   maxTokens: 4096,
 }
 
-const PROVIDER_CONFIG: Record<ModelProvider, { baseURL?: string; apiKeyEnv: string }> = {
+const PROVIDER_CONFIG: Record<
+  ModelProvider,
+  { baseURL?: string; apiKeyEnv: string }
+> = {
   openai: {
     apiKeyEnv: 'OPENAI_API_KEY',
   },
@@ -37,7 +44,9 @@ export function createChatModel(config: Partial<AIConfig> = {}) {
 
   const apiKey = process.env[providerConfig.apiKeyEnv]
   if (!apiKey) {
-    throw new Error(`${providerConfig.apiKeyEnv} environment variable is not set`)
+    throw new Error(
+      `${providerConfig.apiKeyEnv} environment variable is not set`
+    )
   }
 
   return new ChatOpenAI({
@@ -45,7 +54,9 @@ export function createChatModel(config: Partial<AIConfig> = {}) {
     temperature: finalConfig.temperature,
     maxTokens: finalConfig.maxTokens,
     openAIApiKey: apiKey,
-    configuration: providerConfig.baseURL ? { baseURL: providerConfig.baseURL } : undefined,
+    configuration: providerConfig.baseURL
+      ? { baseURL: providerConfig.baseURL }
+      : undefined,
   })
 }
 

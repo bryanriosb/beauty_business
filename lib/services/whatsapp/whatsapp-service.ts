@@ -189,7 +189,7 @@ export default class WhatsAppService {
       business_id: params.business_id,
       to: params.customer_phone,
       template_name: 'appointment_confirmation',
-      language_code: 'es',
+      language_code: 'es_CO',
       components: [
         {
           type: 'body',
@@ -280,7 +280,7 @@ Si necesitas reagendar o cancelar, por favor contactanos con anticipacion.
       business_id: params.business_id,
       to: params.customer_phone,
       template_name: 'appointment_reminder',
-      language_code: 'es',
+      language_code: 'es_CO',
       components: [
         {
           type: 'body',

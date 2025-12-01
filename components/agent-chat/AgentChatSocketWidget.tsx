@@ -38,6 +38,7 @@ export function AgentChatSocketWidget({
     interruptAgent,
     connect,
     agentTyping,
+    session,
   } = useAgentSocket({
     token,
     onError: (error) => console.error('Socket error:', error),
@@ -177,7 +178,9 @@ export function AgentChatSocketWidget({
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
-          <span className="font-medium">Asistente Virtual</span>
+          <span className="font-medium">
+            {session?.settings?.assistant_name || 'Asistente Virtual'}
+          </span>
           {isConnected && (
             <span className="flex h-2 w-2 rounded-full bg-green-500" />
           )}
@@ -185,9 +188,10 @@ export function AgentChatSocketWidget({
         <div className="flex items-center gap-1">
           {isProcessing && (
             <Button
+              variant="ghost"
               size="icon"
               onClick={interruptAgent}
-              className="text-destructive hover:text-destructive rounded-full"
+              className="text-destructive hover:text-destructive"
             >
               <Square className="!h-5 !w-5" />
             </Button>

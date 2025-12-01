@@ -277,6 +277,7 @@ export default function AppointmentDetailsModal({
         </DialogHeader>
         <div className="space-y-4 flex-1 overflow-y-auto min-h-0 scrollbar-none">
           <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-2">
+            <span className="text-sm">ID: {appointmentId}</span>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Pago:</span>
               <PaymentStatusSelector

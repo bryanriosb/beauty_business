@@ -71,7 +71,8 @@ const statusLabels: Record<AgentLink['status'], string> = {
 export function AgentLinkCard({ link, onEdit, onDelete }: AgentLinkCardProps) {
   const [copied, setCopied] = useState(false)
 
-  const chatUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/chat/${link.token}`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')
+  const chatUrl = `${baseUrl}/chat/${link.token}`
 
   const copyToClipboard = async () => {
     try {

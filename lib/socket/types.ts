@@ -1,10 +1,17 @@
 import type { Server, Socket } from 'socket.io'
 
+export interface AgentLinkSettings {
+  assistant_name?: string
+  welcome_message?: string
+  require_phone_verification?: boolean
+}
+
 export interface AgentSession {
   sessionId: string
   conversationId: string
   businessId: string
   userId?: string
+  settings?: AgentLinkSettings
 }
 
 export interface ServerToClientEvents {
