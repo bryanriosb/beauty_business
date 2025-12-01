@@ -154,25 +154,27 @@ export function AgentChatSocketWidget({
         </div>
       )}
 
-      <ScrollArea ref={scrollAreaRef} className="flex-1 p-2">
-        <div className="flex flex-col gap-1 pb-4">
-          {messages.map((message, index) => (
-            <ChatMessage
-              key={message.id}
-              role={message.role}
-              content={message.content}
-              isStreaming={
-                isProcessing &&
-                message.role === 'assistant' &&
-                index === messages.length - 1
-              }
-            />
-          ))}
-          {agentTyping && !isProcessing && (
-            <ChatMessage role="assistant" content="" isTyping />
-          )}
-        </div>
-      </ScrollArea>
+      <div ref={scrollAreaRef} className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full p-2">
+          <div className="flex flex-col gap-1 pb-4">
+            {messages.map((message, index) => (
+              <ChatMessage
+                key={message.id}
+                role={message.role}
+                content={message.content}
+                isStreaming={
+                  isProcessing &&
+                  message.role === 'assistant' &&
+                  index === messages.length - 1
+                }
+              />
+            ))}
+            {agentTyping && !isProcessing && (
+              <ChatMessage role="assistant" content="" isTyping />
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       <div className="border-t p-4 pt-8">
         <AgentChatInput

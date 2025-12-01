@@ -40,7 +40,7 @@ function createModel() {
   }
 
   return new ChatOpenAI({
-    model: 'openai/gpt-oss-120b',
+    model: 'Qwen/Qwen3-235B-A22B-Instruct-2507',
     temperature: 0.3,
     maxTokens: 1024,
     apiKey: apiKey,
@@ -140,53 +140,57 @@ function createSystemPrompt(
     minute: '2-digit',
   })
 
-  return `Eres el asistente virtual de ${context.businessName}. Tu ÚNICO objetivo es agendar citas.
+  return `You are the virtual assistant for ${context.businessName}. Your ONLY goal is to book appointments.
+You MUST respond in Spanish (Colombia). Be friendly and warm.
 
-  FECHA Y HORA ACTUAL (Bogotá): ${bogotaDate}
+CURRENT DATE/TIME (Bogotá): ${bogotaDate}
 
-  NEGOCIO: ${context.businessName}
-  HORARIO: ${context.operatingHours}
+BUSINESS: ${context.businessName}
+HOURS: ${context.operatingHours}
 
-  SERVICIOS (usa estos IDs):
-  ${servicesInfo}
+AVAILABLE SERVICES (use these exact IDs):
+${servicesInfo}
 
-  ESPECIALISTAS (usa estos IDs):
-  ${specialistsInfo}
+AVAILABLE SPECIALISTS (use these exact IDs):
+${specialistsInfo}
 
-  FLUJO OBLIGATORIO (sigue estos pasos EN ORDEN):
-  1. "¡Hola! Soy el asistente de ${context.businessName}. ¿Cómo te llamas?"
-  2. "¡Mucho gusto, [NOMBRE]! Por favor, escribe tu número de celular aquí en el chat:"
-  3. "Perfecto, tu número es [NÚMERO]. ¿Está correcto?"
-  4. "¿Qué servicio te gustaría? Tenemos: [lista breve]"
-  5. "¿Para qué día y hora te gustaría la cita?"
-  6. [Usar get_available_slots] "Tenemos disponible: [horarios]. ¿Cuál prefieres?"
-  7. "¿Con qué especialista te gustaría? Tenemos: [lista]"
-  8. "Resumen: [NOMBRE], [SERVICIO], [FECHA/HORA], con [ESPECIALISTA]. ¿Confirmo la cita?"
-  9. [Usar create_appointment] "¡Listo! Tu cita está agendada."
+MANDATORY BOOKING FLOW (follow IN ORDER):
+1. Greet and ask for name: "¡Hola! Soy el asistente de ${context.businessName}. ¿Cómo te llamas?"
+2. Ask to TYPE phone number: "¡Mucho gusto, [NAME]! Por favor, escribe tu número de celular aquí:"
+3. Confirm phone: "Tu número es [NUMBER], ¿está correcto?"
+4. Ask to TYPE email: "Perfecto. Ahora escribe tu correo electrónico:"
+5. Confirm email: "Tu correo es [EMAIL], ¿está correcto?"
+6. Ask for service: "¿Qué servicio te gustaría?"
+7. Ask for date/time: "¿Para qué día y hora?"
+8. Use get_available_slots tool, then offer times: "Tenemos disponible: [times]. ¿Cuál prefieres?"
+9. Ask for specialist: "¿Con qué especialista te gustaría?"
+10. Show summary and confirm: "Resumen: [NAME], [PHONE], [EMAIL], [SERVICE], [DATE/TIME], con [SPECIALIST]. ¿Confirmo?"
+11. Use create_appointment tool: "¡Listo! Tu cita está agendada."
 
-  REGLAS ESTRICTAS:
-  - NUNCA te despidas hasta terminar de agendar la cita
-  - NUNCA inventes datos - usa EXACTAMENTE lo que el usuario escribió
-  - SIEMPRE haz la siguiente pregunta inmediatamente
-  - Una pregunta por mensaje, máximo 2 oraciones
+CRITICAL RULES:
+- ALWAYS respond with natural Spanish text ONLY
+- NEVER output status messages like "[Waiting]", "[Processing]", "(Esperando)"
+- NEVER use brackets [] or parentheses () for internal states
+- NEVER say goodbye until appointment is complete
+- NEVER invent data - use EXACTLY what user wrote
+- ALWAYS ask the next question immediately
+- One question per message, max 2 sentences
 
-  EXTRACCIÓN DE DATOS (MUY IMPORTANTE):
-  - Cuando el usuario escribe un número de teléfono como "3152181292", usa ESE número exacto
-  - NUNCA inventes números de teléfono - copia exactamente el que el usuario escribió
-  - Si el usuario dice "me llamo Juan", el nombre es "Juan" - no inventes otro
-  - Revisa el historial de la conversación para encontrar los datos reales
+DATA EXTRACTION (VERY IMPORTANT):
+- When user writes phone "3152181292", use THAT EXACT number in tools
+- NEVER invent phone numbers - copy exactly what user wrote
+- If user says "me llamo Juan", name is "Juan" - don't invent another
+- Check conversation history for real data
 
-  EJEMPLO DE USO CORRECTO DE HERRAMIENTAS:
-  Usuario: "3152181292"
-  → get_appointments_by_phone con phone: "3152181292" (el número EXACTO que escribió)
+CORRECT TOOL USAGE:
+User: "3152181292"
+→ Call get_appointments_by_phone with phone: "3152181292" (EXACT number)
 
-  Usuario: "Me llamo Carlos"
-  → Guardar nombre: "Carlos" (EXACTO)
-
-  NUNCA HAGAS ESTO:
-  ❌ Inventar números como "3115551234" cuando el usuario escribió "3152181292"
-  ❌ Usar placeholders como "placeholder", "unknown", "TBD"
-  ❌ Despedirte antes de terminar la cita`
+NEVER DO THIS:
+❌ Invent numbers like "3115551234" when user wrote "3152181292"
+❌ Use placeholders like "placeholder", "unknown", "TBD"
+❌ Output "[Waiting for response]" or any status text
+❌ Say goodbye before completing appointment`
 }
 
 export async function createAppointmentAgent(config: BusinessAgentConfig) {
@@ -240,7 +244,10 @@ export async function* streamAgentResponse(
   businessId: string,
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
 ): AsyncGenerator<string> {
+  console.log('[AI Agent] streamAgentResponse started, messages:', messages.length)
+
   const context = await getBusinessContext(businessId)
+  console.log('[AI Agent] Business context loaded:', context.businessName)
 
   const tools = [
     createGetServicesTool(businessId, handleGetServices),
@@ -264,12 +271,18 @@ export async function* streamAgentResponse(
   ]
 
   let response = await model.invoke(formattedMessages)
+  let loopCount = 0
+  const maxLoops = 5 // Prevenir loops infinitos
 
   while (
     'tool_calls' in response &&
     Array.isArray(response.tool_calls) &&
-    response.tool_calls.length > 0
+    response.tool_calls.length > 0 &&
+    loopCount < maxLoops
   ) {
+    loopCount++
+    console.log(`[AI Agent] Tool loop iteration ${loopCount}`)
+
     const toolResults: BaseMessage[] = []
 
     for (const toolCall of response.tool_calls) {
@@ -290,7 +303,7 @@ export async function* streamAgentResponse(
             '[AI Agent] Tool result:',
             toolCall.name,
             'result:',
-            result
+            typeof result === 'string' ? result.substring(0, 200) : result
           )
           toolResults.push(
             new ToolMessage({
@@ -321,18 +334,61 @@ export async function* streamAgentResponse(
 
     formattedMessages.push(response)
     formattedMessages.push(...toolResults)
-    response = await model.invoke(formattedMessages)
+
+    console.log('[AI Agent] Invoking model after tool results...')
+    try {
+      response = await model.invoke(formattedMessages)
+      console.log('[AI Agent] Model response received')
+    } catch (modelError) {
+      console.error('[AI Agent] Model invocation error:', modelError)
+      throw modelError
+    }
+
+    // Log intermedio del contenido de respuesta
+    const intermediateContent = typeof response.content === 'string'
+      ? response.content
+      : JSON.stringify(response.content)
+    console.log('[AI Agent] Intermediate response:', intermediateContent.substring(0, 200))
+    console.log('[AI Agent] Has tool_calls:', 'tool_calls' in response && Array.isArray(response.tool_calls) ? response.tool_calls.length : 0)
   }
 
-  const content =
+  if (loopCount >= maxLoops) {
+    console.warn('[AI Agent] Max tool loops reached, forcing response')
+  }
+
+  let content =
     typeof response.content === 'string'
       ? response.content
       : JSON.stringify(response.content)
 
+  console.log('[AI Agent] Raw response content:', content)
+
+  // Filtrar mensajes de estado que el modelo no debería generar
+  const originalContent = content
+  content = content
+    .replace(/\[.*?esperando.*?\]/gi, '')
+    .replace(/\[.*?waiting.*?\]/gi, '')
+    .replace(/\[.*?respuesta.*?\]/gi, '')
+    .replace(/\[.*?response.*?\]/gi, '')
+    .replace(/\[.*?proceso.*?\]/gi, '')
+    .replace(/\[.*?processing.*?\]/gi, '')
+    .replace(/\(.*?waiting.*?\)/gi, '')
+    .replace(/\(.*?esperando.*?\)/gi, '')
+    .trim()
+
+  // Si después de filtrar queda vacío, el modelo no respondió correctamente
+  if (!content) {
+    console.warn('[AI Agent] Response was empty after filtering. Original:', originalContent)
+    // Proporcionar una respuesta de fallback
+    content = '¿En qué más puedo ayudarte?'
+  }
+
   const words = content.split(' ')
   for (const word of words) {
-    yield word + ' '
-    await new Promise((resolve) => setTimeout(resolve, 30))
+    if (word.trim()) {
+      yield word + ' '
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    }
   }
 }
 

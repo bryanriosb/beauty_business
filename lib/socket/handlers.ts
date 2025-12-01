@@ -89,32 +89,45 @@ export function setupSocketHandlers(io: AgentServer) {
         socket.emit('agent:typing', { isTyping: true })
 
         let fullResponse = ''
-        const responseStream = streamAgentResponse(session.businessId, chatHistory)
+        console.log('[Socket] Starting streamAgentResponse for business:', session.businessId)
 
-        for await (const chunk of responseStream) {
-          if (socket.data.abortController?.signal.aborted) {
-            socket.emit('agent:interrupted')
-            break
+        try {
+          const responseStream = streamAgentResponse(session.businessId, chatHistory)
+
+          for await (const chunk of responseStream) {
+            if (socket.data.abortController?.signal.aborted) {
+              socket.emit('agent:interrupted')
+              break
+            }
+
+            fullResponse += chunk
+            socket.emit('agent:message', { chunk, isComplete: false })
           }
 
-          fullResponse += chunk
-          socket.emit('agent:message', { chunk, isComplete: false })
+          console.log('[Socket] Stream completed. Full response length:', fullResponse.length)
+        } catch (streamError) {
+          console.error('[Socket] Stream error:', streamError)
+          throw streamError
         }
 
         if (!socket.data.abortController?.signal.aborted) {
-          await addMessageAction({
-            conversation_id: session.conversationId,
-            role: 'assistant',
-            content: fullResponse,
-          })
+          if (fullResponse.trim()) {
+            await addMessageAction({
+              conversation_id: session.conversationId,
+              role: 'assistant',
+              content: fullResponse,
+            })
+          } else {
+            console.warn('[Socket] Empty response from agent, not saving')
+          }
 
           socket.emit('agent:message', { chunk: '', isComplete: true })
         }
 
         socket.emit('agent:typing', { isTyping: false })
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-        console.error('[Socket] Agent send error:', errorMessage)
+        console.error('[Socket] Agent send error:', error)
+        const errorMessage = error instanceof Error ? error.message : String(error)
         socket.emit('agent:error', { error: errorMessage })
       } finally {
         socket.data.isProcessing = false

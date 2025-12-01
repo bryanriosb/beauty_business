@@ -169,31 +169,61 @@ export async function handleGetAppointmentsByPhone(input: GetAppointmentsByPhone
 }
 
 export async function handleCreateAppointment(input: CreateAppointmentInput): Promise<string> {
+  console.log('[AI Agent] handleCreateAppointment called with:', JSON.stringify(input, null, 2))
+
   try {
     const supabase = await getSupabaseAdminClient()
 
     let customerId: string | null = null
     let userProfileId: string | null = null
 
-    const { data: existingCustomer } = await supabase
+    console.log('[AI Agent] Looking for existing customer with phone:', input.customerPhone)
+    const { data: existingCustomer, error: customerError } = await supabase
       .from('business_customers')
       .select('id, user_profile_id')
       .eq('business_id', input.businessId)
       .eq('phone', input.customerPhone)
       .single()
 
+    if (customerError && customerError.code !== 'PGRST116') {
+      console.error('[AI Agent] Error finding customer:', customerError)
+    }
+
     if (existingCustomer) {
+      console.log('[AI Agent] Found existing customer:', existingCustomer.id)
       customerId = existingCustomer.id
       userProfileId = existingCustomer.user_profile_id
     } else {
+      console.log('[AI Agent] Creating new customer:', input.customerName)
       const nameParts = input.customerName.split(' ')
       const firstName = nameParts[0]
       const lastName = nameParts.slice(1).join(' ') || null
 
+      // Primero crear un user_profile para el cliente
+      const { data: newProfile, error: profileError } = await supabase
+        .from('users_profile')
+        .insert({
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: input.customerPhone,
+          email: input.customerEmail || null,
+        })
+        .select('id')
+        .single()
+
+      if (profileError) {
+        console.error('[AI Agent] Error creating user profile:', profileError)
+        throw profileError
+      }
+      console.log('[AI Agent] Created user profile:', newProfile.id)
+      userProfileId = newProfile.id
+
+      // Ahora crear el business_customer con el user_profile_id
       const { data: newCustomer, error: createError } = await supabase
         .from('business_customers')
         .insert({
           business_id: input.businessId,
+          user_profile_id: userProfileId,
           first_name: firstName,
           last_name: lastName,
           phone: input.customerPhone,
@@ -201,22 +231,33 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
           source: 'ai_agent',
           status: 'active',
         })
-        .select('id, user_profile_id')
+        .select('id')
         .single()
 
-      if (createError) throw createError
+      if (createError) {
+        console.error('[AI Agent] Error creating customer:', createError)
+        throw createError
+      }
+      console.log('[AI Agent] Created customer:', newCustomer.id)
       customerId = newCustomer.id
-      userProfileId = newCustomer.user_profile_id
     }
 
-    const { data: services } = await supabase
+    console.log('[AI Agent] Looking for services:', input.serviceIds)
+    const { data: services, error: servicesError } = await supabase
       .from('services')
       .select('id, price_cents, duration_minutes, tax_rate')
       .in('id', input.serviceIds)
 
+    if (servicesError) {
+      console.error('[AI Agent] Error finding services:', servicesError)
+    }
+
     if (!services || services.length === 0) {
+      console.error('[AI Agent] No services found for IDs:', input.serviceIds)
       return 'Error: Los servicios seleccionados no son válidos.'
     }
+
+    console.log('[AI Agent] Found services:', services.length)
 
     const totalDuration = services.reduce((acc, s) => acc + s.duration_minutes, 0)
     const subtotal = services.reduce((acc, s) => acc + s.price_cents, 0)
@@ -224,6 +265,14 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
 
     const startTime = new Date(input.startTime)
     const endTime = new Date(startTime.getTime() + totalDuration * 60 * 1000)
+
+    console.log('[AI Agent] Creating appointment:', {
+      business_id: input.businessId,
+      specialist_id: input.specialistId,
+      users_profile_id: userProfileId,
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+    })
 
     const { data: appointment, error: aptError } = await supabase
       .from('appointments')
@@ -246,7 +295,11 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
       .select('id')
       .single()
 
-    if (aptError) throw aptError
+    if (aptError) {
+      console.error('[AI Agent] Error creating appointment:', aptError)
+      throw aptError
+    }
+    console.log('[AI Agent] Appointment created:', appointment.id)
 
     const appointmentServices = services.map((s) => ({
       appointment_id: appointment.id,
@@ -276,7 +329,15 @@ Detalles:
 
 Se ha enviado una confirmación. ¿Hay algo más en lo que pueda ayudarte?`
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Error desconocido'
+    console.error('[AI Agent] handleCreateAppointment error:', error)
+    let message = 'Error desconocido'
+    if (error instanceof Error) {
+      message = error.message
+    } else if (typeof error === 'object' && error !== null) {
+      // Supabase errors have message property but aren't Error instances
+      const err = error as { message?: string; code?: string; details?: string }
+      message = err.message || err.details || err.code || JSON.stringify(error)
+    }
     return `Error al crear la cita: ${message}`
   }
 }

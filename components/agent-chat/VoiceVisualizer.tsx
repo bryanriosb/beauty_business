@@ -29,7 +29,7 @@ export function VoiceVisualizer({
     if (!lottieRef.current) return
 
     // Solo cambia velocidad: más volumen = más rápido
-    const speed = isActive ? 1 + combinedVolume * 4 : 0.5
+    const speed = isActive ? 1 + combinedVolume * 23 : 0.5
     setAnimationSpeed(speed)
     lottieRef.current.setSpeed(speed)
   }, [combinedVolume, isActive])
