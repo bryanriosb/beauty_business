@@ -92,14 +92,14 @@ export function AgentLinkCard({ link, onEdit, onDelete }: AgentLinkCardProps) {
   return (
     <Card className="relative">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            {typeIcons[link.type]}
-            <CardTitle className="text-base">{link.name}</CardTitle>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="shrink-0">{typeIcons[link.type]}</span>
+            <CardTitle className="text-base truncate">{link.name}</CardTitle>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className={statusColors[link.status]}>
+          <div className="flex items-center gap-1 shrink-0">
+            <Badge variant="outline" className={`${statusColors[link.status]} text-xs`}>
               {statusLabels[link.status]}
             </Badge>
 
@@ -131,13 +131,13 @@ export function AgentLinkCard({ link, onEdit, onDelete }: AgentLinkCardProps) {
           </div>
         </div>
 
-        <CardDescription className="flex items-center gap-2">
+        <CardDescription className="flex items-center gap-2 text-xs sm:text-sm">
           {typeLabels[link.type]}
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+      <CardContent className="space-y-3 sm:space-y-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
           <div>
             <p className="text-muted-foreground">Usos</p>
             <p className="font-medium">
@@ -158,7 +158,7 @@ export function AgentLinkCard({ link, onEdit, onDelete }: AgentLinkCardProps) {
             <div>
               <p className="text-muted-foreground">Expira</p>
               <p className="font-medium">
-                {format(new Date(link.expires_at), "d 'de' MMM, yyyy", { locale: es })}
+                {format(new Date(link.expires_at), "d MMM", { locale: es })}
               </p>
             </div>
           )}
@@ -166,20 +166,20 @@ export function AgentLinkCard({ link, onEdit, onDelete }: AgentLinkCardProps) {
           <div>
             <p className="text-muted-foreground">Creado</p>
             <p className="font-medium">
-              {format(new Date(link.created_at), "d 'de' MMM", { locale: es })}
+              {format(new Date(link.created_at), "d MMM", { locale: es })}
             </p>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <div className="flex-1 truncate rounded-md bg-muted px-3 py-2 text-sm font-mono">
-            {chatUrl}
+          <div className="flex-1 min-w-0 overflow-hidden rounded-md bg-muted px-2 sm:px-3 py-2 text-xs sm:text-sm font-mono">
+            <p className="truncate">{chatUrl}</p>
           </div>
           <Button
             variant="outline"
             size="icon"
             onClick={copyToClipboard}
-            className="shrink-0"
+            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9"
           >
             {copied ? (
               <Check className="h-4 w-4 text-green-600" />
