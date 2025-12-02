@@ -15,6 +15,7 @@ export interface BusinessContext {
   }>
   operatingHours: string
   currentDateTime: string
+  assistantName?: string
 }
 
 function formatServicesWithPrices(
@@ -85,7 +86,7 @@ function getBaseRules(): string {
 - NEVER say you completed both without having executed BOTH tools
 
 ## RESPONSE RULES
-- ALWAYS respond in natural Spanish (Colombian dialect)
+- ALWAYS respond in natural Spanish
 - NEVER invent data - use EXACTLY what the user wrote
 - NEVER use placeholders like "unknown" or "TBD"
 - NEVER generate status messages like "[Waiting]" or "(Processing)"
@@ -99,12 +100,14 @@ function getBaseRules(): string {
 }
 
 export function createBookingPrompt(context: BusinessContext): string {
+  const name = context.assistantName || 'el asistente virtual'
   return `Reasoning HIGH
 
-You are the virtual assistant for ${
+You are ${name}, the virtual assistant for ${
     context.businessName
   }. Your goal is to help BOOK NEW APPOINTMENTS.
-You MUST respond in Spanish (Colombian dialect). Be friendly and efficient.
+Your name is ${name}.
+You MUST respond in Spanish. Be friendly and efficient.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
 
@@ -152,12 +155,14 @@ ${getBaseRules()}`
 }
 
 export function createInquiryPrompt(context: BusinessContext): string {
+  const name = context.assistantName || 'el asistente virtual'
   return `Reasoning HIGH
 
-You are the virtual assistant for ${
+You are ${name}, the virtual assistant for ${
     context.businessName
   }. Your goal is to ANSWER INQUIRIES about services, prices, specialists, and existing appointments.
-You MUST respond in Spanish (Colombian dialect). Be informative and helpful.
+Your name is ${name}.
+You MUST respond in Spanish. Be informative and helpful.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
 
@@ -205,12 +210,14 @@ ${getBaseRules()}`
 }
 
 export function createAvailabilityPrompt(context: BusinessContext): string {
+  const name = context.assistantName || 'el asistente virtual'
   return `Reasoning HIGH
 
-You are the virtual assistant for ${
+You are ${name}, the virtual assistant for ${
     context.businessName
   }. Your goal is to CHECK AVAILABILITY of schedules without commitment to book.
-You MUST respond in Spanish (Colombian dialect). Be clear and concise.
+Your name is ${name}.
+You MUST respond in Spanish. Be clear and concise.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
 
@@ -240,12 +247,14 @@ ${getBaseRules()}`
 }
 
 export function createReschedulePrompt(context: BusinessContext): string {
+  const name = context.assistantName || 'el asistente virtual'
   return `Reasoning HIGH
 
-You are the virtual assistant for ${
+You are ${name}, the virtual assistant for ${
     context.businessName
   }. Your goal is to help RESCHEDULE existing appointments.
-You MUST respond in Spanish (Colombian dialect). Be empathetic and efficient.
+Your name is ${name}.
+You MUST respond in Spanish. Be empathetic and efficient.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
 
@@ -330,12 +339,14 @@ ${getBaseRules()}`
 }
 
 export function createCancelPrompt(context: BusinessContext): string {
+  const name = context.assistantName || 'el asistente virtual'
   return `Reasoning HIGH
 
-You are the virtual assistant for ${
+You are ${name}, the virtual assistant for ${
     context.businessName
   }. Your goal is to help CANCEL existing appointments.
-You MUST respond in Spanish (Colombian dialect). Be empathetic but confirm before canceling.
+Your name is ${name}.
+You MUST respond in Spanish. Be empathetic but confirm before canceling.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
 
@@ -400,12 +411,14 @@ ${getBaseRules()}`
 }
 
 export function createGeneralPrompt(context: BusinessContext): string {
+  const name = context.assistantName || 'el asistente virtual'
   return `Reasoning HIGH
 
-You are the virtual assistant for ${
+You are ${name}, the virtual assistant for ${
     context.businessName
   }. You help with appointments and inquiries.
-You MUST respond in Spanish (Colombian dialect). Be warm and guide the customer.
+Your name is ${name} - use this when introducing yourself.
+You MUST respond in Spanish. Be warm and guide the customer.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
 
@@ -418,18 +431,16 @@ ${formatServicesWithPrices(context.services)}
 
 ## HOW TO RESPOND
 
-- If customer greets → Greet back and ask how you can help
-- Offer main options:
-  "¡Hola! Soy el asistente virtual de ${
+- If customer greets → Greet back with YOUR NAME and ask how you can help
+- Example greeting: "¡Hola! Soy ${name}, asistente virtual de ${
     context.businessName
-  }. Puedo ayudarte con:
+  }. ¿En qué puedo ayudarte?"
+- Offer main options when appropriate:
   • Agendar una nueva cita
   • Consultar servicios y precios
   • Ver disponibilidad de horarios
   • Reprogramar una cita existente
   • Cancelar una cita
-
-  ¿En qué puedo ayudarte?"
 
 - If customer says goodbye → Say goodbye warmly and invite them to return
 - If you don't understand → Ask for clarification politely

@@ -80,10 +80,6 @@ export class CircularAudioBuffer {
     this.boundHandlers.onEnded = () => {
       if (this.useFallbackMode) {
         this.playNextFallback()
-        if (this.fallbackQueue.length === 0 && !this.isPlayingFallback) {
-          this.stopVolumeMonitoring()
-          this.callbacks.onPlaybackEnd?.()
-        }
       } else {
         if (!this.hasAudioPending()) {
           this.stopVolumeMonitoring()
@@ -233,6 +229,8 @@ export class CircularAudioBuffer {
 
       if (this.fallbackQueue.length === 0) {
         this.isPlayingFallback = false
+        this.stopVolumeMonitoring()
+        this.callbacks.onPlaybackEnd?.()
         return
       }
     }

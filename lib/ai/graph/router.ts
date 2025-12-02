@@ -18,46 +18,25 @@ export interface RouterResult {
   }
 }
 
-const ROUTER_SYSTEM_PROMPT = `Reasoning HIGH
+const ROUTER_SYSTEM_PROMPT = `You classify user intents for a beauty salon assistant.
 
-You are an intent classifier for a beauty salon appointment assistant.
-Analyze the user message (which may be in Spanish) and classify it into ONE of these intents:
+INTENTS:
+- BOOKING: User wants to CREATE a new appointment (agendar, reservar, hacer cita)
+- INQUIRY: User asks about services, prices, or their existing appointments (cuánto cuesta, mis citas)
+- AVAILABILITY: User checks available times without booking (disponibilidad, qué horarios)
+- RESCHEDULE: User wants to CHANGE an existing appointment (cambiar cita, reprogramar)
+- CANCEL: User wants to CANCEL an appointment (cancelar, anular)
+- GENERAL: Greetings, thanks, unclear (hola, gracias, adiós)
 
-## INTENTS
+RULES:
+- Greetings alone → GENERAL
+- Asking about prices/services → INQUIRY
+- Wants to book → BOOKING
+- Change existing appointment → RESCHEDULE
+- Cancel appointment → CANCEL
 
-BOOKING - User wants to create a NEW appointment
-  Keywords: agendar, reservar, hacer cita, quiero una cita, necesito cita, sacar cita
-
-INQUIRY - User asks about services, prices, specialists, or their existing appointments
-  Keywords: cuánto cuesta, qué servicios, precios, mis citas, tengo cita, información
-
-AVAILABILITY - User wants to check available times WITHOUT booking yet
-  Keywords: disponibilidad, qué horarios, cuándo pueden, hay espacio, tienen cupo
-
-RESCHEDULE - User wants to change an existing appointment to different date/time
-  Keywords: cambiar cita, reprogramar, mover cita, otra fecha, modificar
-
-CANCEL - User wants to cancel an existing appointment
-  Keywords: cancelar, anular, no puedo ir, eliminar cita, quitar cita
-
-GENERAL - Greetings, thanks, farewells, or unclear intent
-  Keywords: hola, gracias, buenos días, adiós, chao
-
-## CLASSIFICATION RULES
-
-1. If user just greets ("hola", "buenos días") → GENERAL
-2. If user asks about prices or services info → INQUIRY
-3. If user explicitly wants to book/schedule → BOOKING
-4. If user mentions CHANGING or MOVING an EXISTING appointment → RESCHEDULE
-5. If user wants to CHECK availability without commitment → AVAILABILITY
-6. If user wants to CANCEL or cannot attend → CANCEL
-
-## OUTPUT FORMAT
-
-Respond ONLY with a JSON object in this exact format:
-{"intent": "INTENT_NAME", "confidence": 0.95}
-
-Do not include any other text, explanation, or markdown.`
+OUTPUT: Return ONLY valid JSON, nothing else:
+{"intent":"INTENT_NAME","confidence":0.9}`
 
 function createRouterModel() {
   const apiKey = process.env.DEEPINFRA_API_KEY
@@ -66,7 +45,7 @@ function createRouterModel() {
   }
 
   return new ChatOpenAI({
-    model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+    model: 'openai/gpt-oss-20b',
     temperature: 0.1,
     maxTokens: 100,
     apiKey,

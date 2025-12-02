@@ -65,7 +65,7 @@ function createMainModel() {
   }
 
   return new ChatOpenAI({
-    model: 'openai/gpt-oss-120b', //'Qwen/Qwen3-235B-A22B-Instruct-2507',
+    model: 'openai/gpt-oss-120b', // Qwen/Qwen3-235B-A22B-Instruct-2507,
     temperature: 0.3,
     maxTokens: 1024,
     apiKey: apiKey,
@@ -76,7 +76,8 @@ function createMainModel() {
 }
 
 async function getBusinessContext(
-  businessId: string
+  businessId: string,
+  assistantName?: string
 ): Promise<BusinessContext> {
   const supabase = await getSupabaseAdminClient()
 
@@ -149,6 +150,7 @@ async function getBusinessContext(
       })) || [],
     operatingHours,
     currentDateTime: bogotaDate,
+    assistantName,
   }
 }
 
@@ -187,40 +189,9 @@ function getToolsForIntent(
     createRescheduleAppointmentTool(ctx, handleRescheduleAppointment),
   ]
 
-  switch (intent) {
-    case 'BOOKING':
-      return allTools
-    case 'INQUIRY':
-      return [
-        createGetServicesTool(ctx, handleGetServices),
-        createGetSpecialistsTool(ctx, handleGetSpecialists),
-        createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
-      ]
-    case 'AVAILABILITY':
-      return [
-        createGetServicesTool(ctx, handleGetServices),
-        createGetAvailableSlotsTool(ctx, handleGetAvailableSlots),
-        createGetSpecialistsTool(ctx, handleGetSpecialists),
-      ]
-    case 'RESCHEDULE':
-      return [
-        createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
-        createGetAvailableSlotsTool(ctx, handleGetAvailableSlots),
-        createRescheduleAppointmentTool(ctx, handleRescheduleAppointment),
-        createGetSpecialistsTool(ctx, handleGetSpecialists),
-      ]
-    case 'CANCEL':
-      return [
-        createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
-        createCancelAppointmentTool(ctx, handleCancelAppointment),
-      ]
-    case 'GENERAL':
-    default:
-      return [
-        createGetServicesTool(ctx, handleGetServices),
-        createGetSpecialistsTool(ctx, handleGetSpecialists),
-      ]
-  }
+  // Todos los intents tienen acceso a todos los tools para evitar problemas
+  // cuando el router clasifica incorrectamente
+  return allTools
 }
 
 export async function createAppointmentAgent(config: BusinessAgentConfig) {
@@ -490,7 +461,8 @@ export async function* streamAgentResponse(
 export async function* streamAgentResponseWithFeedback(
   businessId: string,
   sessionId: string,
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  assistantName?: string
 ): AsyncGenerator<StreamEvent> {
   console.log(
     '[AI Agent] streamAgentResponseWithFeedback started, messages:',
@@ -499,7 +471,7 @@ export async function* streamAgentResponseWithFeedback(
     sessionId
   )
 
-  const context = await getBusinessContext(businessId)
+  const context = await getBusinessContext(businessId, assistantName)
   const intent = await detectIntent(messages)
   console.log(`[AI Agent] Detected intent: ${intent}`)
 

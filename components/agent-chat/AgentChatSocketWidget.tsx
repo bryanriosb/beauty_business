@@ -8,7 +8,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { ChatMessage } from './ChatMessage'
 import { AgentChatInput } from './AgentChatInput'
 import { FeedbackIndicator } from './FeedbackIndicator'
-import { useAgentSocket } from '@/hooks/useAgentSocket'
+import { useAgentSSE } from '@/hooks/useAgentSSE'
 import { useDeepgramSTT } from '@/hooks/useDeepgramSTT'
 import { useFishAudioTTS } from '@/hooks/useFishAudioTTS'
 import { cn } from '@/lib/utils'
@@ -83,13 +83,13 @@ export function AgentChatSocketWidget({
     connect,
     agentTyping,
     session,
-  } = useAgentSocket({
+  } = useAgentSSE({
     token,
     onChunk: handleTTSChunk,
     onStreamEnd: handleTTSStreamEnd,
     onWelcome: handleWelcome,
     onFallback: handleFallback,
-    onError: (err) => console.error('Socket error:', err),
+    onError: (err) => console.error('SSE error:', err),
   })
 
   const handleUtteranceEnd = useCallback(
