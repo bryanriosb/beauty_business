@@ -19,6 +19,7 @@ export interface ServerToClientEvents {
   'agent:thinking': (data: { content: string }) => void
   'agent:typing': (data: { isTyping: boolean }) => void
   'agent:feedback': (data: { type: 'thinking' | 'progress' | 'waiting'; message: string; toolName?: string }) => void
+  'agent:fallback': (data: { message: string; speak: boolean }) => void
   'agent:tool': (data: { status: 'start' | 'end'; toolName: string; success?: boolean }) => void
   'agent:error': (data: { error: string; code?: string }) => void
   'agent:interrupted': () => void

@@ -42,10 +42,8 @@ export async function startAgentSession(
 
   const link = validation.link
 
-  // Para enlaces single_use, consumir inmediatamente al iniciar sesión
-  if (link.type === 'single_use') {
-    await incrementLinkUsage(link.id, 0)
-  }
+  // Incrementar uso al iniciar sesión para todos los tipos
+  await incrementLinkUsage(link.id, 0)
 
   const sessionId = uuidv4()
 

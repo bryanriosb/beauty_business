@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Loader2, X, Bot, Square } from 'lucide-react'
+import { Loader2, X, Bot, Square, Volume2, VolumeX, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
@@ -10,6 +10,7 @@ import { AgentChatInput } from './AgentChatInput'
 import { FeedbackIndicator } from './FeedbackIndicator'
 import { useAgentSocket } from '@/hooks/useAgentSocket'
 import { useDeepgramSTT } from '@/hooks/useDeepgramSTT'
+import { useFishAudioTTS } from '@/hooks/useFishAudioTTS'
 import { cn } from '@/lib/utils'
 
 interface AgentChatSocketWidgetProps {
@@ -27,13 +28,56 @@ export function AgentChatSocketWidget({
   const [inputValue, setInputValue] = useState('')
   const [voiceMode, setVoiceMode] = useState(false)
   const [isNearBottom, setIsNearBottom] = useState(true)
+  const [ttsEnabled, setTtsEnabled] = useState(true)
+  const voiceModeRef = useRef(voiceMode)
+  const ttsEnabledRef = useRef(ttsEnabled)
+
+  useEffect(() => {
+    voiceModeRef.current = voiceMode
+  }, [voiceMode])
+
+  useEffect(() => {
+    ttsEnabledRef.current = ttsEnabled
+  }, [ttsEnabled])
 
   const {
-    isConnected,
-    isConnecting,
+    speak,
+    streamText,
+    finishStream,
+    stop: stopTTS,
+    isSpeaking: isTTSSpeaking,
+    volume: ttsVolume,
+  } = useFishAudioTTS({
+    onError: (err) => console.error('TTS Error:', err),
+  })
+
+  const handleTTSChunk = useCallback((chunk: string) => {
+    if (voiceModeRef.current && ttsEnabledRef.current) {
+      streamText(chunk)
+    }
+  }, [streamText])
+
+  const handleTTSStreamEnd = useCallback(() => {
+    if (voiceModeRef.current && ttsEnabledRef.current) {
+      finishStream()
+    }
+  }, [finishStream])
+
+  const handleWelcome = useCallback((_message: string) => {
+    // TTS del mensaje de bienvenida deshabilitado
+  }, [])
+
+  const handleFallback = useCallback((message: string) => {
+    if (voiceModeRef.current && ttsEnabledRef.current && message) {
+      speak(message)
+    }
+  }, [speak])
+
+  const {
     isProcessing,
     messages,
     feedback,
+    error,
     sendMessage,
     interruptAgent,
     connect,
@@ -41,7 +85,11 @@ export function AgentChatSocketWidget({
     session,
   } = useAgentSocket({
     token,
-    onError: (error) => console.error('Socket error:', error),
+    onChunk: handleTTSChunk,
+    onStreamEnd: handleTTSStreamEnd,
+    onWelcome: handleWelcome,
+    onFallback: handleFallback,
+    onError: (err) => console.error('Socket error:', err),
   })
 
   const handleUtteranceEnd = useCallback(
@@ -141,10 +189,40 @@ export function AgentChatSocketWidget({
       await startListening()
     } else {
       stopListening()
+      stopTTS()
     }
   }
 
-  if (isConnecting) {
+  const toggleTTS = useCallback(() => {
+    if (ttsEnabled && isTTSSpeaking) {
+      stopTTS()
+    }
+    setTtsEnabled((prev) => !prev)
+  }, [ttsEnabled, isTTSSpeaking, stopTTS])
+
+
+  if (error) {
+    return (
+      <div className={cn('flex h-full items-center justify-center', className)}>
+        <div className="flex flex-col items-center gap-4 text-center px-4 max-w-sm">
+          <div className="rounded-full bg-destructive/10 p-3">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-medium text-destructive">Enlace no válido</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </div>
+          {onClose && (
+            <Button variant="outline" onClick={onClose}>
+              Cerrar
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (!session) {
     return (
       <div className={cn('flex h-full items-center justify-center', className)}>
         <div className="flex flex-col items-center gap-4">
@@ -157,33 +235,15 @@ export function AgentChatSocketWidget({
     )
   }
 
-  if (!isConnected) {
-    return (
-      <div className={cn('flex h-full items-center justify-center', className)}>
-        <div className="flex flex-col items-center gap-4 text-center px-4">
-          <div className="rounded-full bg-destructive/10 p-3">
-            <X className="h-6 w-6 text-destructive" />
-          </div>
-          <p className="text-sm text-muted-foreground">Error de conexión</p>
-          <Button variant="outline" onClick={connect}>
-            Reintentar
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className={cn('flex h-full flex-col bg-background', className)}>
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
           <span className="font-medium">
-            {session?.settings?.assistant_name || 'Asistente Virtual'}
+            {session?.settings?.assistant_name ?? 'Asistente Virtual'}
           </span>
-          {isConnected && (
-            <span className="flex h-2 w-2 rounded-full bg-green-500" />
-          )}
+          <span className="flex h-2 w-2 rounded-full bg-green-500" />
         </div>
         <div className="flex items-center gap-1">
           {isProcessing && (
@@ -196,12 +256,27 @@ export function AgentChatSocketWidget({
               <Square className="!h-5 !w-5" />
             </Button>
           )}
+          {voiceMode && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTTS}
+              className={cn('h-8 w-8', !ttsEnabled && 'text-muted-foreground')}
+              title={ttsEnabled ? 'Desactivar voz' : 'Activar voz'}
+            >
+              {ttsEnabled ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <VolumeX className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          <ThemeToggle />
           {onClose && (
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           )}
-          <ThemeToggle />
         </div>
       </div>
 
@@ -247,7 +322,7 @@ export function AgentChatSocketWidget({
           isMuted={isMuted}
           isSpeaking={isSpeaking}
           volume={volume}
-          outputVolume={0}
+          outputVolume={ttsVolume}
           onModeChange={handleModeChange}
           onToggleMute={toggleMute}
         />

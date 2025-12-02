@@ -1,6 +1,7 @@
 import type { AgentServer, AgentSocket, AgentSession } from './types'
 import { startAgentSession } from '@/lib/services/ai-agent'
 import { streamAgentResponseWithFeedback } from '@/lib/ai/graph/appointment-graph'
+import { generateWaitingMessage } from '@/lib/ai/graph/feedback-generator'
 import {
   addMessageAction,
   fetchConversationMessagesAction,
@@ -90,7 +91,22 @@ export function setupSocketHandlers(io: AgentServer) {
         socket.emit('agent:typing', { isTyping: true })
 
         let fullResponse = ''
+        let hasStartedResponse = false
         console.log('[Socket] Starting streamAgentResponseWithFeedback for business:', session.businessId, 'session:', session.sessionId)
+
+        const fallbackDelays = [5000, 15000]
+        const fallbackTimeouts: NodeJS.Timeout[] = []
+        const businessName = session.settings?.assistant_name || 'el asistente'
+
+        fallbackDelays.forEach((delay) => {
+          const timeout = setTimeout(async () => {
+            if (!hasStartedResponse && !socket.data.abortController?.signal.aborted) {
+              const message = await generateWaitingMessage(delay / 1000, businessName)
+              socket.emit('agent:fallback', { message, speak: true })
+            }
+          }, delay)
+          fallbackTimeouts.push(timeout)
+        })
 
         try {
           const responseStream = streamAgentResponseWithFeedback(session.businessId, session.sessionId, chatHistory)
@@ -103,6 +119,10 @@ export function setupSocketHandlers(io: AgentServer) {
 
             switch (event.type) {
               case 'chunk':
+                if (!hasStartedResponse) {
+                  hasStartedResponse = true
+                  fallbackTimeouts.forEach(clearTimeout)
+                }
                 fullResponse += event.content
                 socket.emit('agent:message', { chunk: event.content, isComplete: false })
                 break
@@ -136,6 +156,8 @@ export function setupSocketHandlers(io: AgentServer) {
         } catch (streamError) {
           console.error('[Socket] Stream error:', streamError)
           throw streamError
+        } finally {
+          fallbackTimeouts.forEach(clearTimeout)
         }
 
         if (!socket.data.abortController?.signal.aborted) {

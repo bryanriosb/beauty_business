@@ -65,7 +65,7 @@ function createMainModel() {
   }
 
   return new ChatOpenAI({
-    model: 'Qwen/Qwen3-235B-A22B-Instruct-2507', //'openai/gpt-oss-120b',
+    model: 'openai/gpt-oss-120b', //'Qwen/Qwen3-235B-A22B-Instruct-2507',
     temperature: 0.3,
     maxTokens: 1024,
     apiKey: apiKey,
@@ -170,7 +170,11 @@ function getPromptForIntent(intent: Intent, context: BusinessContext): string {
   }
 }
 
-function getToolsForIntent(intent: Intent, businessId: string, sessionId: string) {
+function getToolsForIntent(
+  intent: Intent,
+  businessId: string,
+  sessionId: string
+) {
   const ctx = { businessId, sessionId }
 
   const allTools = [

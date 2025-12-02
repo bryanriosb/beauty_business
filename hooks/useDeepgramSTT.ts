@@ -59,6 +59,18 @@ export function useDeepgramSTT(options: UseDeepgramSTTOptions = {}): UseDeepgram
   const isActiveRef = useRef(false)
   const speakingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  const onInterimTranscriptRef = useRef(onInterimTranscript)
+  const onFinalTranscriptRef = useRef(onFinalTranscript)
+  const onUtteranceEndRef = useRef(onUtteranceEnd)
+  const onErrorRef = useRef(onError)
+
+  useEffect(() => {
+    onInterimTranscriptRef.current = onInterimTranscript
+    onFinalTranscriptRef.current = onFinalTranscript
+    onUtteranceEndRef.current = onUtteranceEnd
+    onErrorRef.current = onError
+  }, [onInterimTranscript, onFinalTranscript, onUtteranceEnd, onError])
+
   const SPEAKING_TIMEOUT_MS = 1500
 
   const resetSpeakingTimeout = useCallback(() => {
@@ -75,14 +87,14 @@ export function useDeepgramSTT(options: UseDeepgramSTTOptions = {}): UseDeepgram
     if (isFinal) {
       setFinalTranscript(prev => prev + (prev ? ' ' : '') + text)
       setInterimTranscript('')
-      onFinalTranscript?.(text)
+      onFinalTranscriptRef.current?.(text)
     } else {
       setInterimTranscript(text)
-      onInterimTranscript?.(text)
+      onInterimTranscriptRef.current?.(text)
     }
     setIsSpeaking(true)
     resetSpeakingTimeout()
-  }, [onFinalTranscript, onInterimTranscript, resetSpeakingTimeout])
+  }, [resetSpeakingTimeout])
 
   const handleUtteranceEnd = useCallback((fullText: string) => {
     if (speakingTimeoutRef.current) {
@@ -92,9 +104,9 @@ export function useDeepgramSTT(options: UseDeepgramSTTOptions = {}): UseDeepgram
     setIsSpeaking(false)
     setInterimTranscript('')
     setVolume(0)
-    onUtteranceEnd?.(fullText)
+    onUtteranceEndRef.current?.(fullText)
     setFinalTranscript('')
-  }, [onUtteranceEnd])
+  }, [])
 
   const setupAudioCapture = useCallback(async () => {
     try {
@@ -182,10 +194,10 @@ export function useDeepgramSTT(options: UseDeepgramSTTOptions = {}): UseDeepgram
       return true
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to setup audio capture')
-      onError?.(err)
+      onErrorRef.current?.(err)
       return false
     }
-  }, [highPassCutoff, useHighPassFilter, onError])
+  }, [highPassCutoff, useHighPassFilter])
 
   const start = useCallback(async () => {
     if (isListening) return

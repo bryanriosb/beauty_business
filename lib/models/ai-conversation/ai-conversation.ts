@@ -45,6 +45,7 @@ export interface AgentLinkInsert {
 
 export interface AgentLinkUpdate {
   name?: string
+  type?: AgentLinkType
   status?: AgentLinkStatus
   max_uses?: number | null
   max_minutes?: number | null

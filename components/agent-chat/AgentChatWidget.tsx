@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Loader2, X, Bot } from 'lucide-react'
+import { Loader2, X, Bot, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { ChatMessage } from './ChatMessage'
 import { AgentChatInput } from './AgentChatInput'
 import { useDeepgramSTT } from '@/hooks/useDeepgramSTT'
+import { useFishAudioTTS } from '@/hooks/useFishAudioTTS'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -45,9 +46,28 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
   const [session, setSession] = useState<AgentSession | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [voiceMode, setVoiceMode] = useState(false)
-  const [outputVolume] = useState(0)
+  const [ttsEnabled, setTtsEnabled] = useState(true)
 
   const scrollRef = useRef<HTMLDivElement>(null)
+  const voiceModeRef = useRef(voiceMode)
+  const ttsEnabledRef = useRef(ttsEnabled)
+
+  useEffect(() => {
+    voiceModeRef.current = voiceMode
+  }, [voiceMode])
+
+  useEffect(() => {
+    ttsEnabledRef.current = ttsEnabled
+  }, [ttsEnabled])
+
+  const {
+    speak,
+    stop: stopTTS,
+    isSpeaking: isTTSSpeaking,
+    volume: ttsVolume,
+  } = useFishAudioTTS({
+    onError: (err) => console.error('TTS Error:', err),
+  })
 
   const sendMessageToAgent = useCallback(async (text: string) => {
     if (!text.trim() || !session || isLoading) return
@@ -129,6 +149,9 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
 
                 if (data.done) {
                   setIsStreaming(false)
+                  if (voiceModeRef.current && ttsEnabledRef.current && accumulatedContent) {
+                    speak(accumulatedContent)
+                  }
                 }
               } catch {
                 // Ignore JSON parse errors for incomplete chunks
@@ -151,7 +174,7 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
       setIsLoading(false)
       setIsStreaming(false)
     }
-  }, [session, isLoading, token])
+  }, [session, isLoading, token, speak])
 
   const handleUtteranceEnd = useCallback(async (text: string) => {
     if (!text.trim() || !session) return
@@ -244,8 +267,16 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
     } else {
       setVoiceMode(false)
       stopListening()
+      stopTTS()
     }
   }
+
+  const toggleTTS = useCallback(() => {
+    if (ttsEnabled && isTTSSpeaking) {
+      stopTTS()
+    }
+    setTtsEnabled((prev) => !prev)
+  }, [ttsEnabled, isTTSSpeaking, stopTTS])
 
   if (isInitializing) {
     return (
@@ -284,6 +315,24 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {voiceMode && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTTS}
+              className={cn(
+                'h-8 w-8',
+                !ttsEnabled && 'text-muted-foreground'
+              )}
+              title={ttsEnabled ? 'Desactivar voz' : 'Activar voz'}
+            >
+              {ttsEnabled ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <VolumeX className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           <ThemeToggle />
           {onClose && (
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -326,7 +375,7 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
           isMuted={isMuted}
           isSpeaking={isSpeaking}
           volume={volume}
-          outputVolume={outputVolume}
+          outputVolume={ttsVolume}
           onModeChange={handleModeChange}
           onToggleMute={toggleMute}
         />

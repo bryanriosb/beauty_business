@@ -11,9 +11,9 @@ const FEEDBACK_CONTEXTS: Record<string, string> = {
 }
 
 const DELAY_MESSAGES = [
-  { delay: 5000, type: 'working' },
-  { delay: 10000, type: 'patience' },
-  { delay: 15000, type: 'apology' },
+  { delay: 8000, type: 'working' },
+  { delay: 20000, type: 'patience' },
+  { delay: 40000, type: 'apology' },
 ]
 
 let feedbackModel: ChatOpenAI | null = null
@@ -53,7 +53,7 @@ export async function generateFeedbackMessage(
   const context = FEEDBACK_CONTEXTS[toolName] || 'procesando tu solicitud'
 
   // For quick responses, use predefined messages
-  if (elapsedMs < 5000) {
+  if (elapsedMs < DELAY_MESSAGES[0].delay) {
     return getQuickFeedback(toolName)
   }
 
@@ -62,12 +62,18 @@ export async function generateFeedbackMessage(
     const model = getFeedbackModel()
     const messageType = getMessageType(elapsedMs)
 
-    const prompt = buildFeedbackPrompt(context, messageType, businessName, elapsedMs)
+    const prompt = buildFeedbackPrompt(
+      context,
+      messageType,
+      businessName,
+      elapsedMs
+    )
     const response = await model.invoke(prompt)
 
-    const content = typeof response.content === 'string'
-      ? response.content
-      : JSON.stringify(response.content)
+    const content =
+      typeof response.content === 'string'
+        ? response.content
+        : JSON.stringify(response.content)
 
     return content.trim().replace(/^["']|["']$/g, '')
   } catch (error) {
@@ -82,7 +88,10 @@ function getQuickFeedback(toolName: string): string {
     get_services: ['Revisando servicios...', 'Un momento...'],
     get_specialists: ['Buscando especialistas...', 'Consultando equipo...'],
     get_available_slots: ['Verificando horarios...', 'Consultando agenda...'],
-    get_appointments_by_phone: ['Buscando tus citas...', 'Revisando historial...'],
+    get_appointments_by_phone: [
+      'Buscando tus citas...',
+      'Revisando historial...',
+    ],
     create_appointment: ['Agendando...', 'Confirmando cita...'],
     cancel_appointment: ['Procesando cancelación...'],
     reschedule_appointment: ['Reprogramando...'],
@@ -93,8 +102,8 @@ function getQuickFeedback(toolName: string): string {
 }
 
 function getMessageType(elapsedMs: number): 'working' | 'patience' | 'apology' {
-  if (elapsedMs >= 15000) return 'apology'
-  if (elapsedMs >= 10000) return 'patience'
+  if (elapsedMs >= DELAY_MESSAGES[2].delay) return 'apology'
+  if (elapsedMs >= DELAY_MESSAGES[1].delay) return 'patience'
   return 'working'
 }
 
@@ -119,10 +128,10 @@ Usa español colombiano casual y cálido.`
 }
 
 function getFallbackMessage(elapsedMs: number, context: string): string {
-  if (elapsedMs >= 15000) {
+  if (elapsedMs >= DELAY_MESSAGES[2].delay) {
     return `Disculpa la espera, estoy ${context}. Ya casi termino...`
   }
-  if (elapsedMs >= 10000) {
+  if (elapsedMs >= DELAY_MESSAGES[1].delay) {
     return `Gracias por tu paciencia, sigo ${context}...`
   }
   return `Estoy ${context}, un momento...`
@@ -156,7 +165,10 @@ export function createProgressTracker(
         const elapsedMs = Date.now() - startTime
         onFeedback({
           type: 'progress',
-          message: getFallbackMessage(elapsedMs, FEEDBACK_CONTEXTS[toolName] || 'procesando'),
+          message: getFallbackMessage(
+            elapsedMs,
+            FEEDBACK_CONTEXTS[toolName] || 'procesando'
+          ),
           toolName,
           elapsedMs,
         })
@@ -187,4 +199,43 @@ export function getThinkingIndicator(toolName: string): string[] {
   }
 
   return indicators[toolName] || ['⏳', 'Procesando...']
+}
+
+export async function generateWaitingMessage(
+  elapsedSeconds: number,
+  businessName: string,
+  currentTask?: string
+): Promise<string> {
+  try {
+    const model = getFeedbackModel()
+
+    const taskContext = currentTask
+      ? `Estás ${currentTask}.`
+      : 'Estás procesando una solicitud del cliente.'
+
+    const prompt =
+      elapsedSeconds <= 5
+        ? `Eres el asistente virtual de ${businessName}. ${taskContext}
+Genera un mensaje MUY corto (máximo 10 palabras) indicando que estás trabajando en ello.
+Sé cálido y natural. Usa español casual.
+Responde SOLO con el mensaje, sin comillas.`
+        : `Eres el asistente virtual de ${businessName}. ${taskContext}
+Han pasado ${elapsedSeconds} segundos. El cliente está esperando.
+Genera un mensaje corto (máximo 15 palabras) pidiendo paciencia de forma cálida y amigable.
+Puedes usar frases como "ya casi", "un momentito más", etc.
+Responde SOLO con el mensaje, sin comillas.`
+
+    const response = await model.invoke(prompt)
+    const content =
+      typeof response.content === 'string'
+        ? response.content
+        : JSON.stringify(response.content)
+
+    return content.trim().replace(/^["']|["']$/g, '')
+  } catch (error) {
+    console.error('[Feedback] Error generating waiting message:', error)
+    return elapsedSeconds <= 5
+      ? 'Un momento, estoy en ello...'
+      : 'Gracias por tu paciencia, ya casi termino...'
+  }
 }

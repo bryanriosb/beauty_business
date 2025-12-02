@@ -96,9 +96,43 @@ export async function updateAgentLinkAction(
   try {
     const supabase = await getSupabaseAdminClient()
 
+    const { data: currentLink } = await supabase
+      .from('agent_links')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (!currentLink) {
+      return { success: false, error: 'Enlace no encontrado' }
+    }
+
+    const updatedData = { ...data, updated_at: new Date().toISOString() }
+
+    const newType = data.type || currentLink.type
+    const newMaxUses = data.max_uses !== undefined ? data.max_uses : currentLink.max_uses
+    const newMaxMinutes = data.max_minutes !== undefined ? data.max_minutes : currentLink.max_minutes
+    const currentUses = currentLink.current_uses
+    const minutesUsed = currentLink.minutes_used
+
+    if (data.type || data.max_uses !== undefined || data.max_minutes !== undefined) {
+      let recalculatedStatus: AgentLinkStatus = 'active'
+
+      if (newType === 'single_use' && currentUses >= 1) {
+        recalculatedStatus = 'exhausted'
+      } else if (newMaxUses && currentUses >= newMaxUses) {
+        recalculatedStatus = 'exhausted'
+      } else if (newMaxMinutes && minutesUsed >= newMaxMinutes) {
+        recalculatedStatus = 'exhausted'
+      } else if (currentLink.expires_at && new Date(currentLink.expires_at) < new Date()) {
+        recalculatedStatus = 'expired'
+      }
+
+      updatedData.status = recalculatedStatus
+    }
+
     const { data: link, error } = await supabase
       .from('agent_links')
-      .update({ ...data, updated_at: new Date().toISOString() })
+      .update(updatedData)
       .eq('id', id)
       .select()
       .single()
@@ -317,30 +351,29 @@ export async function endConversationAction(
       .eq('id', id)
 
     if (conversation.agent_link_id) {
-      // Obtener tipo de enlace para evitar doble incremento en single_use
-      const { data: link } = await supabase
+      // Solo actualizar minutos usados (el uso ya se contó al iniciar sesión)
+      const { data: currentLink } = await supabase
         .from('agent_links')
-        .select('type')
+        .select('minutes_used, max_minutes')
         .eq('id', conversation.agent_link_id)
         .single()
 
-      // single_use ya fue consumido al iniciar, solo actualizar minutos
-      if (link?.type === 'single_use') {
-        const { data: currentLink } = await supabase
-          .from('agent_links')
-          .select('minutes_used')
-          .eq('id', conversation.agent_link_id)
-          .single()
+      if (currentLink) {
+        const newMinutes = (currentLink.minutes_used || 0) + minutesUsed
+        const updates: Record<string, unknown> = {
+          minutes_used: newMinutes,
+          updated_at: new Date().toISOString(),
+        }
+
+        // Si excede el límite de minutos, marcar como exhausted
+        if (currentLink.max_minutes && newMinutes >= currentLink.max_minutes) {
+          updates.status = 'exhausted'
+        }
 
         await supabase
           .from('agent_links')
-          .update({
-            minutes_used: (currentLink?.minutes_used || 0) + minutesUsed,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updates)
           .eq('id', conversation.agent_link_id)
-      } else {
-        await incrementLinkUsage(conversation.agent_link_id, minutesUsed)
       }
     }
 

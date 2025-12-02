@@ -17,15 +17,24 @@ export interface BusinessContext {
   currentDateTime: string
 }
 
-function formatServicesWithPrices(services: BusinessContext['services']): string {
+function formatServicesWithPrices(
+  services: BusinessContext['services']
+): string {
   return services
-    .map(s => `- ${s.name} (ID: ${s.id}): $${(s.price / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })} - ${s.duration} min`)
+    .map(
+      (s) =>
+        `- ${s.name} (ID: ${s.id}): $${(s.price / 100).toLocaleString('es-CO', {
+          minimumFractionDigits: 0,
+        })} - ${s.duration} min`
+    )
     .join('\n')
 }
 
-function formatSpecialists(specialists: BusinessContext['specialists']): string {
+function formatSpecialists(
+  specialists: BusinessContext['specialists']
+): string {
   return specialists
-    .map(s => `- ${s.name} (ID: ${s.id}) - ${s.specialty}`)
+    .map((s) => `- ${s.name} (ID: ${s.id}) - ${s.specialty}`)
     .join('\n')
 }
 
@@ -92,7 +101,9 @@ function getBaseRules(): string {
 export function createBookingPrompt(context: BusinessContext): string {
   return `Reasoning HIGH
 
-You are the virtual assistant for ${context.businessName}. Your goal is to help BOOK NEW APPOINTMENTS.
+You are the virtual assistant for ${
+    context.businessName
+  }. Your goal is to help BOOK NEW APPOINTMENTS.
 You MUST respond in Spanish (Colombian dialect). Be friendly and efficient.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
@@ -143,7 +154,9 @@ ${getBaseRules()}`
 export function createInquiryPrompt(context: BusinessContext): string {
   return `Reasoning HIGH
 
-You are the virtual assistant for ${context.businessName}. Your goal is to ANSWER INQUIRIES about services, prices, specialists, and existing appointments.
+You are the virtual assistant for ${
+    context.businessName
+  }. Your goal is to ANSWER INQUIRIES about services, prices, specialists, and existing appointments.
 You MUST respond in Spanish (Colombian dialect). Be informative and helpful.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
@@ -194,7 +207,9 @@ ${getBaseRules()}`
 export function createAvailabilityPrompt(context: BusinessContext): string {
   return `Reasoning HIGH
 
-You are the virtual assistant for ${context.businessName}. Your goal is to CHECK AVAILABILITY of schedules without commitment to book.
+You are the virtual assistant for ${
+    context.businessName
+  }. Your goal is to CHECK AVAILABILITY of schedules without commitment to book.
 You MUST respond in Spanish (Colombian dialect). Be clear and concise.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
@@ -227,7 +242,9 @@ ${getBaseRules()}`
 export function createReschedulePrompt(context: BusinessContext): string {
   return `Reasoning HIGH
 
-You are the virtual assistant for ${context.businessName}. Your goal is to help RESCHEDULE existing appointments.
+You are the virtual assistant for ${
+    context.businessName
+  }. Your goal is to help RESCHEDULE existing appointments.
 You MUST respond in Spanish (Colombian dialect). Be empathetic and efficient.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
@@ -315,7 +332,9 @@ ${getBaseRules()}`
 export function createCancelPrompt(context: BusinessContext): string {
   return `Reasoning HIGH
 
-You are the virtual assistant for ${context.businessName}. Your goal is to help CANCEL existing appointments.
+You are the virtual assistant for ${
+    context.businessName
+  }. Your goal is to help CANCEL existing appointments.
 You MUST respond in Spanish (Colombian dialect). Be empathetic but confirm before canceling.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
@@ -383,7 +402,9 @@ ${getBaseRules()}`
 export function createGeneralPrompt(context: BusinessContext): string {
   return `Reasoning HIGH
 
-You are the virtual assistant for ${context.businessName}. You help with appointments and inquiries.
+You are the virtual assistant for ${
+    context.businessName
+  }. You help with appointments and inquiries.
 You MUST respond in Spanish (Colombian dialect). Be warm and guide the customer.
 
 CURRENT DATE/TIME (Bogotá timezone): ${context.currentDateTime}
@@ -399,7 +420,9 @@ ${formatServicesWithPrices(context.services)}
 
 - If customer greets → Greet back and ask how you can help
 - Offer main options:
-  "¡Hola! Soy el asistente virtual de ${context.businessName}. Puedo ayudarte con:
+  "¡Hola! Soy el asistente virtual de ${
+    context.businessName
+  }. Puedo ayudarte con:
   • Agendar una nueva cita
   • Consultar servicios y precios
   • Ver disponibilidad de horarios

@@ -19,6 +19,10 @@ interface FeedbackMessage {
 interface UseAgentSocketOptions {
   token: string
   onMessage?: (message: Message) => void
+  onChunk?: (chunk: string) => void
+  onStreamEnd?: () => void
+  onFallback?: (message: string) => void
+  onWelcome?: (message: string) => void
   onError?: (error: string) => void
   onSessionStart?: (session: AgentSession, welcomeMessage: string) => void
   onFeedback?: (feedback: FeedbackMessage) => void
@@ -32,17 +36,23 @@ interface UseAgentSocketReturn {
   messages: Message[]
   feedback: FeedbackMessage | null
   currentTool: string | null
+  error: string | null
   sendMessage: (message: string) => Promise<void>
   interruptAgent: () => void
   connect: () => void
   disconnect: () => void
   setTyping: (isTyping: boolean) => void
   agentTyping: boolean
+  clearError: () => void
 }
 
 export function useAgentSocket({
   token,
   onMessage,
+  onChunk,
+  onStreamEnd,
+  onFallback,
+  onWelcome,
   onError,
   onSessionStart,
   onFeedback,
@@ -55,6 +65,7 @@ export function useAgentSocket({
   const [agentTyping, setAgentTyping] = useState(false)
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null)
   const [currentTool, setCurrentTool] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const socketRef = useRef<AgentClientSocket | null>(null)
   const currentMessageRef = useRef<string>('')
@@ -76,7 +87,10 @@ export function useAgentSocket({
 
       socket.emit('session:start', { token }, (response) => {
         if (!response.success) {
-          onError?.(response.error || 'Error al iniciar sesión')
+          const errorMsg = response.error || 'Error al iniciar sesión'
+          setError(errorMsg)
+          setIsConnecting(false)
+          onError?.(errorMsg)
         }
       })
     })
@@ -101,11 +115,20 @@ export function useAgentSocket({
       }
       setMessages([welcomeMsg])
       onMessage?.(welcomeMsg)
+      onWelcome?.(welcomeMessage)
       onSessionStart?.(newSession, welcomeMessage)
     })
 
-    socket.on('session:error', ({ error }) => {
-      onError?.(error)
+    socket.on('agent:fallback', ({ message, speak }) => {
+      if (speak) {
+        onFallback?.(message)
+      }
+    })
+
+    socket.on('session:error', ({ error: errorMsg }) => {
+      setError(errorMsg)
+      setIsConnecting(false)
+      onError?.(errorMsg)
     })
 
     socket.on('agent:typing', ({ isTyping }) => {
@@ -115,6 +138,7 @@ export function useAgentSocket({
     socket.on('agent:message', ({ chunk, isComplete }) => {
       if (chunk) {
         currentMessageRef.current += chunk
+        onChunk?.(chunk)
 
         setMessages((prev) => {
           const lastMessage = prev[prev.length - 1]
@@ -136,6 +160,7 @@ export function useAgentSocket({
       }
 
       if (isComplete) {
+        onStreamEnd?.()
         const finalMessage: Message = {
           id: currentMessageIdRef.current,
           role: 'assistant',
@@ -177,7 +202,7 @@ export function useAgentSocket({
       currentMessageRef.current = ''
       currentMessageIdRef.current = ''
     })
-  }, [token, onMessage, onError, onSessionStart])
+  }, [token, onMessage, onChunk, onStreamEnd, onFallback, onWelcome, onError, onSessionStart])
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
@@ -232,6 +257,10 @@ export function useAgentSocket({
     }
   }, [])
 
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
+
   useEffect(() => {
     return () => {
       disconnect()
@@ -246,11 +275,13 @@ export function useAgentSocket({
     messages,
     feedback,
     currentTool,
+    error,
     sendMessage,
     interruptAgent,
     connect,
     disconnect,
     setTyping,
     agentTyping,
+    clearError,
   }
 }
