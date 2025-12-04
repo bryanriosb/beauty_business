@@ -56,3 +56,5 @@ export type InventoryMovementType =
   | 'ADJUSTMENT'
   | 'TRANSFER'
   | 'WASTE'
+
+export type ServiceType = 'REGULAR' | 'ASSESSMENT'

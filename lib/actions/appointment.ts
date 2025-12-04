@@ -477,6 +477,192 @@ async function sendAppointmentNotifications(
   }
 }
 
+interface StatusNotificationParams {
+  appointmentId: string
+  currentStatus: string
+  newStatus?: string
+  currentStartTime: string
+  newStartTime?: string
+  businessId: string
+  specialistId: string
+  usersProfileId: string
+}
+
+async function sendAppointmentStatusNotifications(
+  supabase: any,
+  params: StatusNotificationParams
+) {
+  const statusChanged = params.newStatus && params.newStatus !== params.currentStatus
+  const timeChanged = params.newStartTime && params.newStartTime !== params.currentStartTime
+
+  if (!statusChanged && !timeChanged) return
+
+  // Obtener datos del negocio
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('id, name, business_account_id, address, phone_number')
+    .eq('id', params.businessId)
+    .single()
+
+  if (!business?.business_account_id) return
+
+  // Obtener datos del cliente
+  const { data: customer } = await supabase
+    .from('business_customers')
+    .select('first_name, last_name, phone')
+    .eq('user_profile_id', params.usersProfileId)
+    .eq('business_id', params.businessId)
+    .single()
+
+  let customerPhone = customer?.phone || null
+  let customerName = customer
+    ? `${customer.first_name} ${customer.last_name || ''}`.trim()
+    : 'Cliente'
+
+  if (!customerPhone) {
+    const { data: userProfile } = await supabase
+      .from('users_profile')
+      .select('user_id')
+      .eq('id', params.usersProfileId)
+      .single()
+
+    if (userProfile?.user_id) {
+      const { data: authData } = await supabase.auth.admin.getUserById(userProfile.user_id)
+      customerPhone = authData?.user?.phone || authData?.user?.user_metadata?.phone || null
+      if (!customerName || customerName === 'Cliente') {
+        customerName = authData?.user?.user_metadata?.name || 'Cliente'
+      }
+    }
+  }
+
+  if (!customerPhone) return
+
+  // Obtener especialista
+  const { data: specialist } = await supabase
+    .from('specialists')
+    .select('first_name, last_name')
+    .eq('id', params.specialistId)
+    .single()
+
+  const specialistName = specialist
+    ? `${specialist.first_name} ${specialist.last_name || ''}`.trim()
+    : 'Especialista'
+
+  // Obtener servicios de la cita
+  const { data: appointmentServices } = await supabase
+    .from('appointment_services')
+    .select('service:services(id, name), duration_minutes, price_at_booking_cents')
+    .eq('appointment_id', params.appointmentId)
+
+  const services = (appointmentServices || []).map((as: any) => ({
+    name: as.service?.name || 'Servicio',
+    duration_minutes: as.duration_minutes,
+    price_cents: as.price_at_booking_cents,
+  }))
+
+  const { cancelScheduledRemindersAction, createScheduledReminderAction } = await import('./whatsapp')
+  const WhatsAppService = (await import('@/lib/services/whatsapp/whatsapp-service')).default
+  const whatsappService = new WhatsAppService()
+
+  // Manejar cambio de estado
+  if (statusChanged) {
+    // CANCELACIÓN
+    if (params.newStatus === 'CANCELLED') {
+      await cancelScheduledRemindersAction(params.appointmentId)
+      await whatsappService.sendAppointmentCancellation({
+        business_account_id: business.business_account_id,
+        business_id: params.businessId,
+        customer_phone: customerPhone,
+        customer_name: customerName,
+        appointment_date: new Date(params.currentStartTime),
+        business_name: business.name,
+      })
+      return
+    }
+
+    // CONFIRMACIÓN (de PENDING a CONFIRMED)
+    if (params.newStatus === 'CONFIRMED' && params.currentStatus === 'PENDING') {
+      const totalPriceCents = services.reduce((acc: number, s: any) => acc + s.price_cents, 0)
+      await whatsappService.sendAppointmentConfirmation({
+        business_account_id: business.business_account_id,
+        business_id: params.businessId,
+        customer_phone: customerPhone,
+        customer_name: customerName,
+        appointment_date: new Date(params.newStartTime || params.currentStartTime),
+        services,
+        specialist_name: specialistName,
+        business_name: business.name,
+        business_address: business.address,
+        business_phone: business.phone_number,
+        total_price_cents: totalPriceCents,
+      })
+
+      // Programar recordatorio
+      const appointmentDate = new Date(params.newStartTime || params.currentStartTime)
+      const reminderDate = new Date(appointmentDate.getTime() - 2 * 60 * 60 * 1000)
+      if (reminderDate > new Date()) {
+        await createScheduledReminderAction({
+          appointment_id: params.appointmentId,
+          business_account_id: business.business_account_id,
+          business_id: params.businessId,
+          customer_phone: customerPhone,
+          customer_name: customerName,
+          scheduled_for: reminderDate.toISOString(),
+          reminder_type: 'appointment_reminder',
+        })
+      }
+      return
+    }
+
+    // COMPLETADA
+    if (params.newStatus === 'COMPLETED' && params.currentStatus !== 'COMPLETED') {
+      await whatsappService.sendAppointmentCompleted({
+        business_account_id: business.business_account_id,
+        business_id: params.businessId,
+        customer_phone: customerPhone,
+        customer_name: customerName,
+        services,
+        specialist_name: specialistName,
+        business_name: business.name,
+      })
+      return
+    }
+  }
+
+  // REPROGRAMACIÓN (cambio de fecha/hora sin cambio de estado a cancelado)
+  if (timeChanged && params.newStatus !== 'CANCELLED') {
+    await cancelScheduledRemindersAction(params.appointmentId)
+
+    await whatsappService.sendAppointmentRescheduled({
+      business_account_id: business.business_account_id,
+      business_id: params.businessId,
+      customer_phone: customerPhone,
+      customer_name: customerName,
+      old_date: new Date(params.currentStartTime),
+      new_date: new Date(params.newStartTime!),
+      specialist_name: specialistName,
+      business_name: business.name,
+      business_address: business.address,
+      business_phone: business.phone_number,
+    })
+
+    // Reprogramar recordatorio
+    const newAppointmentDate = new Date(params.newStartTime!)
+    const reminderDate = new Date(newAppointmentDate.getTime() - 2 * 60 * 60 * 1000)
+    if (reminderDate > new Date()) {
+      await createScheduledReminderAction({
+        appointment_id: params.appointmentId,
+        business_account_id: business.business_account_id,
+        business_id: params.businessId,
+        customer_phone: customerPhone,
+        customer_name: customerName,
+        scheduled_for: reminderDate.toISOString(),
+        reminder_type: 'appointment_reminder',
+      })
+    }
+  }
+}
+
 export async function updateAppointmentAction(
   id: string,
   data: AppointmentUpdate,
@@ -485,6 +671,7 @@ export async function updateAppointmentAction(
     businessData?: { name: string; address?: string; phone?: string; nit?: string }
     services?: AppointmentServiceInput[]
     supplies?: AppointmentSupplyInput[]
+    sendWhatsAppNotification?: boolean
   }
 ): Promise<{ success: boolean; data?: Appointment; error?: string; invoiceGenerated?: boolean; stockDeducted?: boolean }> {
   try {
@@ -492,7 +679,7 @@ export async function updateAppointmentAction(
 
     const { data: currentAppointment } = await supabase
       .from('appointments')
-      .select('payment_status, business_id, status')
+      .select('payment_status, business_id, status, start_time, specialist_id, users_profile_id')
       .eq('id', id)
       .single()
 
@@ -591,6 +778,24 @@ export async function updateAppointmentAction(
         business_nit: options.businessData.nit,
       })
       invoiceGenerated = invoiceResult.success
+    }
+
+    // Enviar notificaciones WhatsApp según cambio de estado
+    if (options?.sendWhatsAppNotification !== false && currentAppointment) {
+      try {
+        await sendAppointmentStatusNotifications(supabase, {
+          appointmentId: id,
+          currentStatus: currentAppointment.status,
+          newStatus: data.status,
+          currentStartTime: currentAppointment.start_time,
+          newStartTime: data.start_time,
+          businessId: currentAppointment.business_id,
+          specialistId: data.specialist_id || currentAppointment.specialist_id,
+          usersProfileId: currentAppointment.users_profile_id,
+        })
+      } catch (notificationError) {
+        console.error('Error sending status notifications:', notificationError)
+      }
     }
 
     return { success: true, data: appointment, invoiceGenerated, stockDeducted }

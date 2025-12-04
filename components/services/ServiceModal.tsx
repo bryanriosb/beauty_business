@@ -44,6 +44,7 @@ import type {
   ServiceCategory,
 } from '@/lib/models/service/service'
 import type { Business } from '@/lib/models/business/business'
+import type { ServiceType } from '@/lib/types/enums'
 import { Loader2 } from 'lucide-react'
 import {
   ServiceSuppliesSection,
@@ -59,11 +60,17 @@ import { BusinessStorageService } from '@/lib/services/business/business-storage
 import { toast } from 'sonner'
 import { NumericInput } from '../ui/numeric-input'
 
+const SERVICE_TYPE_OPTIONS: { value: ServiceType; label: string }[] = [
+  { value: 'REGULAR', label: 'Servicio Regular' },
+  { value: 'ASSESSMENT', label: 'Valoración' },
+]
+
 const formSchema = z.object({
   business_id: z.string().min(1, 'Selecciona una sucursal'),
   category_id: z.string().nullable().optional(),
   name: z.string().min(1, 'El nombre del servicio es requerido'),
   description: z.string().optional().or(z.literal('')),
+  service_type: z.enum(['REGULAR', 'ASSESSMENT']),
   price: z.number().min(0, 'El precio debe ser mayor o igual a 0'),
   duration_minutes: z.number().min(1, 'La duración debe ser al menos 1 minuto'),
   is_featured: z.boolean(),
@@ -127,6 +134,7 @@ export function ServiceModal({
       category_id: null,
       name: '',
       description: '',
+      service_type: 'REGULAR',
       price: 0,
       duration_minutes: 30,
       is_featured: false,
@@ -142,6 +150,7 @@ export function ServiceModal({
         category_id: service.category_id,
         name: service.name,
         description: service.description || '',
+        service_type: service.service_type || 'REGULAR',
         price: service.price_cents / 100,
         duration_minutes: service.duration_minutes,
         is_featured: service.is_featured,
@@ -172,6 +181,7 @@ export function ServiceModal({
         category_id: null,
         name: '',
         description: '',
+        service_type: 'REGULAR',
         price: 0,
         duration_minutes: 30,
         is_featured: false,
@@ -211,6 +221,7 @@ export function ServiceModal({
         category_id: data.category_id || null,
         name: data.name,
         description: data.description || null,
+        service_type: data.service_type,
         price_cents: Math.round(data.price * 100),
         duration_minutes: data.duration_minutes,
         is_featured: data.is_featured,
@@ -303,6 +314,37 @@ export function ServiceModal({
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="service_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Tipo de servicio <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={isSubmitting}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona el tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {SERVICE_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

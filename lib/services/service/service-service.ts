@@ -13,6 +13,7 @@ import type {
   ServiceUpdate,
   ServiceCategory,
 } from '@/lib/models/service/service'
+import type { ServiceType } from '@/lib/types/enums'
 
 export interface ServiceListResponse {
   data: Service[]
@@ -27,6 +28,7 @@ export default class ServiceService {
     business_id?: string
     category_id?: string
     is_featured?: boolean
+    service_type?: ServiceType | ServiceType[]
   }): Promise<ServiceListResponse> {
     try {
       return await fetchServicesAction(params)

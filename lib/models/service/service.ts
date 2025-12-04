@@ -1,3 +1,5 @@
+import { ServiceType } from '@/lib/types/enums'
+
 export interface ServiceCategory {
   id: string
   name: string
@@ -15,6 +17,7 @@ export interface Service {
   is_featured: boolean
   image_url: string | null
   tax_rate: number | null
+  service_type: ServiceType
   created_at: string
   updated_at: string
 }
@@ -30,6 +33,7 @@ export class Service implements Service {
   is_featured: boolean
   image_url: string | null
   tax_rate: number | null
+  service_type: ServiceType
   created_at: string
   updated_at: string
 
@@ -44,6 +48,7 @@ export class Service implements Service {
     this.is_featured = data.is_featured
     this.image_url = data.image_url
     this.tax_rate = data.tax_rate
+    this.service_type = data.service_type
     this.created_at = data.created_at
     this.updated_at = data.updated_at
   }
@@ -67,6 +72,7 @@ export interface ServiceInsert {
   is_featured?: boolean
   image_url?: string | null
   tax_rate?: number | null
+  service_type?: ServiceType
 }
 
 export interface ServiceUpdate {
@@ -79,6 +85,7 @@ export interface ServiceUpdate {
   is_featured?: boolean
   image_url?: string | null
   tax_rate?: number | null
+  service_type?: ServiceType
 }
 
 export interface ServiceWithCategory extends Service {

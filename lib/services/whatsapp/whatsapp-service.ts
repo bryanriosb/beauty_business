@@ -342,7 +342,7 @@ Por favor llega *10 minutos antes* de tu cita.
   }
 
   /**
-   * Envia mensaje cuando la cita es cancelada
+   * Envia mensaje cuando la cita es cancelada usando plantilla aprobada
    */
   async sendAppointmentCancellation(params: {
     business_account_id: string
@@ -356,7 +356,37 @@ Por favor llega *10 minutos antes* de tu cita.
     const date = new Date(params.appointment_date)
     const formattedDate = formatDateSpanish(date)
     const formattedTime = formatTimeSpanish(date)
+    const reasonText = params.reason ? `Motivo: ${params.reason}` : ''
 
+    // Primero intentar con plantilla aprobada (5 variables)
+    const templateResult = await this.sendTemplateMessage({
+      business_account_id: params.business_account_id,
+      business_id: params.business_id,
+      to: params.customer_phone,
+      template_name: 'appointment_cancellation',
+      language_code: 'es_CO',
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: params.customer_name },
+            { type: 'text', text: params.business_name },
+            { type: 'text', text: formattedDate },
+            { type: 'text', text: formattedTime },
+            { type: 'text', text: reasonText },
+          ],
+        },
+      ],
+      customer_name: params.customer_name,
+    })
+
+    if (templateResult.success) {
+      return { success: true }
+    }
+
+    console.log('Cancellation template failed, trying text message:', templateResult.error)
+
+    // Fallback: mensaje de texto
     const message = `❌ *CITA CANCELADA*
 
 Hola *${params.customer_name}*,
@@ -388,7 +418,7 @@ Lamentamos los inconvenientes. 🙏`
   }
 
   /**
-   * Envia mensaje cuando la cita es reagendada
+   * Envia mensaje cuando la cita es reagendada usando plantilla aprobada
    */
   async sendAppointmentRescheduled(params: {
     business_account_id: string
@@ -400,12 +430,52 @@ Lamentamos los inconvenientes. 🙏`
     specialist_name: string
     business_name: string
     business_address?: string
+    business_phone?: string
   }): Promise<{ success: boolean; error?: string }> {
-    const oldFormattedDate = formatDateSpanish(new Date(params.old_date))
-    const oldFormattedTime = formatTimeSpanish(new Date(params.old_date))
-    const newFormattedDate = formatDateSpanish(new Date(params.new_date))
-    const newFormattedTime = formatTimeSpanish(new Date(params.new_date))
+    const oldDate = new Date(params.old_date)
+    const newDate = new Date(params.new_date)
+    const oldFormattedDate = formatDateSpanish(oldDate)
+    const oldFormattedTime = formatTimeSpanish(oldDate)
+    const newFormattedDate = formatDateSpanish(newDate)
+    const newFormattedTime = formatTimeSpanish(newDate)
 
+    // Construir variables combinadas para la plantilla
+    const oldDateTime = `${oldFormattedDate} a las ${oldFormattedTime}`
+    const newDateTime = `${newFormattedDate} a las ${newFormattedTime}`
+    const locationWithPhone = params.business_phone
+      ? `${params.business_address || params.business_name} - Tel: ${params.business_phone}`
+      : params.business_address || params.business_name
+
+    // Primero intentar con plantilla aprobada (6 variables)
+    const templateResult = await this.sendTemplateMessage({
+      business_account_id: params.business_account_id,
+      business_id: params.business_id,
+      to: params.customer_phone,
+      template_name: 'appointment_rescheduled',
+      language_code: 'es_CO',
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: params.customer_name },
+            { type: 'text', text: params.business_name },
+            { type: 'text', text: oldDateTime },
+            { type: 'text', text: newDateTime },
+            { type: 'text', text: params.specialist_name },
+            { type: 'text', text: locationWithPhone },
+          ],
+        },
+      ],
+      customer_name: params.customer_name,
+    })
+
+    if (templateResult.success) {
+      return { success: true }
+    }
+
+    console.log('Rescheduled template failed, trying text message:', templateResult.error)
+
+    // Fallback: mensaje de texto
     const message = `🔄 *CITA REAGENDADA*
 
 Hola *${params.customer_name}*,

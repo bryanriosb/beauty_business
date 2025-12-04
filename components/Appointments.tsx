@@ -31,7 +31,7 @@ type DisplayMode = 'calendar' | 'list' | 'table'
 export default function Appointments() {
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('week')
+  const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [displayMode, setDisplayMode] = useState<DisplayMode>('calendar')
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date()

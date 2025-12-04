@@ -15,6 +15,7 @@ import type {
   ServiceCategory,
   ServiceWithCategory,
 } from '@/lib/models/service/service'
+import type { ServiceType } from '@/lib/types/enums'
 
 export interface ServiceListResponse {
   data: ServiceWithCategory[]
@@ -28,6 +29,7 @@ export async function fetchServicesAction(params?: {
   business_id?: string
   category_id?: string | string[]
   is_featured?: boolean | string | string[]
+  service_type?: ServiceType | ServiceType[]
   name?: string
 }): Promise<ServiceListResponse> {
   try {
@@ -60,6 +62,15 @@ export async function fetchServicesAction(params?: {
       const boolValues = featuredValues.map((v) => v === true || v === 'true')
       filteredServices = filteredServices.filter(
         (service) => boolValues.includes(service.is_featured)
+      )
+    }
+
+    if (params?.service_type) {
+      const typeValues = Array.isArray(params.service_type)
+        ? params.service_type
+        : [params.service_type]
+      filteredServices = filteredServices.filter(
+        (service) => typeValues.includes(service.service_type)
       )
     }
 
