@@ -329,6 +329,80 @@
   animation: slide-in-left 0.3s ease-out;
 }
 
+/* Gradient text animation */
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+}
+
+/* Blob animation for backgrounds - smooth and organic */
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -40px) scale(1.05);
+  }
+  66% {
+    transform: translate(-25px, 25px) scale(0.95);
+  }
+}
+
+.animate-blob {
+  animation: blob 12s ease-in-out infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 4s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 8s;
+}
+
+/* Shimmer effect for cards */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(0.90 0.09 85 / 0.3) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Glow effect */
+.glow-primary {
+  box-shadow: 0 0 40px oklch(0.90 0.09 85 / 0.4);
+}
+
+.glow-secondary {
+  box-shadow: 0 0 40px oklch(0.55 0.12 300 / 0.4);
+}
+
+/* Glass effect */
+.glass {
+  background: oklch(100% 0 0 / 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid oklch(100% 0 0 / 0.2);
+}
+
+.dark .glass {
+  background: oklch(16% 0.025 280 / 0.7);
+  border: 1px solid oklch(100% 0 0 / 0.1);
+}
+
 /* React Big Calendar - Custom Styles */
 .rbc-month-view,
 .rbc-time-view,
