@@ -22,8 +22,10 @@ import DayAppointmentsModal from './appointments/DayAppointmentsModal'
 import InvoiceDetailModal from './invoices/InvoiceDetailModal'
 import Loading from '@/components/ui/loading'
 import { getBusinessByIdAction } from '@/lib/actions/business'
+import { fetchSpecialistsAction } from '@/lib/actions/specialist'
 import type { Business } from '@/lib/models/business/business'
 import type { Invoice } from '@/lib/models/invoice/invoice'
+import type { Specialist } from '@/lib/models/specialist/specialist'
 
 type ViewMode = 'day' | 'week' | 'month'
 type DisplayMode = 'calendar' | 'list' | 'table'
@@ -55,6 +57,7 @@ export default function Appointments() {
   const [businessData, setBusinessData] = useState<Business | null>(null)
   const [invoiceToView, setInvoiceToView] = useState<Invoice | null>(null)
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
+  const [specialists, setSpecialists] = useState<Specialist[]>([])
   const { user, role } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
   const appointmentService = new AppointmentService()
@@ -73,6 +76,18 @@ export default function Appointments() {
     }
     loadBusinessData()
   }, [activeBusinessId])
+
+  useEffect(() => {
+    async function loadSpecialists() {
+      if (!activeBusinessId && !isCompanyAdmin) return
+      const params = !isCompanyAdmin && activeBusinessId
+        ? { business_id: activeBusinessId }
+        : undefined
+      const response = await fetchSpecialistsAction(params)
+      setSpecialists(response.data)
+    }
+    loadSpecialists()
+  }, [activeBusinessId, isCompanyAdmin])
 
   const dateRange = useMemo(() => {
     const start = new Date(currentDate)
@@ -365,6 +380,7 @@ export default function Appointments() {
             setSelectedAppointmentId(id)
             setIsDetailsModalOpen(true)
           }}
+          specialists={specialists}
         />
       )}
 

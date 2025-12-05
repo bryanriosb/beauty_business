@@ -210,7 +210,6 @@ export default function AppointmentFormModal({
       const appointmentDate = new Date(appointment.start_time)
       const startTimeStr = format(appointmentDate, 'HH:mm')
 
-      // Load services from appointment_services first
       const appointmentWithDetails = appointment as AppointmentWithDetails
       if (appointmentWithDetails.appointment_services?.length) {
         const servicesFromAppointment: SelectedService[] =
@@ -222,8 +221,40 @@ export default function AppointmentFormModal({
             original_price_cents: as.price_at_booking_cents,
             tax_rate: as.service.tax_rate,
             has_custom_price: false,
+            category_id: as.service.category_id,
+            category_name: as.service.service_category?.name || null,
           }))
         setSelectedServices(servicesFromAppointment)
+
+        // Initialize prevServiceIdsRef to prevent reset on first render
+        prevServiceIdsRef.current = servicesFromAppointment.map(s => s.id).sort().join(',')
+
+        // Load specialist assignments from appointment_services
+        const assignmentsFromAppointment: ServiceSpecialistAssignment[] =
+          appointmentWithDetails.appointment_services.map((as) => {
+            const serviceStartTime = as.start_time
+              ? format(new Date(as.start_time), 'HH:mm')
+              : null
+            const serviceEndTime = as.end_time
+              ? format(new Date(as.end_time), 'HH:mm')
+              : null
+            const specialistName = as.specialist
+              ? `${as.specialist.first_name} ${as.specialist.last_name || ''}`.trim()
+              : null
+
+            return {
+              serviceId: as.service_id,
+              serviceName: as.service.name,
+              categoryId: as.service.category_id,
+              categoryName: as.service.service_category?.name || null,
+              specialistId: as.specialist_id,
+              specialistName,
+              durationMinutes: as.duration_minutes,
+              startTime: serviceStartTime,
+              endTime: serviceEndTime,
+            }
+          })
+        setServiceSpecialistAssignments(assignmentsFromAppointment)
       }
 
       form.reset({

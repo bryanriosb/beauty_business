@@ -69,15 +69,15 @@ export const PRODUCTS_COLUMNS: ColumnDef<ProductWithDetails>[] = [
       const type = row.getValue('type') as string
       const isSupply = type === 'SUPPLY'
       return (
-        <Badge variant={isSupply ? 'secondary' : 'default'} className="gap-1">
+        <Badge variant={isSupply ? 'secondary' : 'default'} className="block w-full text-center gap-1">
           {isSupply ? (
             <>
-              <Syringe className="h-3 w-3" />
+              <Syringe className="h-3 w-3 inline mr-1" />
               Insumo
             </>
           ) : (
             <>
-              <Package className="h-3 w-3" />
+              <Package className="h-3 w-3 inline mr-1" />
               Venta
             </>
           )}
@@ -144,7 +144,7 @@ export const PRODUCTS_COLUMNS: ColumnDef<ProductWithDetails>[] = [
     cell: ({ row }) => {
       const isActive = row.getValue('is_active') as boolean
       return (
-        <Badge variant={isActive ? 'default' : 'secondary'}>
+        <Badge variant={isActive ? 'default' : 'secondary'} className="block w-full text-center">
           {isActive ? 'Activo' : 'Inactivo'}
         </Badge>
       )

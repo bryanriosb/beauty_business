@@ -14,6 +14,16 @@ import {
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  AppointmentsFilters,
+  type AppointmentsFiltersState,
+} from './AppointmentsFilters'
+
+interface Specialist {
+  id: string
+  first_name: string
+  last_name: string | null
+}
 
 interface AppointmentsTableViewProps {
   appointments: any[]
@@ -22,6 +32,7 @@ interface AppointmentsTableViewProps {
   onViewModeChange: (mode: 'day' | 'week' | 'month') => void
   onNavigate: (date: Date) => void
   onSelectAppointment: (id: string) => void
+  specialists?: Specialist[]
 }
 
 const STATUS_CONFIG = {
@@ -52,6 +63,13 @@ const STATUS_CONFIG = {
   },
 }
 
+const DEFAULT_FILTERS: AppointmentsFiltersState = {
+  search: '',
+  status: 'all',
+  paymentStatus: 'all',
+  specialistId: 'all',
+}
+
 export default function AppointmentsTableView({
   appointments,
   currentDate,
@@ -59,33 +77,75 @@ export default function AppointmentsTableView({
   onViewModeChange,
   onNavigate,
   onSelectAppointment,
+  specialists = [],
 }: AppointmentsTableViewProps) {
   const [sortField, setSortField] = useState<
     'date' | 'client' | 'specialist' | 'status'
   >('date')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [filters, setFilters] = useState<AppointmentsFiltersState>(DEFAULT_FILTERS)
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter((appointment) => {
       const appointmentDate = new Date(appointment.start_time)
 
+      // Filtro por rango de fecha según viewMode
+      let dateMatch = true
       switch (viewMode) {
         case 'day':
-          return isSameDay(appointmentDate, currentDate)
+          dateMatch = isSameDay(appointmentDate, currentDate)
+          break
         case 'week':
           const weekStart = startOfWeek(currentDate, { locale: es })
           const weekEnd = endOfWeek(currentDate, { locale: es })
-          return appointmentDate >= weekStart && appointmentDate <= weekEnd
+          dateMatch = appointmentDate >= weekStart && appointmentDate <= weekEnd
+          break
         case 'month':
-          return (
+          dateMatch =
             appointmentDate.getMonth() === currentDate.getMonth() &&
             appointmentDate.getFullYear() === currentDate.getFullYear()
-          )
-        default:
-          return true
+          break
       }
+      if (!dateMatch) return false
+
+      // Filtro por búsqueda de texto
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase()
+        const clientName = `${appointment.client?.first_name || ''} ${appointment.client?.last_name || ''}`.toLowerCase()
+        const specialistName = `${appointment.specialist?.first_name || ''} ${appointment.specialist?.last_name || ''}`.toLowerCase()
+        const services = (appointment.appointment_services || [])
+          .map((s: any) => s.service?.name || '')
+          .join(' ')
+          .toLowerCase()
+        const clientPhone = appointment.client?.phone_number?.toLowerCase() || ''
+
+        const matchesSearch =
+          clientName.includes(searchLower) ||
+          specialistName.includes(searchLower) ||
+          services.includes(searchLower) ||
+          clientPhone.includes(searchLower)
+
+        if (!matchesSearch) return false
+      }
+
+      // Filtro por estado de cita
+      if (filters.status !== 'all' && appointment.status !== filters.status) {
+        return false
+      }
+
+      // Filtro por estado de pago
+      if (filters.paymentStatus !== 'all' && appointment.payment_status !== filters.paymentStatus) {
+        return false
+      }
+
+      // Filtro por especialista
+      if (filters.specialistId !== 'all' && appointment.specialist_id !== filters.specialistId) {
+        return false
+      }
+
+      return true
     })
-  }, [appointments, currentDate, viewMode])
+  }, [appointments, currentDate, viewMode, filters])
 
   const sortedAppointments = useMemo(() => {
     const sorted = [...filteredAppointments].sort((a, b) => {
@@ -203,6 +263,12 @@ export default function AppointmentsTableView({
 
   return (
     <div className="flex flex-col gap-4">
+      <AppointmentsFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        specialists={specialists}
+      />
+
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-card rounded-lg border p-3">
         <div className="flex items-center justify-between gap-2">
           <Button
@@ -312,7 +378,7 @@ export default function AppointmentsTableView({
                           </div>
                         </div>
                         <span
-                          className={`px-2 py-1 rounded-md font-medium text-xs ${statusConfig.bg} ${statusConfig.text}`}
+                          className={`px-2 py-0.5 rounded font-medium text-xs ${statusConfig.bg} ${statusConfig.text}`}
                         >
                           {statusConfig.label}
                         </span>
@@ -524,7 +590,7 @@ export default function AppointmentsTableView({
                       </td>
                       <td className="p-2 md:p-3">
                         <span
-                          className={`px-2 py-1 md:px-3 md:py-1.5 rounded-md font-medium text-xs md:text-sm inline-block ${statusConfig.bg} ${statusConfig.text}`}
+                          className={`block w-full text-center px-2 py-0.5 rounded font-medium text-xs ${statusConfig.bg} ${statusConfig.text}`}
                         >
                           {statusConfig.label}
                         </span>

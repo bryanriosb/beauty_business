@@ -98,10 +98,14 @@ export default function ServiceSpecialistAssignmentComponent({
   const initialLoadDoneRef = useRef(false)
   const prevServiceIdsKeyRef = useRef('')
 
+  // Track if pre-existing values have been loaded (for edit mode)
+  const hasInitializedFromValueRef = useRef(false)
+
   // Reset initial load flag when services actually change
   useEffect(() => {
     if (prevServiceIdsKeyRef.current !== serviceIdsKey) {
       initialLoadDoneRef.current = false
+      hasInitializedFromValueRef.current = false
       prevServiceIdsKeyRef.current = serviceIdsKey
     }
   }, [serviceIdsKey])
@@ -173,6 +177,130 @@ export default function ServiceSpecialistAssignmentComponent({
 
     onChange(newAssignments)
   }, [services, value.length, onChange])
+
+  // Initialize unified specialist/time from existing value (for edit mode)
+  useEffect(() => {
+    if (hasInitializedFromValueRef.current) return
+    if (value.length === 0) return
+    if (universalSpecialists.length === 0 && categoryGroups.length === 0) return
+
+    const firstWithSpecialist = value.find(v => v.specialistId && v.startTime)
+    if (!firstWithSpecialist) return
+
+    // Check if all services have the same specialist (unified mode)
+    const allSameSpecialist = value.every(
+      v => v.specialistId === firstWithSpecialist.specialistId
+    )
+
+    if (allSameSpecialist && canSingleSpecialistHandleAll && universalSpecialists.length > 0) {
+      const specialistExists = universalSpecialists.some(
+        s => s.id === firstWithSpecialist.specialistId
+      )
+      if (specialistExists) {
+        setUnifiedSpecialistId(firstWithSpecialist.specialistId)
+        setUnifiedStartTime(firstWithSpecialist.startTime)
+        hasInitializedFromValueRef.current = true
+      }
+    } else if (categoryGroups.length > 0) {
+      // Per-category mode: initialize categoryAssignments and load slots
+      setUseUnifiedAssignment(false)
+      const allCategoryKeys = new Set(categoryGroups.map(g => g.categoryId || 'no-category'))
+      setExpandedCategories(allCategoryKeys)
+
+      const newCategoryAssignments = new Map<string, CategoryAssignmentState>()
+      const slotsToLoad: Array<{
+        categoryKey: string
+        specialistId: string
+        startTime: string | null
+        serviceId: string
+      }> = []
+
+      categoryGroups.forEach(group => {
+        const categoryKey = group.categoryId || 'no-category'
+        const assignmentForCategory = value.find(
+          v => (v.categoryId === group.categoryId || (group.categoryId === null && v.categoryId === null)) && v.specialistId
+        )
+        if (assignmentForCategory?.specialistId) {
+          const serviceId = assignmentForCategory.serviceId
+          newCategoryAssignments.set(categoryKey, {
+            specialistId: assignmentForCategory.specialistId,
+            startTime: assignmentForCategory.startTime,
+            availableSlots: [],
+            isLoadingSlots: true,
+          })
+          slotsToLoad.push({
+            categoryKey,
+            specialistId: assignmentForCategory.specialistId,
+            startTime: assignmentForCategory.startTime,
+            serviceId,
+          })
+        }
+      })
+
+      if (newCategoryAssignments.size > 0) {
+        setCategoryAssignments(newCategoryAssignments)
+        hasInitializedFromValueRef.current = true
+
+        // Load slots for each category asynchronously
+        slotsToLoad.forEach(async ({ categoryKey, specialistId, startTime, serviceId }) => {
+          try {
+            const result = await getAvailableSlotsForServiceAction({
+              businessId,
+              serviceId,
+              date,
+              excludeAppointmentId,
+            })
+
+            let availableSlots: TimeSlot[] = []
+            if (result.success && result.slots) {
+              availableSlots = result.slots.filter(
+                slot => slot.available && slot.availableSpecialistIds.includes(specialistId)
+              )
+              // Ensure the pre-existing time is in the slots (for edit mode)
+              if (startTime && !availableSlots.some(s => s.time === startTime)) {
+                availableSlots.unshift({
+                  time: startTime,
+                  available: true,
+                  availableSpecialistIds: [specialistId],
+                })
+              }
+            }
+
+            setCategoryAssignments(prev => {
+              const newMap = new Map(prev)
+              const current = newMap.get(categoryKey)
+              if (current) {
+                newMap.set(categoryKey, {
+                  ...current,
+                  availableSlots,
+                  isLoadingSlots: false,
+                })
+              }
+              return newMap
+            })
+          } catch (err) {
+            console.error('Error loading category slots for edit:', err)
+            setCategoryAssignments(prev => {
+              const newMap = new Map(prev)
+              const current = newMap.get(categoryKey)
+              if (current) {
+                // Still show the pre-existing time even if loading failed
+                const fallbackSlots: TimeSlot[] = startTime
+                  ? [{ time: startTime, available: true, availableSpecialistIds: [specialistId] }]
+                  : []
+                newMap.set(categoryKey, {
+                  ...current,
+                  availableSlots: fallbackSlots,
+                  isLoadingSlots: false,
+                })
+              }
+              return newMap
+            })
+          }
+        })
+      }
+    }
+  }, [value, universalSpecialists, canSingleSpecialistHandleAll, categoryGroups, businessId, date, excludeAppointmentId])
 
   // Load slots when unified specialist is selected
   useEffect(() => {

@@ -8,8 +8,8 @@ import type { InvoiceStatus } from '@/lib/types/enums'
 
 const STATUS_CONFIG: Record<InvoiceStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   DRAFT: { label: 'Borrador', variant: 'secondary' },
-  ISSUED: { label: 'Emitida', variant: 'outline' },
-  PAID: { label: 'Pagada', variant: 'default' },
+  ISSUED: { label: 'Emitida', variant: 'default' },
+  PAID: { label: 'Pagada', variant: 'outline' },
   CANCELLED: { label: 'Anulada', variant: 'destructive' },
 }
 
@@ -61,7 +61,7 @@ export const INVOICE_COLUMNS: ColumnDef<Invoice>[] = [
     cell: ({ row }) => {
       const status = row.getValue('status') as InvoiceStatus
       const config = STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT
-      return <Badge variant={config.variant}>{config.label}</Badge>
+      return <Badge variant={config.variant} className="block w-full text-center">{config.label}</Badge>
     },
   },
   {

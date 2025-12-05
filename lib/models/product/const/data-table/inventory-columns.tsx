@@ -80,8 +80,8 @@ export const inventoryMovementColumns: ColumnDef<InventoryMovementWithProduct>[]
       const config = movementTypeConfig[type]
       const Icon = config.icon
       return (
-        <Badge variant="outline" className={`${config.bgColor} ${config.color} border-0`}>
-          <Icon className="h-3 w-3 mr-1" />
+        <Badge variant="outline" className={`block w-full text-center ${config.bgColor} ${config.color} border-0`}>
+          <Icon className="h-3 w-3 inline mr-1" />
           {config.label}
         </Badge>
       )

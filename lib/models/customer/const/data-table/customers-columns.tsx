@@ -63,7 +63,7 @@ export const CUSTOMERS_COLUMNS: ColumnDef<BusinessCustomer>[] = [
       return (
         <Badge
           variant={statusVariants[status]}
-          className={status === 'vip' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+          className={`block w-full text-center ${status === 'vip' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
         >
           {statusLabels[status]}
         </Badge>

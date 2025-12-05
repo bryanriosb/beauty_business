@@ -141,23 +141,54 @@ export async function fetchAppointmentsAction(params?: {
 
     const appointmentsWithUserData = await Promise.all(
       filteredAppointments.map(async (appointment: any) => {
-        if (appointment.user_profile?.user_id) {
+        let clientData = null
+
+        // Obtener datos del cliente desde business_customers
+        if (appointment.users_profile_id && appointment.business_id) {
+          const { data: customer } = await supabase
+            .from('business_customers')
+            .select('first_name, last_name, phone, email')
+            .eq('user_profile_id', appointment.users_profile_id)
+            .eq('business_id', appointment.business_id)
+            .single()
+
+          if (customer) {
+            clientData = {
+              first_name: customer.first_name,
+              last_name: customer.last_name,
+              phone_number: customer.phone,
+              email: customer.email,
+            }
+          }
+        }
+
+        // Fallback: si no hay datos en business_customers, usar user_profile + auth
+        if (!clientData && appointment.user_profile?.user_id) {
           const { data: authUser } = await supabase.auth.admin.getUserById(
             appointment.user_profile.user_id
           )
-          return {
-            ...appointment,
-            user_profile: {
-              ...appointment.user_profile,
-              user: authUser?.user ? {
-                email: authUser.user.email,
-                name: authUser.user.user_metadata?.name,
-                phone: authUser.user.phone,
-              } : null,
-            },
+          if (authUser?.user) {
+            clientData = {
+              first_name: authUser.user.user_metadata?.name || 'Cliente',
+              last_name: null,
+              phone_number: authUser.user.phone || authUser.user.user_metadata?.phone,
+              email: authUser.user.email,
+            }
           }
         }
-        return appointment
+
+        return {
+          ...appointment,
+          client: clientData,
+          user_profile: appointment.user_profile ? {
+            ...appointment.user_profile,
+            user: appointment.user_profile?.user_id ? {
+              email: clientData?.email,
+              name: clientData?.first_name,
+              phone: clientData?.phone_number,
+            } : null,
+          } : null,
+        }
       })
     )
 
@@ -266,24 +297,54 @@ export async function getAppointmentByIdAction(
       return null
     }
 
-    if (data?.user_profile?.user_id) {
+    let clientData = null
+
+    // Obtener datos del cliente desde business_customers
+    if (data?.users_profile_id && data?.business_id) {
+      const { data: customer } = await supabase
+        .from('business_customers')
+        .select('first_name, last_name, phone, email')
+        .eq('user_profile_id', data.users_profile_id)
+        .eq('business_id', data.business_id)
+        .single()
+
+      if (customer) {
+        clientData = {
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+          phone_number: customer.phone,
+          email: customer.email,
+        }
+      }
+    }
+
+    // Fallback: si no hay datos en business_customers, usar user_profile + auth
+    if (!clientData && data?.user_profile?.user_id) {
       const { data: authUser } = await supabase.auth.admin.getUserById(
         data.user_profile.user_id
       )
-      return {
-        ...data,
-        user_profile: {
-          ...data.user_profile,
-          user: authUser?.user ? {
-            email: authUser.user.email,
-            name: authUser.user.user_metadata?.name,
-            phone: authUser.user.phone,
-          } : null,
-        },
-      } as any
+      if (authUser?.user) {
+        clientData = {
+          first_name: authUser.user.user_metadata?.name || 'Cliente',
+          last_name: null,
+          phone_number: authUser.user.phone || authUser.user.user_metadata?.phone,
+          email: authUser.user.email,
+        }
+      }
     }
 
-    return data as any
+    return {
+      ...data,
+      client: clientData,
+      user_profile: data?.user_profile ? {
+        ...data.user_profile,
+        user: clientData ? {
+          email: clientData.email,
+          name: `${clientData.first_name} ${clientData.last_name || ''}`.trim(),
+          phone: clientData.phone_number,
+        } : null,
+      } : null,
+    } as any
   } catch (error) {
     console.error('Error fetching appointment:', error)
     return null

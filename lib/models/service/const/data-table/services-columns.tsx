@@ -78,8 +78,8 @@ export const SERVICES_COLUMNS: ColumnDef<ServiceWithCategory>[] = [
     cell: ({ row }) => {
       const category = row.original.category
       return category ? (
-        <Badge variant="secondary" className="gap-1">
-          <Tag className="h-3 w-3" />
+        <Badge variant="secondary" className="block w-full text-center gap-1">
+          <Tag className="h-3 w-3 inline mr-1" />
           {category.name}
         </Badge>
       ) : (
@@ -114,8 +114,8 @@ export const SERVICES_COLUMNS: ColumnDef<ServiceWithCategory>[] = [
     cell: ({ row }) => {
       const isFeatured = row.getValue('is_featured') as boolean
       return isFeatured ? (
-        <Badge variant="default" className="gap-1">
-          <Star className="h-3 w-3" />
+        <Badge variant="default" className="block w-full text-center gap-1">
+          <Star className="h-3 w-3 inline mr-1" />
           Destacado
         </Badge>
       ) : (

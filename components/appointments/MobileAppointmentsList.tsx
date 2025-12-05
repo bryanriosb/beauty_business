@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Clock, User } from 'lucide-react'
@@ -53,6 +53,15 @@ export default function MobileAppointmentsList({
   onNavigate,
   onSelectAppointment,
 }: MobileAppointmentsListProps) {
+  const todayRef = useRef<HTMLDivElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (todayRef.current) {
+      todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [currentDate])
+
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate, { locale: es })
     const end = endOfWeek(currentDate, { locale: es })
@@ -139,7 +148,7 @@ export default function MobileAppointmentsList({
             const isToday = isSameDay(day, new Date())
 
             return (
-              <div key={key} className="space-y-2">
+              <div key={key} className="space-y-2" ref={isToday ? todayRef : undefined}>
                 <div
                   className={`sticky top-0 z-10 flex items-center gap-2 py-2 px-3 rounded-lg border ${
                     isToday

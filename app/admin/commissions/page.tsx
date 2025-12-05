@@ -207,7 +207,7 @@ export default function CommissionsPage() {
           <CommissionTable
             key={tableKey}
             businessId={activeBusinessId}
-            specialistId={isProfessional ? currentSpecialistId : undefined}
+            specialistId={isProfessional ? currentSpecialistId ?? undefined : undefined}
             startDate={dateParams.start_date}
             endDate={dateParams.end_date}
             onStatusChange={isAdmin ? handleStatusChange : undefined}
