@@ -10,6 +10,7 @@ import {
   FileStack,
   Package,
   Warehouse,
+  Percent,
 } from 'lucide-react'
 import { USER_ROLES, type UserRole } from './roles'
 
@@ -83,6 +84,12 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
   },
   {
+    title: 'Comisiones',
+    url: '/admin/commissions',
+    icon: Percent,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  },
+  {
     title: 'Reportes',
     url: '/admin/reports',
     icon: BarChart3,
@@ -126,6 +133,10 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
       {
         title: 'Facturación',
         url: '/admin/settings/invoicing',
+      },
+      {
+        title: 'Comisiones',
+        url: '/admin/settings/commissions',
       },
       {
         title: 'Asistente IA',

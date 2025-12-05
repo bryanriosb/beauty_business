@@ -741,7 +741,7 @@ export async function updateAppointmentAction(
     supplies?: AppointmentSupplyInput[]
     sendWhatsAppNotification?: boolean
   }
-): Promise<{ success: boolean; data?: Appointment; error?: string; invoiceGenerated?: boolean; stockDeducted?: boolean }> {
+): Promise<{ success: boolean; data?: Appointment; error?: string; invoiceGenerated?: boolean; stockDeducted?: boolean; commissionGenerated?: boolean }> {
   try {
     const supabase = await getSupabaseAdminClient()
 
@@ -808,14 +808,15 @@ export async function updateAppointmentAction(
 
     let invoiceGenerated = false
     let stockDeducted = false
+    let commissionGenerated = false
 
-    // Deduct stock when appointment is completed
-    const shouldDeductStock =
+    // Check if appointment is being completed
+    const isBeingCompleted =
       data.status === 'COMPLETED' &&
       currentAppointment?.status !== 'COMPLETED'
 
-    if (shouldDeductStock && currentAppointment?.business_id) {
-      // Get appointment supplies
+    if (isBeingCompleted && currentAppointment?.business_id) {
+      // Deduct stock if there are supplies
       const { data: supplies } = await supabase
         .from('appointment_supplies')
         .select('product_id, quantity_used, unit_price_cents')
@@ -833,6 +834,25 @@ export async function updateAppointmentAction(
           }))
         )
         stockDeducted = consumptionResult.success
+      }
+
+      // Calculate commission for specialist (independent of supplies)
+      const specialistId = data.specialist_id || currentAppointment.specialist_id
+      if (specialistId) {
+        try {
+          const { calculateAndCreateCommissionAction } = await import('./commission')
+          const commissionResult = await calculateAndCreateCommissionAction(
+            id,
+            currentAppointment.business_id,
+            specialistId
+          )
+          commissionGenerated = commissionResult.success
+          if (!commissionResult.success) {
+            console.log('Commission result:', commissionResult.error)
+          }
+        } catch (commissionError) {
+          console.error('Error calculating commission:', commissionError)
+        }
       }
     }
 
@@ -870,7 +890,7 @@ export async function updateAppointmentAction(
       }
     }
 
-    return { success: true, data: appointment, invoiceGenerated, stockDeducted }
+    return { success: true, data: appointment, invoiceGenerated, stockDeducted, commissionGenerated }
   } catch (error: any) {
     console.error('Error updating appointment:', error)
     return { success: false, error: error.message || 'Error desconocido' }
