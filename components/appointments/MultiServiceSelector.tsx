@@ -36,6 +36,8 @@ export interface SelectedService {
   duration_minutes: number
   tax_rate: number | null
   has_custom_price?: boolean
+  category_id?: string | null
+  category_name?: string | null
 }
 
 interface MultiServiceSelectorProps {
@@ -99,6 +101,7 @@ export function MultiServiceSelector({
     if (selectedIds.has(service.id)) {
       onChange(selectedServices.filter((s) => s.id !== service.id))
     } else {
+      const serviceWithCategory = service as Service & { category?: { id: string; name: string } | null }
       onChange([
         ...selectedServices,
         {
@@ -109,6 +112,8 @@ export function MultiServiceSelector({
           duration_minutes: service.duration_minutes,
           tax_rate: service.tax_rate,
           has_custom_price: false,
+          category_id: service.category_id || null,
+          category_name: serviceWithCategory.category?.name || null,
         },
       ])
       onServiceSelect?.(service.id)

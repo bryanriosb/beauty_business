@@ -139,27 +139,74 @@ const CustomEvent = ({ event }: { event: Event }) => {
     })
   }
 
-  const specialistName = appointment?.specialist?.first_name || 'Especialista'
-  const specialistPhoto = appointment?.specialist?.profile_picture_url
-  const specialistInitial = appointment?.specialist?.first_name?.[0] || 'E'
+  // Get unique specialists from appointment_services
+  const uniqueSpecialists = appointment?.appointment_services
+    ?.filter((as: any) => as.specialist)
+    .reduce((acc: any[], as: any) => {
+      if (!acc.find((s: any) => s.id === as.specialist.id)) {
+        acc.push(as.specialist)
+      }
+      return acc
+    }, []) || []
+
+  // Fallback to main specialist
+  const specialists = uniqueSpecialists.length > 0
+    ? uniqueSpecialists
+    : appointment?.specialist
+      ? [appointment.specialist]
+      : []
+
+  const isMultiple = specialists.length > 1
   const totalServices = appointment?.appointment_services?.length || 0
 
   return (
     <div className="flex gap-1.5 md:gap-2 h-full overflow-hidden p-0.5">
-      <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-white/20 flex items-center justify-center text-[0.55rem] md:text-[0.6rem] font-semibold overflow-hidden">
-        {specialistPhoto ? (
-          <img
-            src={specialistPhoto}
-            alt={specialistInitial}
-            className="w-full h-full object-cover"
-          />
+      <div className="flex-shrink-0">
+        {isMultiple ? (
+          <div className="flex -space-x-1.5">
+            {specialists.slice(0, 3).map((specialist: any, idx: number) => (
+              <div
+                key={specialist.id}
+                className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-white/30 ring-1 ring-white/50 flex items-center justify-center text-[0.5rem] md:text-[0.55rem] font-semibold overflow-hidden"
+                style={{ zIndex: 3 - idx }}
+              >
+                {specialist.profile_picture_url ? (
+                  <img
+                    src={specialist.profile_picture_url}
+                    alt={specialist.first_name?.[0] || 'E'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{specialist.first_name?.[0] || 'E'}</span>
+                )}
+              </div>
+            ))}
+            {specialists.length > 3 && (
+              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-white/40 ring-1 ring-white/50 flex items-center justify-center text-[0.45rem] md:text-[0.5rem] font-medium">
+                +{specialists.length - 3}
+              </div>
+            )}
+          </div>
         ) : (
-          <span>{specialistInitial}</span>
+          <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-white/20 flex items-center justify-center text-[0.55rem] md:text-[0.6rem] font-semibold overflow-hidden">
+            {specialists[0]?.profile_picture_url ? (
+              <img
+                src={specialists[0].profile_picture_url}
+                alt={specialists[0]?.first_name?.[0] || 'E'}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{specialists[0]?.first_name?.[0] || 'E'}</span>
+            )}
+          </div>
         )}
       </div>
       <div className="flex-1 flex flex-col gap-0.5 min-w-0">
         <div className="font-semibold truncate text-[0.65rem] md:text-xs leading-tight">
-          {specialistName}
+          {isMultiple
+            ? specialists.map((s: any) => s.first_name).join(', ')
+            : specialists[0]?.first_name || 'Especialista'
+          }
         </div>
         <div className="flex items-center justify-between gap-1">
           <div className="truncate text-[0.6rem] md:text-[0.7rem] leading-tight opacity-90">

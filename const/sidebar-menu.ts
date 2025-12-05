@@ -124,6 +124,10 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
         url: '/admin/settings/scheduler',
       },
       {
+        title: 'Facturación',
+        url: '/admin/settings/invoicing',
+      },
+      {
         title: 'Asistente IA',
         url: '/admin/settings/ai-agent',
       },

@@ -59,10 +59,16 @@ export default function InvoiceSettingsPage() {
   const handleSave = async () => {
     if (!activeBusinessId || !canEdit) return
 
+    const trimmedPrefix = prefix.toUpperCase().trim()
+    if (trimmedPrefix.length < 4) {
+      toast.error('El prefijo debe tener mínimo 4 caracteres (requisito DIAN)')
+      return
+    }
+
     setIsSaving(true)
     try {
       const result = await updateInvoiceSettingsAction(activeBusinessId, {
-        prefix: prefix.toUpperCase().trim() || 'FAC',
+        prefix: trimmedPrefix,
         next_number: Math.max(1, nextNumber),
       })
 
@@ -79,9 +85,8 @@ export default function InvoiceSettingsPage() {
     }
   }
 
-  const previewNumber = `${prefix.toUpperCase() || 'FAC'}-${nextNumber
-    .toString()
-    .padStart(4, '0')}`
+  const previewPrefix = prefix.toUpperCase() || 'FACT'
+  const previewNumber = `${previewPrefix}-${nextNumber.toString()}`
 
   if (!activeBusinessId) {
     return (
@@ -139,12 +144,14 @@ export default function InvoiceSettingsPage() {
                 id="prefix"
                 value={prefix}
                 onChange={(e) => setPrefix(e.target.value.toUpperCase())}
-                placeholder="FAC"
+                placeholder="FACT"
+                minLength={4}
                 maxLength={10}
                 disabled={!canEdit}
+                className={prefix.length > 0 && prefix.length < 4 ? 'border-destructive' : ''}
               />
               <p className="text-xs text-muted-foreground">
-                Letras que aparecen antes del número
+                Mínimo 4 caracteres (requisito DIAN)
               </p>
             </div>
             <div className="space-y-2">

@@ -30,6 +30,7 @@ export interface Product {
   max_stock: number | null
   image_url: string | null
   is_active: boolean
+  tax_rate: number | null
   created_at: string
   updated_at: string
 }
@@ -51,6 +52,7 @@ export class ProductModel implements Product {
   max_stock: number | null
   image_url: string | null
   is_active: boolean
+  tax_rate: number | null
   created_at: string
   updated_at: string
 
@@ -71,6 +73,7 @@ export class ProductModel implements Product {
     this.max_stock = data.max_stock
     this.image_url = data.image_url
     this.is_active = data.is_active
+    this.tax_rate = data.tax_rate
     this.created_at = data.created_at
     this.updated_at = data.updated_at
   }
@@ -116,6 +119,7 @@ export interface ProductInsert {
   max_stock?: number | null
   image_url?: string | null
   is_active?: boolean
+  tax_rate?: number | null
 }
 
 export interface ProductUpdate {
@@ -132,6 +136,7 @@ export interface ProductUpdate {
   max_stock?: number | null
   image_url?: string | null
   is_active?: boolean
+  tax_rate?: number | null
 }
 
 export interface ProductWithDetails extends Product {

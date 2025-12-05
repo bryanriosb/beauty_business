@@ -148,8 +148,11 @@ export interface AppointmentWithDetails extends Appointment {
   appointment_services?: Array<{
     id: string
     service_id: string
+    specialist_id: string | null
     price_at_booking_cents: number
     duration_minutes: number
+    start_time: string | null
+    end_time: string | null
     service: {
       id: string
       name: string
@@ -162,6 +165,13 @@ export interface AppointmentWithDetails extends Appointment {
         icon_key: string | null
       } | null
     }
+    specialist?: {
+      id: string
+      first_name: string
+      last_name: string | null
+      specialty: string | null
+      profile_picture_url: string | null
+    } | null
   }>
   appointment_supplies?: Array<{
     id: string

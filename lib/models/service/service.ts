@@ -96,10 +96,20 @@ export interface AppointmentService {
   id: string
   appointment_id: string
   service_id: string
+  specialist_id: string | null
   price_at_booking_cents: number
   duration_minutes: number
+  start_time: string | null
+  end_time: string | null
 }
 
 export interface AppointmentServiceWithDetails extends AppointmentService {
   service: Service
+  specialist?: {
+    id: string
+    first_name: string
+    last_name: string | null
+    specialty: string | null
+    profile_picture_url: string | null
+  } | null
 }

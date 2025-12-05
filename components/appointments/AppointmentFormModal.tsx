@@ -37,7 +37,6 @@ import {
 } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
 import { NumericInput } from '@/components/ui/numeric-input'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
@@ -55,18 +54,18 @@ import { useServiceStockCheck } from '@/hooks/use-service-stock-check'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 import { USER_ROLES } from '@/const/roles'
 import CustomerSelector from './CustomerSelector'
-import TimeSlotPicker from './TimeSlotPicker'
-import SpecialistPicker from './SpecialistPicker'
 import {
   MultiServiceSelector,
   type SelectedService,
 } from './MultiServiceSelector'
+import ServiceSpecialistAssignmentComponent, {
+  type ServiceSpecialistAssignment,
+} from './ServiceSpecialistAssignment'
 import {
   AppointmentSuppliesSection,
   calculateSuppliesTotal,
   hasInsufficientStock,
 } from './AppointmentSuppliesSection'
-import type { AvailableSpecialist } from '@/lib/actions/availability'
 import type {
   AppointmentServiceInput,
   AppointmentSupplyInput,
@@ -77,7 +76,7 @@ import { validateStockForSuppliesAction } from '@/lib/actions/inventory'
 const appointmentFormSchema = z.object({
   business_id: z.string().min(1, 'El negocio es requerido'),
   service_id: z.string(),
-  specialist_id: z.string().min(1, 'El especialista es requerido'),
+  specialist_id: z.string().optional(),
   customer_id: z.string().min(1, 'El cliente es requerido'),
   date: z.string().min(1, 'La fecha es requerida'),
   start_time: z.string().min(1, 'El horario es requerido'),
@@ -108,15 +107,14 @@ export default function AppointmentFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [services, setServices] = useState<Service[]>([])
   const [isLoadingServices, setIsLoadingServices] = useState(false)
-  const [availableSpecialistIds, setAvailableSpecialistIds] = useState<
-    string[]
-  >([])
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>(
     []
   )
   const [supplies, setSupplies] = useState<SelectedSupply[]>([])
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [discountPercent, setDiscountPercent] = useState(0)
+  const [serviceSpecialistAssignments, setServiceSpecialistAssignments] =
+    useState<ServiceSpecialistAssignment[]>([])
   const isInitializingRef = useRef(false)
 
   const { role, businesses } = useCurrentUser()
@@ -132,10 +130,6 @@ export default function AppointmentFormModal({
     return businesses || []
   }, [isCompanyAdmin, businesses])
 
-  const totalDuration = useMemo(() => {
-    return selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0)
-  }, [selectedServices])
-
   const totalSuppliesPrice = useMemo(() => {
     return calculateSuppliesTotal(supplies)
   }, [supplies])
@@ -146,7 +140,9 @@ export default function AppointmentFormModal({
 
     selectedServices.forEach((service) => {
       if (service.tax_rate !== null && service.tax_rate > 0) {
-        const subtotalItem = Math.round(service.price_cents / (1 + service.tax_rate / 100))
+        const subtotalItem = Math.round(
+          service.price_cents / (1 + service.tax_rate / 100)
+        )
         const taxItem = service.price_cents - subtotalItem
         servicesSubtotal += subtotalItem
         servicesTax += taxItem
@@ -164,6 +160,20 @@ export default function AppointmentFormModal({
 
   const firstServiceId =
     selectedServices.length > 0 ? selectedServices[0].id : ''
+
+  const allServicesHaveSpecialistAndTime = useMemo(() => {
+    if (serviceSpecialistAssignments.length === 0) return false
+    return serviceSpecialistAssignments.every(
+      (a) => a.specialistId !== null && a.startTime !== null
+    )
+  }, [serviceSpecialistAssignments])
+
+  const primarySpecialistId = useMemo(() => {
+    const firstAssignment = serviceSpecialistAssignments.find(
+      (a) => a.specialistId
+    )
+    return firstAssignment?.specialistId || ''
+  }, [serviceSpecialistAssignments])
 
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentFormSchema),
@@ -184,7 +194,6 @@ export default function AppointmentFormModal({
 
   const currentBusinessId = form.watch('business_id')
   const currentDate = form.watch('date')
-  const currentStartTime = form.watch('start_time')
 
   // Set business_id when effectiveBusinessId changes
   useEffect(() => {
@@ -231,11 +240,6 @@ export default function AppointmentFormModal({
         payment_method: appointment.payment_method,
         payment_status: appointment.payment_status,
       })
-
-      // Initialize available specialist IDs with the current specialist
-      if (appointment.specialist_id) {
-        setAvailableSpecialistIds([appointment.specialist_id])
-      }
 
       // Calculate discount percent from existing values
       if (appointment.subtotal_cents > 0 && appointment.discount_cents > 0) {
@@ -298,61 +302,82 @@ export default function AppointmentFormModal({
       setServices([])
       setSelectedServices([])
       setSupplies([])
-      setAvailableSpecialistIds([])
       setDiscountPercent(0)
+      setServiceSpecialistAssignments([])
       clearCache()
     }
   }, [open, effectiveBusinessId, form, clearCache])
 
-  // Clear dependent fields when services change (skip during edit initialization)
+  // Reset assignments when services change (skip during edit initialization)
+  // Use a ref to track service IDs and only reset when they actually change
+  const prevServiceIdsRef = useRef<string>('')
   useEffect(() => {
     if (isInitializingRef.current) return
+
+    const currentServiceIds = selectedServices.map(s => s.id).sort().join(',')
+    if (currentServiceIds === prevServiceIdsRef.current) {
+      // Service IDs haven't changed, don't reset
+      return
+    }
+    prevServiceIdsRef.current = currentServiceIds
+
     form.setValue('start_time', '')
     form.setValue('end_time', '')
     form.setValue('specialist_id', '')
     form.setValue('service_id', firstServiceId)
-    setAvailableSpecialistIds([])
-  }, [selectedServices.length, firstServiceId, form])
+    // Recreate assignments structure without specialist/time
+    const newAssignments: ServiceSpecialistAssignment[] = selectedServices.map(s => ({
+      serviceId: s.id,
+      serviceName: s.name,
+      categoryId: s.category_id || null,
+      categoryName: s.category_name || null,
+      specialistId: null,
+      specialistName: null,
+      durationMinutes: s.duration_minutes,
+      startTime: null,
+      endTime: null,
+    }))
+    setServiceSpecialistAssignments(newAssignments)
+  }, [selectedServices, firstServiceId, form])
 
-  // Clear specialist when date changes (skip during edit initialization)
+  // Clear specialist/time when date changes (skip during edit initialization)
   useEffect(() => {
     if (isInitializingRef.current) return
     form.setValue('start_time', '')
     form.setValue('end_time', '')
     form.setValue('specialist_id', '')
-    setAvailableSpecialistIds([])
+    // Reset assignments to clear specialist/time but keep structure
+    setServiceSpecialistAssignments(prev => prev.map(a => ({
+      ...a,
+      specialistId: null,
+      specialistName: null,
+      startTime: null,
+      endTime: null,
+    })))
   }, [currentDate, form])
-
-  // Clear specialist when time changes (skip during edit initialization)
-  useEffect(() => {
-    if (isInitializingRef.current) return
-    form.setValue('specialist_id', '')
-  }, [currentStartTime, form])
 
   const handleCustomerSelect = (customerId: string) => {
     form.setValue('customer_id', customerId)
   }
 
-  const handleTimeSlotSelect = (time: string, specialistIds: string[]) => {
-    form.setValue('start_time', time)
-    setAvailableSpecialistIds(specialistIds)
+  const handleTimesCalculated = (startTime: string, endTime: string) => {
+    form.setValue('start_time', startTime)
+    form.setValue('end_time', endTime)
+  }
 
-    if (totalDuration > 0) {
-      const [hours, minutes] = time.split(':').map(Number)
-      const endTotalMinutes = hours * 60 + minutes + totalDuration
-      const endHours = Math.floor(endTotalMinutes / 60)
-      const endMinutes = endTotalMinutes % 60
-      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes
-        .toString()
-        .padStart(2, '0')}`
-      form.setValue('end_time', endTime)
+  const handleServiceSpecialistAssignmentsChange = (
+    assignments: ServiceSpecialistAssignment[]
+  ) => {
+    setServiceSpecialistAssignments(assignments)
+    const firstSpecialistId = assignments.find(
+      (a) => a.specialistId
+    )?.specialistId
+    if (firstSpecialistId) {
+      form.setValue('specialist_id', firstSpecialistId)
     }
   }
 
-  const handleSpecialistSelect = (
-    specialistId: string,
-    _specialist?: AvailableSpecialist
-  ) => {
+  const handlePrimarySpecialistChange = (specialistId: string) => {
     form.setValue('specialist_id', specialistId)
   }
 
@@ -373,11 +398,17 @@ export default function AppointmentFormModal({
         return
       }
 
-      if (!appointment && firstServiceId) {
+      if (!allServicesHaveSpecialistAndTime) {
+        toast.error('Debes asignar especialista y horario a todos los servicios')
+        setIsSubmitting(false)
+        return
+      }
+
+      if (!appointment && firstServiceId && primarySpecialistId) {
         const validation = await validateAppointmentAction({
           businessId: values.business_id,
           serviceId: firstServiceId,
-          specialistId: values.specialist_id,
+          specialistId: primarySpecialistId,
           date: values.date,
           startTime: values.start_time,
         })
@@ -415,7 +446,7 @@ export default function AppointmentFormModal({
 
       const appointmentData = {
         business_id: values.business_id,
-        specialist_id: values.specialist_id,
+        specialist_id: primarySpecialistId || values.specialist_id || '',
         users_profile_id: values.customer_id,
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
@@ -430,11 +461,28 @@ export default function AppointmentFormModal({
       }
 
       const servicesData: AppointmentServiceInput[] = selectedServices.map(
-        (s) => ({
-          service_id: s.id,
-          price_at_booking_cents: s.price_cents,
-          duration_minutes: s.duration_minutes,
-        })
+        (s) => {
+          const assignment = serviceSpecialistAssignments.find(
+            (a) => a.serviceId === s.id
+          )
+          // Build full datetime strings for start_time and end_time
+          const serviceStartTime = assignment?.startTime
+            ? new Date(`${values.date}T${assignment.startTime}:00`).toISOString()
+            : null
+          const serviceEndTime = assignment?.endTime
+            ? new Date(`${values.date}T${assignment.endTime}:00`).toISOString()
+            : null
+
+          return {
+            service_id: s.id,
+            specialist_id:
+              assignment?.specialistId || primarySpecialistId || null,
+            price_at_booking_cents: s.price_cents,
+            duration_minutes: s.duration_minutes,
+            start_time: serviceStartTime,
+            end_time: serviceEndTime,
+          }
+        }
       )
 
       const suppliesData: AppointmentSupplyInput[] = supplies.map((s) => ({
@@ -488,7 +536,11 @@ export default function AppointmentFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[100dvh] sm:max-h-[90vh] !grid !grid-rows-[auto_1fr]">
+      <DialogContent
+        className="sm:max-w-2xl max-h-[100dvh] sm:max-h-[90vh] !grid !grid-rows-[auto_1fr]"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader className="shrink-0">
           <DialogTitle>
             {appointment ? 'Editar Cita' : 'Nueva Cita'}
@@ -598,7 +650,9 @@ export default function AppointmentFormModal({
                         <span>
                           $
                           {(
-                            (priceCalculations.subtotal - priceCalculations.suppliesCost) / 100
+                            (priceCalculations.subtotal -
+                              priceCalculations.suppliesCost) /
+                            100
                           ).toLocaleString('es-CO', {
                             minimumFractionDigits: 0,
                           })}
@@ -728,52 +782,22 @@ export default function AppointmentFormModal({
                   )}
                 />
 
-                {/* Step 4: Time Slot */}
+                {/* Step 4: Specialist & Time Assignment */}
                 {selectedServices.length > 0 && currentDate && (
-                  <FormField
-                    control={form.control}
-                    name="start_time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>4. Horario</FormLabel>
-                        <TimeSlotPicker
-                          businessId={currentBusinessId || effectiveBusinessId}
-                          serviceId={firstServiceId}
-                          date={currentDate}
-                          value={field.value}
-                          onChange={handleTimeSlotSelect}
-                          disabled={isSubmitting}
-                          excludeAppointmentId={appointment?.id}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {/* Step 5: Specialist */}
-                {currentStartTime && (
-                  <FormField
-                    control={form.control}
-                    name="specialist_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>5. Especialista</FormLabel>
-                        <SpecialistPicker
-                          businessId={currentBusinessId || effectiveBusinessId}
-                          serviceId={firstServiceId}
-                          date={currentDate}
-                          time={currentStartTime}
-                          availableSpecialistIds={availableSpecialistIds}
-                          value={field.value}
-                          onChange={handleSpecialistSelect}
-                          disabled={isSubmitting}
-                          excludeAppointmentId={appointment?.id}
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormItem>
+                    <FormLabel>4. Especialista y Horario</FormLabel>
+                    <ServiceSpecialistAssignmentComponent
+                      businessId={currentBusinessId || effectiveBusinessId}
+                      services={selectedServices}
+                      date={currentDate}
+                      value={serviceSpecialistAssignments}
+                      onChange={handleServiceSpecialistAssignmentsChange}
+                      onPrimarySpecialistChange={handlePrimarySpecialistChange}
+                      onTimesCalculated={handleTimesCalculated}
+                      disabled={isSubmitting}
+                      excludeAppointmentId={appointment?.id}
+                    />
+                  </FormItem>
                 )}
 
                 <Separator />
@@ -912,7 +936,8 @@ export default function AppointmentFormModal({
                   type="submit"
                   disabled={
                     isSubmitting ||
-                    (!appointment && hasInsufficientStock(supplies))
+                    (!appointment && hasInsufficientStock(supplies)) ||
+                    (!appointment && !allServicesHaveSpecialistAndTime)
                   }
                 >
                   {isSubmitting

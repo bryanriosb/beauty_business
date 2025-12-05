@@ -14,8 +14,11 @@ import type {
 
 export interface AppointmentServiceInput {
   service_id: string
+  specialist_id?: string | null
   price_at_booking_cents: number
   duration_minutes: number
+  start_time?: string | null
+  end_time?: string | null
 }
 
 export interface AppointmentSupplyInput {
@@ -67,8 +70,11 @@ export async function fetchAppointmentsAction(params?: {
         appointment_services(
           id,
           service_id,
+          specialist_id,
           price_at_booking_cents,
           duration_minutes,
+          start_time,
+          end_time,
           service:services(
             id,
             name,
@@ -80,6 +86,13 @@ export async function fetchAppointmentsAction(params?: {
               name,
               icon_key
             )
+          ),
+          specialist:specialists(
+            id,
+            first_name,
+            last_name,
+            specialty,
+            profile_picture_url
           )
         )
       `)
@@ -206,8 +219,11 @@ export async function getAppointmentByIdAction(
         appointment_services(
           id,
           service_id,
+          specialist_id,
           price_at_booking_cents,
           duration_minutes,
+          start_time,
+          end_time,
           service:services(
             id,
             name,
@@ -219,6 +235,13 @@ export async function getAppointmentByIdAction(
               name,
               icon_key
             )
+          ),
+          specialist:specialists(
+            id,
+            first_name,
+            last_name,
+            specialty,
+            profile_picture_url
           )
         ),
         appointment_supplies(
@@ -294,8 +317,11 @@ export async function createAppointmentAction(
       const appointmentServices = services.map((service) => ({
         appointment_id: appointment.id,
         service_id: service.service_id,
+        specialist_id: service.specialist_id || data.specialist_id,
         price_at_booking_cents: service.price_at_booking_cents,
         duration_minutes: service.duration_minutes,
+        start_time: service.start_time || null,
+        end_time: service.end_time || null,
       }))
 
       const { error: servicesError } = await supabase
@@ -365,12 +391,27 @@ async function sendAppointmentNotifications(
     return
   }
 
-  // Obtener datos del especialista
-  const { data: specialist } = await supabase
-    .from('specialists')
-    .select('first_name, last_name')
-    .eq('id', appointment.specialist_id)
-    .single()
+  // Obtener IDs únicos de especialistas de los servicios
+  const specialistIds = new Set<string>()
+  services.forEach((s) => {
+    if (s.specialist_id) {
+      specialistIds.add(s.specialist_id)
+    }
+  })
+  // Fallback al especialista principal si no hay en servicios
+  if (specialistIds.size === 0 && appointment.specialist_id) {
+    specialistIds.add(appointment.specialist_id)
+  }
+
+  // Obtener datos de todos los especialistas
+  let allSpecialists: { first_name: string; last_name?: string }[] = []
+  if (specialistIds.size > 0) {
+    const { data: specialists } = await supabase
+      .from('specialists')
+      .select('first_name, last_name')
+      .in('id', Array.from(specialistIds))
+    allSpecialists = specialists || []
+  }
 
   // Obtener datos del cliente desde business_customers
   const { data: customer } = await supabase
@@ -425,8 +466,11 @@ async function sendAppointmentNotifications(
     price_cents: s.price_at_booking_cents,
   }))
 
-  const specialistName = specialist
-    ? `${specialist.first_name} ${specialist.last_name || ''}`.trim()
+  // Construir nombre(s) del/los especialista(s)
+  const specialistName = allSpecialists.length > 0
+    ? allSpecialists
+        .map((s) => `${s.first_name} ${s.last_name || ''}`.trim())
+        .join(', ')
     : 'Especialista'
 
   // Importar dinamicamente para evitar dependencias circulares
@@ -537,21 +581,15 @@ async function sendAppointmentStatusNotifications(
 
   if (!customerPhone) return
 
-  // Obtener especialista
-  const { data: specialist } = await supabase
-    .from('specialists')
-    .select('first_name, last_name')
-    .eq('id', params.specialistId)
-    .single()
-
-  const specialistName = specialist
-    ? `${specialist.first_name} ${specialist.last_name || ''}`.trim()
-    : 'Especialista'
-
-  // Obtener servicios de la cita
+  // Obtener servicios de la cita con especialistas
   const { data: appointmentServices } = await supabase
     .from('appointment_services')
-    .select('service:services(id, name), duration_minutes, price_at_booking_cents')
+    .select(`
+      service:services(id, name),
+      duration_minutes,
+      price_at_booking_cents,
+      specialist:specialists(id, first_name, last_name)
+    `)
     .eq('appointment_id', params.appointmentId)
 
   const services = (appointmentServices || []).map((as: any) => ({
@@ -559,6 +597,36 @@ async function sendAppointmentStatusNotifications(
     duration_minutes: as.duration_minutes,
     price_cents: as.price_at_booking_cents,
   }))
+
+  // Obtener especialistas únicos de los servicios
+  const uniqueSpecialists = new Map<string, { first_name: string; last_name?: string }>()
+  ;(appointmentServices || []).forEach((as: any) => {
+    if (as.specialist?.id && !uniqueSpecialists.has(as.specialist.id)) {
+      uniqueSpecialists.set(as.specialist.id, {
+        first_name: as.specialist.first_name,
+        last_name: as.specialist.last_name,
+      })
+    }
+  })
+
+  // Fallback al especialista principal si no hay en servicios
+  if (uniqueSpecialists.size === 0 && params.specialistId) {
+    const { data: specialist } = await supabase
+      .from('specialists')
+      .select('first_name, last_name')
+      .eq('id', params.specialistId)
+      .single()
+    if (specialist) {
+      uniqueSpecialists.set(params.specialistId, specialist)
+    }
+  }
+
+  // Construir nombre(s) del/los especialista(s)
+  const specialistName = uniqueSpecialists.size > 0
+    ? Array.from(uniqueSpecialists.values())
+        .map((s) => `${s.first_name} ${s.last_name || ''}`.trim())
+        .join(', ')
+    : 'Especialista'
 
   const { cancelScheduledRemindersAction, createScheduledReminderAction } = await import('./whatsapp')
   const WhatsAppService = (await import('@/lib/services/whatsapp/whatsapp-service')).default
@@ -694,11 +762,15 @@ export async function updateAppointmentAction(
       await supabase.from('appointment_services').delete().eq('appointment_id', id)
 
       if (options.services.length > 0) {
+        const specialistId = data.specialist_id || currentAppointment?.specialist_id
         const appointmentServices = options.services.map((service) => ({
           appointment_id: id,
           service_id: service.service_id,
+          specialist_id: service.specialist_id || specialistId,
           price_at_booking_cents: service.price_at_booking_cents,
           duration_minutes: service.duration_minutes,
+          start_time: service.start_time || null,
+          end_time: service.end_time || null,
         }))
 
         const { error: servicesError } = await supabase

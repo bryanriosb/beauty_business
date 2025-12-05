@@ -7,6 +7,7 @@ import {
   deleteRecord,
   getSupabaseAdminClient,
 } from '@/lib/actions/supabase'
+import { incrementInvoiceNumberAction } from '@/lib/actions/invoice-settings'
 import type { Invoice, InvoiceInsert, InvoiceUpdate } from '@/lib/models/invoice/invoice'
 
 export interface InvoiceListResponse {
@@ -79,9 +80,12 @@ export async function getInvoiceByIdAction(id: string): Promise<Invoice | null> 
 
 export async function getNextInvoiceNumberAction(businessId: string): Promise<string> {
   try {
-    const { incrementInvoiceNumberAction } = await import('./invoice-settings')
     const { prefix, number } = await incrementInvoiceNumberAction(businessId)
-    return `${prefix}-${number.toString().padStart(4, '0')}`
+    // padStart solo aplica si el número tiene menos de 4 dígitos
+    const formattedNumber = number.toString().length < 4
+      ? number.toString().padStart(4, '0')
+      : number.toString()
+    return `${prefix}-${formattedNumber}`
   } catch (error) {
     console.error('Error getting next invoice number:', error)
     return `FAC-${Date.now()}`
@@ -185,6 +189,18 @@ export async function createInvoiceFromAppointmentAction(
             name,
             tax_rate
           )
+        ),
+        appointment_supplies (
+          id,
+          product_id,
+          quantity_used,
+          unit_price_cents,
+          total_price_cents,
+          product:products (
+            id,
+            name,
+            tax_rate
+          )
         )
       `)
       .eq('id', appointmentId)
@@ -232,7 +248,8 @@ export async function createInvoiceFromAppointmentAction(
 
     const userProfile = businessCustomer?.user_profile as any
 
-    const items = (appointment.appointment_services || []).map((as: any) => {
+    // Items de servicios
+    const serviceItems = (appointment.appointment_services || []).map((as: any) => {
       const serviceTaxRate = as.service?.tax_rate ?? null
       const totalCentsItem = as.price_at_booking_cents
       let taxCentsItem = 0
@@ -252,6 +269,31 @@ export async function createInvoiceFromAppointmentAction(
         tax_cents: taxCentsItem,
       }
     })
+
+    // Items de insumos/productos utilizados
+    const supplyItems = (appointment.appointment_supplies || []).map((sup: any) => {
+      const productTaxRate = sup.product?.tax_rate ?? null
+      const totalCentsItem = sup.total_price_cents
+      let taxCentsItem = 0
+
+      if (productTaxRate !== null && productTaxRate > 0) {
+        const subtotalItem = Math.round(totalCentsItem / (1 + productTaxRate / 100))
+        taxCentsItem = totalCentsItem - subtotalItem
+      }
+
+      return {
+        product_id: sup.product_id,
+        name: sup.product?.name || 'Insumo',
+        quantity: sup.quantity_used,
+        unit_price_cents: sup.unit_price_cents,
+        total_cents: totalCentsItem,
+        tax_rate: productTaxRate,
+        tax_cents: taxCentsItem,
+      }
+    })
+
+    // Combinar servicios e insumos
+    const items = [...serviceItems, ...supplyItems]
 
     const totalCents = items.reduce((sum: number, item: any) => sum + item.total_cents, 0)
     const taxCents = items.reduce((sum: number, item: any) => sum + item.tax_cents, 0)

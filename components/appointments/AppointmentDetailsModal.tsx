@@ -30,7 +30,10 @@ import {
   Syringe,
   Plus,
   Wallet,
+  Users,
+  UserStar,
 } from 'lucide-react'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import Loading from '@/components/ui/loading'
 import { toast } from 'sonner'
 import StatusSelector from './StatusSelector'
@@ -324,7 +327,7 @@ export default function AppointmentDetailsModal({
 
                 {appointment.user_profile && (
                   <div className="flex items-start gap-3">
-                    <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <UserStar className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div className="flex-1">
                       <p className="font-medium">Cliente</p>
                       {appointment.user_profile.user && (
@@ -352,37 +355,105 @@ export default function AppointmentDetailsModal({
                   </div>
                 )}
 
-                {appointment.specialist && (
-                  <div className="flex items-start gap-3">
-                    <User className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0">
-                        {appointment.specialist.profile_picture_url ? (
-                          <img
-                            src={appointment.specialist.profile_picture_url}
-                            alt={appointment.specialist.first_name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                            {appointment.specialist.first_name[0]}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {appointment.specialist.first_name}{' '}
-                          {appointment.specialist.last_name}
-                        </p>
-                        {appointment.specialist.specialty && (
-                          <p className="text-xs text-muted-foreground">
-                            {appointment.specialist.specialty}
+                {(() => {
+                  // Get unique specialists from appointment_services
+                  type SpecialistType = NonNullable<
+                    NonNullable<
+                      typeof appointment.appointment_services
+                    >[number]['specialist']
+                  >
+                  const uniqueSpecialists =
+                    appointment.appointment_services
+                      ?.filter((as) => as.specialist)
+                      .reduce((acc, as) => {
+                        if (!acc.find((s) => s.id === as.specialist!.id)) {
+                          acc.push(as.specialist!)
+                        }
+                        return acc
+                      }, [] as SpecialistType[]) || []
+
+                  // Fallback to main specialist if no service specialists
+                  const specialists =
+                    uniqueSpecialists.length > 0
+                      ? uniqueSpecialists
+                      : appointment.specialist
+                      ? [appointment.specialist]
+                      : []
+
+                  if (specialists.length === 0) return null
+
+                  const isMultiple = specialists.length > 1
+
+                  return (
+                    <div className="flex items-start gap-3">
+                      {isMultiple ? (
+                        <Users className="!h-5 !w-5 text-muted-foreground mt-0.5" />
+                      ) : (
+                        <User className="!h-5 !w-5 text-muted-foreground mt-0.5" />
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          {isMultiple ? (
+                            <div className="flex -space-x-2">
+                              {specialists.slice(0, 4).map((specialist) => (
+                                <Avatar
+                                  key={specialist.id}
+                                  className="w-10 h-10 ring-2 ring-background"
+                                >
+                                  {specialist.profile_picture_url ? (
+                                    <AvatarImage
+                                      src={specialist.profile_picture_url}
+                                      alt={specialist.first_name}
+                                    />
+                                  ) : null}
+                                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                                    {specialist.first_name[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ))}
+                              {specialists.length > 4 && (
+                                <Avatar className="w-10 h-10 ring-2 ring-background">
+                                  <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
+                                    +{specialists.length - 4}
+                                  </AvatarFallback>
+                                </Avatar>
+                              )}
+                            </div>
+                          ) : specialists[0].profile_picture_url ? (
+                            <img
+                              src={specialists[0].profile_picture_url}
+                              alt={specialists[0].first_name}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
+                              {specialists[0].first_name[0]}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {isMultiple
+                              ? specialists.map((s) => s.first_name).join(', ')
+                              : `${specialists[0].first_name} ${
+                                  specialists[0].last_name || ''
+                                }`}
                           </p>
-                        )}
+                          {!isMultiple && specialists[0].specialty && (
+                            <p className="text-xs text-muted-foreground">
+                              {specialists[0].specialty}
+                            </p>
+                          )}
+                          {isMultiple && (
+                            <p className="text-xs text-muted-foreground">
+                              {specialists.length} especialistas
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
 
                 {appointment.appointment_services &&
                   appointment.appointment_services.length > 0 && (
@@ -423,6 +494,66 @@ export default function AppointmentDetailsModal({
                                       {appointmentService.duration_minutes} min
                                     </span>
                                   </div>
+                                  {appointmentService.specialist && (
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                      {appointmentService.specialist
+                                        .profile_picture_url ? (
+                                        <img
+                                          src={
+                                            appointmentService.specialist
+                                              .profile_picture_url
+                                          }
+                                          alt={
+                                            appointmentService.specialist
+                                              .first_name
+                                          }
+                                          className="w-4 h-4 rounded-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-semibold text-primary">
+                                          {
+                                            appointmentService.specialist
+                                              .first_name[0]
+                                          }
+                                        </div>
+                                      )}
+                                      <span className="text-xs text-muted-foreground">
+                                        {
+                                          appointmentService.specialist
+                                            .first_name
+                                        }{' '}
+                                        {appointmentService.specialist
+                                          .last_name || ''}
+                                      </span>
+                                      {appointmentService.start_time &&
+                                        appointmentService.end_time && (
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1 ml-2">
+                                            <Clock className="h-3 w-3" />
+                                            {formatTime(
+                                              appointmentService.start_time
+                                            )}{' '}
+                                            -{' '}
+                                            {formatTime(
+                                              appointmentService.end_time
+                                            )}
+                                          </span>
+                                        )}
+                                    </div>
+                                  )}
+                                  {!appointmentService.specialist &&
+                                    appointmentService.start_time &&
+                                    appointmentService.end_time && (
+                                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                        <Clock className="h-3 w-3" />
+                                        {formatTime(
+                                          appointmentService.start_time
+                                        )}{' '}
+                                        -{' '}
+                                        {formatTime(
+                                          appointmentService.end_time
+                                        )}
+                                      </div>
+                                    )}
                                   {appointmentService.service.description && (
                                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                       {appointmentService.service.description}
