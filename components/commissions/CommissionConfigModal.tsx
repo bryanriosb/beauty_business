@@ -217,16 +217,6 @@ export function CommissionConfigModal({
                         max={commissionType === 'percentage' ? 100 : undefined}
                         {...field}
                       />
-                      {/* <Input
-                        type="number"
-                        step={commissionType === 'percentage' ? '0.1' : '1'}
-                        min={0}
-                        max={commissionType === 'percentage' ? 100 : undefined}
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseFloat(e.target.value) || 0)
-                        }
-                      /> */}
                     </FormControl>
                     <FormMessage />
                   </FormItem>
