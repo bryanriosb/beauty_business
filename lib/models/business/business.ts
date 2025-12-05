@@ -10,6 +10,7 @@ export interface Business {
   state: string
   location: string | null // Geography point
   phone_number: string | null
+  nit: string | null
   gallery_cover_image_url: string | null
   type: BusinessType
   avg_rating: number
@@ -29,6 +30,7 @@ export class Business implements Business {
   state: string
   location: string | null
   phone_number: string | null
+  nit: string | null
   gallery_cover_image_url: string | null
   type: BusinessType
   avg_rating: number
@@ -47,6 +49,7 @@ export class Business implements Business {
     this.location = data.location
     this.state = data.state
     this.phone_number = data.phone_number
+    this.nit = data.nit
     this.gallery_cover_image_url = data.gallery_cover_image_url
     this.type = data.type
     this.avg_rating = data.avg_rating
@@ -66,6 +69,7 @@ export interface BusinessInsert {
   state: string
   location?: string | null
   phone_number?: string | null
+  nit?: string | null
   gallery_cover_image_url?: string | null
   type?: BusinessType
   logo_url?: string | null
@@ -79,6 +83,7 @@ export interface BusinessUpdate {
   state?: string
   location?: string | null
   phone_number?: string | null
+  nit?: string | null
   gallery_cover_image_url?: string | null
   type?: BusinessType
   avg_rating?: number
