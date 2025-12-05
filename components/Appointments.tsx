@@ -407,6 +407,8 @@ export default function Appointments() {
                 name: businessData.name,
                 address: businessData.address,
                 phone: businessData.phone_number || undefined,
+                nit: businessData.nit || undefined,
+                business_account_id: activeBusiness?.business_account_id,
               }
             : undefined
         }

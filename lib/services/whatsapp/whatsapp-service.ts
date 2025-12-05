@@ -617,4 +617,96 @@ Tu opinion es muy importante para nosotros. Nos encantaria saber como fue tu exp
 
     return { success: result.success, error: result.error }
   }
+
+  /**
+   * Envia comprobante de abono por WhatsApp
+   */
+  async sendPaymentReceipt(params: {
+    business_account_id: string
+    business_id: string
+    customer_phone: string
+    customer_name: string
+    business_name: string
+    business_address?: string
+    business_phone?: string
+    business_nit?: string
+    payment_amount_cents: number
+    payment_method: string
+    payment_date: Date
+    payment_notes?: string
+    receipt_number: string
+    appointment_date: Date
+    services: Array<{ name: string; price_cents: number }>
+    total_price_cents: number
+    total_paid_cents: number
+    balance_due_cents: number
+  }): Promise<{ success: boolean; error?: string }> {
+    const paymentDate = new Date(params.payment_date)
+    const appointmentDate = new Date(params.appointment_date)
+
+    const formatDate = (date: Date) => {
+      const days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
+      const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+      return `${date.getDate()} de ${months[date.getMonth()]} ${date.getFullYear()}`
+    }
+
+    const formatDateTime = (date: Date) => {
+      const hours = date.getHours()
+      const minutes = date.getMinutes()
+      const ampm = hours >= 12 ? 'PM' : 'AM'
+      const h = hours % 12 || 12
+      const m = minutes < 10 ? '0' + minutes : minutes
+      return `${formatDate(date)}, ${h}:${m} ${ampm}`
+    }
+
+    const servicesList = params.services.map((s) => `   • ${s.name}`).join('\n')
+
+    const message = `🧾 *COMPROBANTE DE ABONO*
+
+━━━━━━━━━━━━━━━━━━━━━
+
+📍 *${params.business_name}*${params.business_address ? `\n${params.business_address}` : ''}${params.business_phone ? `\nTel: ${params.business_phone}` : ''}${params.business_nit ? `\nNIT: ${params.business_nit}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+👤 *Cliente:* ${params.customer_name}
+📅 *Cita:* ${formatDate(appointmentDate)}
+🕐 *Fecha abono:* ${formatDateTime(paymentDate)}
+🔢 *No. Recibo:* ${params.receipt_number}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+💇 *Servicios:*
+${servicesList}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+💰 *RESUMEN DE PAGO*
+
+Total servicios: $${(params.total_price_cents / 100).toLocaleString('es-CO')}
+Total abonado: $${(params.total_paid_cents / 100).toLocaleString('es-CO')}
+*Saldo pendiente: $${(params.balance_due_cents / 100).toLocaleString('es-CO')}*
+
+━━━━━━━━━━━━━━━━━━━━━
+
+✅ *ABONO REGISTRADO*
+
+💵 *Monto: $${(params.payment_amount_cents / 100).toLocaleString('es-CO')}*
+📝 Método: ${params.payment_method}${params.payment_notes ? `\n📌 Nota: ${params.payment_notes}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+_Este mensaje es un comprobante de su abono._
+_¡Gracias por su preferencia!_ ✨`
+
+    const result = await this.sendTextMessage({
+      business_account_id: params.business_account_id,
+      business_id: params.business_id,
+      to: params.customer_phone,
+      message,
+      customer_name: params.customer_name,
+    })
+
+    return { success: result.success, error: result.error }
+  }
 }

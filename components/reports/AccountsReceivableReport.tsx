@@ -34,6 +34,7 @@ interface AccountsReceivableReportProps {
     address?: string
     phone?: string
     nit?: string
+    business_account_id?: string
   }
 }
 

@@ -171,7 +171,10 @@ export default function ReportsPage() {
             endDate={dateRangeProps.endDate}
             businessData={
               activeBusiness
-                ? { name: activeBusiness.name }
+                ? {
+                    name: activeBusiness.name,
+                    business_account_id: activeBusiness.business_account_id,
+                  }
                 : undefined
             }
           />

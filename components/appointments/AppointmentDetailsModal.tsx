@@ -54,6 +54,7 @@ interface AppointmentDetailsModalProps {
     address?: string
     phone?: string
     nit?: string
+    business_account_id?: string
   }
   onViewInvoice?: (invoice: Invoice) => void
   currentUserId?: string
@@ -702,6 +703,23 @@ export default function AppointmentDetailsModal({
                     <PaymentHistorySection
                       payments={payments}
                       showDelete={false}
+                      context={businessData ? {
+                        businessName: businessData.name,
+                        businessAddress: businessData.address,
+                        businessPhone: businessData.phone,
+                        businessNit: businessData.nit,
+                        businessAccountId: businessData.business_account_id || undefined,
+                        customerName: appointment.user_profile?.user?.name || 'Cliente',
+                        customerPhone: appointment.user_profile?.user?.phone,
+                        appointmentDate: appointment.start_time,
+                        services: appointment.appointment_services?.map(s => ({
+                          name: s.service.name,
+                          price_cents: s.price_at_booking_cents
+                        })) || [],
+                        totalPriceCents: appointment.total_price_cents,
+                        totalPaidCents: appointment.amount_paid_cents || 0,
+                        balanceDueCents: balanceDueCents,
+                      } : undefined}
                     />
                   </div>
                 </div>
@@ -726,6 +744,23 @@ export default function AppointmentDetailsModal({
                       payments={payments}
                       onDeletePayment={handleDeletePayment}
                       isDeleting={isDeletingPayment}
+                      context={businessData ? {
+                        businessName: businessData.name,
+                        businessAddress: businessData.address,
+                        businessPhone: businessData.phone,
+                        businessNit: businessData.nit,
+                        businessAccountId: businessData.business_account_id || undefined,
+                        customerName: appointment.user_profile?.user?.name || 'Cliente',
+                        customerPhone: appointment.user_profile?.user?.phone,
+                        appointmentDate: appointment.start_time,
+                        services: appointment.appointment_services?.map(s => ({
+                          name: s.service.name,
+                          price_cents: s.price_at_booking_cents
+                        })) || [],
+                        totalPriceCents: appointment.total_price_cents,
+                        totalPaidCents: appointment.amount_paid_cents || 0,
+                        balanceDueCents: balanceDueCents,
+                      } : undefined}
                     />
                   </div>
                 </div>
