@@ -11,6 +11,7 @@ import {
   Package,
   Warehouse,
   Percent,
+  ClipboardList,
 } from 'lucide-react'
 import { USER_ROLES, type UserRole } from './roles'
 
@@ -81,6 +82,12 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Clientes',
     url: '/admin/customers',
     icon: Users,
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
+  },
+  {
+    title: 'Historias Clínicas',
+    url: '/admin/medical-records',
+    icon: ClipboardList,
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN, USER_ROLES.PROFESSIONAL],
   },
   {

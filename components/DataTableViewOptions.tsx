@@ -32,7 +32,7 @@ export function DataTableViewOptions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[150px]">
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>Columnas</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {table
           .getAllColumns()
@@ -42,9 +42,10 @@ export function DataTableViewOptions<TData>({
           )
           .map((column) => {
             // Usar el header de la columna si está disponible, sino usar el id
-            const displayName = typeof column.columnDef.header === 'string'
-              ? column.columnDef.header
-              : column.id
+            const displayName =
+              typeof column.columnDef.header === 'string'
+                ? column.columnDef.header
+                : column.id
 
             return (
               <DropdownMenuCheckboxItem

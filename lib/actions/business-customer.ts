@@ -348,6 +348,30 @@ export async function searchBusinessCustomersAction(
   }
 }
 
+export async function getRecentBusinessCustomersAction(
+  businessId: string,
+  limit: number = 10
+): Promise<BusinessCustomer[]> {
+  try {
+    const supabase = await getSupabaseAdminClient()
+
+    const { data, error } = await supabase
+      .from('business_customers')
+      .select('*')
+      .eq('business_id', businessId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+
+    return data || []
+  } catch (error) {
+    console.error('Error fetching recent business customers:', error)
+    return []
+  }
+}
+
 export async function incrementCustomerVisitAction(
   businessCustomerId: string,
   amountCents: number

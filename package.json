@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test": "bun test --watch",
+    "test:run": "bun test",
+    "test:coverage": "bun test --coverage"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.873.0",
