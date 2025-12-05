@@ -745,7 +745,7 @@ async function sendAppointmentStatusNotifications(
 
     // COMPLETADA
     if (params.newStatus === 'COMPLETED' && params.currentStatus !== 'COMPLETED') {
-      await whatsappService.sendAppointmentCompleted({
+      const result = await whatsappService.sendAppointmentCompleted({
         business_account_id: business.business_account_id,
         business_id: params.businessId,
         customer_phone: customerPhone,
@@ -754,6 +754,9 @@ async function sendAppointmentStatusNotifications(
         specialist_name: specialistName,
         business_name: business.name,
       })
+      if (!result.success) {
+        console.error('Error sending appointment completed notification:', result.error)
+      }
       return
     }
   }

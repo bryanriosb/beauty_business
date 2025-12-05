@@ -74,11 +74,21 @@ async function callWhatsAppAPI(
   payload: Record<string, unknown>
 ): Promise<{ success: boolean; data?: WhatsAppAPIResponse; error?: string }> {
   try {
-    console.log('📤 WhatsApp API request:', {
+    const messageType = payload.type as string
+    const logInfo: Record<string, unknown> = {
       phoneNumberId,
-      template: (payload.template as Record<string, unknown>)?.name,
-      language: (payload.template as Record<string, unknown>)?.language,
-    })
+      type: messageType,
+    }
+
+    if (messageType === 'template') {
+      logInfo.template = (payload.template as Record<string, unknown>)?.name
+      logInfo.language = (payload.template as Record<string, unknown>)?.language
+    } else if (messageType === 'text') {
+      const textBody = (payload.text as Record<string, unknown>)?.body as string
+      logInfo.preview = textBody?.substring(0, 50) + (textBody?.length > 50 ? '...' : '')
+    }
+
+    console.log('📤 WhatsApp API request:', logInfo)
     const response = await fetch(
       `${WHATSAPP_API_URL}/${WHATSAPP_API_VERSION}/${phoneNumberId}/messages`,
       {

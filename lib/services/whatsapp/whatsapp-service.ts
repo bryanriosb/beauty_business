@@ -547,7 +547,8 @@ Estamos comprometidos a brindarte la mejor experiencia. Si tienes alguna pregunt
   }
 
   /**
-   * Envia mensaje despues de completar una cita
+   * Envia mensaje despues de completar una cita usando plantilla aprobada de Meta
+   * Si falla, intenta con mensaje de texto (solo funciona si hay conversacion activa)
    */
   async sendAppointmentCompleted(params: {
     business_account_id: string
@@ -559,6 +560,32 @@ Estamos comprometidos a brindarte la mejor experiencia. Si tienes alguna pregunt
     business_name: string
   }): Promise<{ success: boolean; error?: string }> {
     const servicesList = params.services.map((s) => s.name).join(', ')
+
+    const templateResult = await this.sendTemplateMessage({
+      business_account_id: params.business_account_id,
+      business_id: params.business_id,
+      to: params.customer_phone,
+      template_name: 'appointment_completed',
+      language_code: 'es_CO',
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: params.customer_name },
+            { type: 'text', text: params.business_name },
+            { type: 'text', text: servicesList },
+            { type: 'text', text: params.specialist_name },
+          ],
+        },
+      ],
+      customer_name: params.customer_name,
+    })
+
+    if (templateResult.success) {
+      return { success: true }
+    }
+
+    console.log('Template failed, trying text message:', templateResult.error)
 
     const message = `💖 *¡GRACIAS POR TU VISITA!*
 
