@@ -69,17 +69,15 @@ export async function fetchBusinessAccountsAction(params?: {
 }
 
 export async function createBusinessAccountAction(
-  data: BusinessAccountInsert
+  data: BusinessAccountInsert,
+  startTrial: boolean = true
 ): Promise<{ data: BusinessAccount | null; error: string | null }> {
   try {
-    // Verificar que el usuario sea company_admin
     const currentUser = await getCurrentUser()
     if (!currentUser || currentUser.role !== USER_ROLES.COMPANY_ADMIN) {
       return { data: null, error: 'No tienes permisos para crear cuentas de negocio' }
     }
 
-    // Usar cliente admin para bypass RLS al crear cuentas
-    // La validación del created_by se hace a nivel de aplicación
     const client = await getSupabaseAdminClient()
     const { data: account, error } = await client
       .from('business_accounts')
@@ -88,6 +86,27 @@ export async function createBusinessAccountAction(
       .single()
 
     if (error) throw error
+
+    if (startTrial && account) {
+      const { error: trialError } = await client.rpc('start_trial_for_account', {
+        p_business_account_id: account.id,
+        p_custom_trial_days: data.custom_trial_days ?? null,
+      })
+
+      if (trialError) {
+        console.error('Error starting trial for new account:', trialError)
+      } else {
+        const { data: updatedAccount } = await client
+          .from('business_accounts')
+          .select()
+          .eq('id', account.id)
+          .single()
+
+        if (updatedAccount) {
+          return { data: updatedAccount, error: null }
+        }
+      }
+    }
 
     return { data: account, error: null }
   } catch (error: any) {

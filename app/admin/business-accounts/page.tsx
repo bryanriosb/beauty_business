@@ -11,11 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, Trash2, Users } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Users, Eye, Clock } from 'lucide-react'
 import BusinessAccountService from '@/lib/services/business-account/business-account-service'
 import { BUSINESS_ACCOUNTS_COLUMNS } from '@/lib/models/business-account/const/data-table/business-accounts-columns'
 import { BusinessAccountModal } from '@/components/business-accounts/BusinessAccountModal'
 import { BusinessAccountMembersModal } from '@/components/business-accounts/BusinessAccountMembersModal'
+import { BusinessAccountDetailModal } from '@/components/business-accounts/BusinessAccountDetailModal'
+import { TrialAssignmentModal } from '@/components/trial'
 import { useRef, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import type {
@@ -34,9 +36,12 @@ export default function BusinessAccountsPage() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [membersModalOpen, setMembersModalOpen] = useState(false)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] =
+    useState<BusinessAccount | null>(null)
+  const [selectedAccountForDetail, setSelectedAccountForDetail] =
     useState<BusinessAccount | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null)
   const [accountsToDelete, setAccountsToDelete] = useState<string[]>([])
@@ -45,6 +50,11 @@ export default function BusinessAccountsPage() {
     name: string
     contactName?: string
     contactEmail?: string
+  } | null>(null)
+  const [trialModalOpen, setTrialModalOpen] = useState(false)
+  const [selectedAccountForTrial, setSelectedAccountForTrial] = useState<{
+    id: string
+    name: string
   } | null>(null)
 
   const searchConfig: SearchConfig = useMemo(
@@ -66,6 +76,11 @@ export default function BusinessAccountsPage() {
     setModalOpen(true)
   }
 
+  const handleViewDetail = (account: BusinessAccount) => {
+    setSelectedAccountForDetail(account)
+    setDetailModalOpen(true)
+  }
+
   const handleManageMembers = (account: BusinessAccount) => {
     setSelectedAccountForMembers({
       id: account.id,
@@ -74,6 +89,14 @@ export default function BusinessAccountsPage() {
       contactEmail: account.contact_email,
     })
     setMembersModalOpen(true)
+  }
+
+  const handleManageTrial = (account: BusinessAccount) => {
+    setSelectedAccountForTrial({
+      id: account.id,
+      name: account.company_name,
+    })
+    setTrialModalOpen(true)
   }
 
   const handleDeleteAccount = (accountId: string) => {
@@ -198,6 +221,12 @@ export default function BusinessAccountsPage() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleViewDetail(account)}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver detalle
+                  </DropdownMenuItem>
                   {canEdit && (
                     <DropdownMenuItem
                       onClick={() => handleEditAccount(account)}
@@ -212,6 +241,14 @@ export default function BusinessAccountsPage() {
                     >
                       <Users className="mr-2 h-4 w-4" />
                       Miembros Administrativos
+                    </DropdownMenuItem>
+                  )}
+                  {canEditFull && (
+                    <DropdownMenuItem
+                      onClick={() => handleManageTrial(account)}
+                    >
+                      <Clock className="mr-2 h-4 w-4" />
+                      Período de Prueba
                     </DropdownMenuItem>
                   )}
                   {canDelete && (
@@ -287,6 +324,12 @@ export default function BusinessAccountsPage() {
         />
       )}
 
+      <BusinessAccountDetailModal
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        account={selectedAccountForDetail}
+      />
+
       <ConfirmDeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
@@ -302,6 +345,16 @@ export default function BusinessAccountsPage() {
         count={accountsToDelete.length}
         variant="outline"
       />
+
+      {selectedAccountForTrial && (
+        <TrialAssignmentModal
+          open={trialModalOpen}
+          onOpenChange={setTrialModalOpen}
+          accountId={selectedAccountForTrial.id}
+          accountName={selectedAccountForTrial.name}
+          onSuccess={() => dataTableRef.current?.refreshData()}
+        />
+      )}
     </div>
   )
 }

@@ -19,6 +19,8 @@ export interface BusinessAccount {
   trial_ends_at: string | null
   subscription_started_at: string | null
   settings: Record<string, unknown> | null
+  plan_id: string | null
+  custom_trial_days: number | null
   created_by: string
   created_at: string
   updated_at: string
@@ -42,6 +44,8 @@ export class BusinessAccount implements BusinessAccount {
   trial_ends_at: string | null
   subscription_started_at: string | null
   settings: Record<string, unknown> | null
+  plan_id: string | null
+  custom_trial_days: number | null
   created_by: string
   created_at: string
   updated_at: string
@@ -64,6 +68,8 @@ export class BusinessAccount implements BusinessAccount {
     this.trial_ends_at = data.trial_ends_at
     this.subscription_started_at = data.subscription_started_at
     this.settings = data.settings
+    this.plan_id = data.plan_id
+    this.custom_trial_days = data.custom_trial_days
     this.created_by = data.created_by
     this.created_at = data.created_at
     this.updated_at = data.updated_at
@@ -78,15 +84,9 @@ export class BusinessAccount implements BusinessAccount {
     return new Date(this.trial_ends_at) > new Date()
   }
 
+  /** @deprecated Use canCreateBusinessInAccountAction instead - this method doesn't check actual business count */
   canCreateBusiness(): boolean {
-    const limits = {
-      trial: 1,
-      free: 1,
-      basic: 3,
-      pro: 10,
-      enterprise: Infinity,
-    }
-    return this.isActive() && limits[this.subscription_plan] > 0
+    return this.isActive() && this.plan_id !== null
   }
 }
 
@@ -107,6 +107,8 @@ export interface BusinessAccountInsert {
   trial_ends_at?: string | null
   subscription_started_at?: string | null
   settings?: Record<string, unknown> | null
+  plan_id?: string | null
+  custom_trial_days?: number | null
   created_by: string
 }
 
@@ -127,4 +129,6 @@ export interface BusinessAccountUpdate {
   trial_ends_at?: string | null
   subscription_started_at?: string | null
   settings?: Record<string, unknown> | null
+  plan_id?: string | null
+  custom_trial_days?: number | null
 }

@@ -10,10 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react'
 import BusinessService from '@/lib/services/business/business-service'
 import { BUSINESSES_COLUMNS } from '@/lib/models/business/const/data-table/businesses-columns'
 import { BusinessModal } from '@/components/businesses/BusinessModal'
+import { BusinessDetailModal } from '@/components/businesses/BusinessDetailModal'
 import { useRef, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useCurrentUser } from '@/hooks/use-current-user'
@@ -26,9 +27,11 @@ export default function BusinessesPage() {
   const dataTableRef = useRef<DataTableRef>(null)
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false)
   const [selectedBusiness, setSelectedBusiness] = useState<BusinessWithAccount | null>(null)
+  const [selectedBusinessForDetail, setSelectedBusinessForDetail] = useState<BusinessWithAccount | null>(null)
   const [businessToDelete, setBusinessToDelete] = useState<string | null>(null)
   const [businessesToDelete, setBusinessesToDelete] = useState<string[]>([])
 
@@ -79,6 +82,11 @@ export default function BusinessesPage() {
   const handleEditBusiness = (business: BusinessWithAccount) => {
     setSelectedBusiness(business)
     setModalOpen(true)
+  }
+
+  const handleViewDetail = (business: BusinessWithAccount) => {
+    setSelectedBusinessForDetail(business)
+    setDetailModalOpen(true)
   }
 
   const handleDeleteBusiness = (businessId: string) => {
@@ -186,6 +194,12 @@ export default function BusinessesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleViewDetail(business)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        Ver detalle
+                      </DropdownMenuItem>
                       {canEdit && (
                         <DropdownMenuItem
                           onClick={() => handleEditBusiness(business)}
@@ -226,6 +240,12 @@ export default function BusinessesPage() {
         onOpenChange={setModalOpen}
         business={selectedBusiness}
         onSave={handleSaveBusiness}
+      />
+
+      <BusinessDetailModal
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        business={selectedBusinessForDetail}
       />
 
       <ConfirmDeleteDialog
