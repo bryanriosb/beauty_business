@@ -18,12 +18,14 @@ import { useCurrentUser } from '@/hooks/use-current-user'
 import { NavMain } from './NavMain'
 import { BusinessSwitcher } from './BusinessSwitcher'
 import { LowStockAlertBadge } from './inventory/LowStockAlert'
+import { useSidebarAccess } from '@/hooks/use-sidebar-access'
 import Image from 'next/image'
 
 export function AppSidebar() {
   const { role } = useCurrentUser()
 
-  const filteredAppItems = useMemo(() => {
+  // Filtrar por rol primero
+  const roleFilteredAppItems = useMemo(() => {
     const items = SIDE_APP_MENU_ITEMS.filter((item) =>
       role ? item.allowedRoles.includes(role) : false
     )
@@ -40,9 +42,15 @@ export function AppSidebar() {
     })
   }, [role])
 
-  const filteredSystemItems = SIDE_SYSTEM_MENU_ITEMS.filter((item) =>
-    role ? item.allowedRoles.includes(role) : false
-  )
+  const roleFilteredSystemItems = useMemo(() => {
+    return SIDE_SYSTEM_MENU_ITEMS.filter((item) =>
+      role ? item.allowedRoles.includes(role) : false
+    )
+  }, [role])
+
+  // Luego filtrar por acceso del plan
+  const { filteredItems: planFilteredAppItems } = useSidebarAccess(roleFilteredAppItems)
+  const { filteredItems: planFilteredSystemItems } = useSidebarAccess(roleFilteredSystemItems)
 
   return (
     <Sidebar collapsible="icon">
@@ -60,11 +68,11 @@ export function AppSidebar() {
         <BusinessSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        {filteredAppItems.length > 0 && (
-          <NavMain items={filteredAppItems} label="Aplicación" userRole={role} />
+        {planFilteredAppItems.length > 0 && (
+          <NavMain items={planFilteredAppItems} label="Aplicación" userRole={role} />
         )}
-        {filteredSystemItems.length > 0 && (
-          <NavMain items={filteredSystemItems} label="Sistema" userRole={role} />
+        {planFilteredSystemItems.length > 0 && (
+          <NavMain items={planFilteredSystemItems} label="Sistema" userRole={role} />
         )}
       </SidebarContent>
       <SidebarFooter>

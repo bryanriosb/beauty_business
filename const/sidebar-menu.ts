@@ -16,10 +16,27 @@ import {
 } from 'lucide-react'
 import { USER_ROLES, type UserRole } from './roles'
 
+export type ModuleCode =
+  | 'dashboard'
+  | 'appointments'
+  | 'services'
+  | 'products'
+  | 'inventory'
+  | 'specialists'
+  | 'customers'
+  | 'medical_records'
+  | 'commissions'
+  | 'reports'
+  | 'invoices'
+  | 'ai_assistant'
+  | 'whatsapp'
+  | 'settings'
+
 export interface MenuSubItem {
   title: string
   url: string
   allowedRoles?: UserRole[]
+  moduleCode?: ModuleCode
 }
 
 export interface MenuItem {
@@ -28,6 +45,8 @@ export interface MenuItem {
   icon: any
   allowedRoles: UserRole[]
   items?: MenuSubItem[]
+  moduleCode?: ModuleCode // Código del módulo para verificar acceso del plan
+  skipPlanCheck?: boolean // Para menús del sistema que no requieren verificación de plan
 }
 
 export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
@@ -35,6 +54,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Tablero',
     url: '/admin',
     icon: LayoutDashboard,
+    moduleCode: 'dashboard',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -45,6 +65,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Citas',
     url: '/admin/appointments',
     icon: Calendar,
+    moduleCode: 'appointments',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -55,6 +76,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Servicios',
     url: '/admin/services',
     icon: Scissors,
+    moduleCode: 'services',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -65,6 +87,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Productos',
     url: '/admin/products',
     icon: Package,
+    moduleCode: 'products',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -75,6 +98,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Inventario',
     url: '/admin/inventory',
     icon: Warehouse,
+    moduleCode: 'inventory',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -85,6 +109,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Especialistas',
     url: '/admin/specialists/goals',
     icon: UserCircle,
+    moduleCode: 'specialists',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -111,6 +136,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Clientes',
     url: '/admin/customers',
     icon: Users,
+    moduleCode: 'customers',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -121,6 +147,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Historias Clínicas',
     url: '/admin/medical-records',
     icon: ClipboardList,
+    moduleCode: 'medical_records',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -131,6 +158,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Comisiones',
     url: '/admin/commissions',
     icon: Percent,
+    moduleCode: 'commissions',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -141,12 +169,14 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     title: 'Reportes',
     url: '/admin/reports',
     icon: BarChart3,
+    moduleCode: 'reports',
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
   {
     title: 'Facturas',
     url: '/admin/invoices',
     icon: FileStack,
+    moduleCode: 'invoices',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -160,6 +190,7 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
     title: 'Planes',
     url: '/admin/plans',
     icon: CreditCard,
+    skipPlanCheck: true, // Menú del sistema, no requiere verificación de plan
     allowedRoles: [USER_ROLES.COMPANY_ADMIN],
     items: [
       {
@@ -176,6 +207,7 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
     title: 'Cuentas',
     url: '/admin/businesses',
     icon: Building2,
+    skipPlanCheck: true, // Menú del sistema
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
     items: [
       {
@@ -192,6 +224,7 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
     title: 'Configuración',
     url: '/admin/settings',
     icon: Settings,
+    moduleCode: 'settings',
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
     items: [
       {
@@ -214,11 +247,13 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
       {
         title: 'Asistente IA',
         url: '/admin/settings/ai-agent',
+        moduleCode: 'ai_assistant',
       },
       {
         title: 'WhatsApp',
         url: '/admin/settings/whatsapp',
         allowedRoles: [USER_ROLES.COMPANY_ADMIN],
+        moduleCode: 'whatsapp',
       },
     ],
   },

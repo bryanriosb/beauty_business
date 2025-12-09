@@ -390,7 +390,7 @@ export default function AppointmentDetailsModal({
                       {isMultiple ? (
                         <Users className="!h-5 !w-5 text-muted-foreground mt-0.5" />
                       ) : (
-                        <User className="!h-5 !w-5 text-muted-foreground mt-0.5" />
+                        <User className="!h-7 !w-7 text-muted-foreground mt-0.5" />
                       )}
                       <div className="flex items-center gap-3">
                         <div className="flex-shrink-0">
@@ -703,23 +703,33 @@ export default function AppointmentDetailsModal({
                     <PaymentHistorySection
                       payments={payments}
                       showDelete={false}
-                      context={businessData ? {
-                        businessName: businessData.name,
-                        businessAddress: businessData.address,
-                        businessPhone: businessData.phone,
-                        businessNit: businessData.nit,
-                        businessAccountId: businessData.business_account_id || undefined,
-                        customerName: appointment.user_profile?.user?.name || 'Cliente',
-                        customerPhone: appointment.user_profile?.user?.phone,
-                        appointmentDate: appointment.start_time,
-                        services: appointment.appointment_services?.map(s => ({
-                          name: s.service.name,
-                          price_cents: s.price_at_booking_cents
-                        })) || [],
-                        totalPriceCents: appointment.total_price_cents,
-                        totalPaidCents: appointment.amount_paid_cents || 0,
-                        balanceDueCents: balanceDueCents,
-                      } : undefined}
+                      context={
+                        businessData
+                          ? {
+                              businessName: businessData.name,
+                              businessAddress: businessData.address,
+                              businessPhone: businessData.phone,
+                              businessNit: businessData.nit,
+                              businessAccountId:
+                                businessData.business_account_id || undefined,
+                              customerName:
+                                appointment.user_profile?.user?.name ||
+                                'Cliente',
+                              customerPhone:
+                                appointment.user_profile?.user?.phone,
+                              appointmentDate: appointment.start_time,
+                              services:
+                                appointment.appointment_services?.map((s) => ({
+                                  name: s.service.name,
+                                  price_cents: s.price_at_booking_cents,
+                                })) || [],
+                              totalPriceCents: appointment.total_price_cents,
+                              totalPaidCents:
+                                appointment.amount_paid_cents || 0,
+                              balanceDueCents: balanceDueCents,
+                            }
+                          : undefined
+                      }
                     />
                   </div>
                 </div>
@@ -744,23 +754,33 @@ export default function AppointmentDetailsModal({
                       payments={payments}
                       onDeletePayment={handleDeletePayment}
                       isDeleting={isDeletingPayment}
-                      context={businessData ? {
-                        businessName: businessData.name,
-                        businessAddress: businessData.address,
-                        businessPhone: businessData.phone,
-                        businessNit: businessData.nit,
-                        businessAccountId: businessData.business_account_id || undefined,
-                        customerName: appointment.user_profile?.user?.name || 'Cliente',
-                        customerPhone: appointment.user_profile?.user?.phone,
-                        appointmentDate: appointment.start_time,
-                        services: appointment.appointment_services?.map(s => ({
-                          name: s.service.name,
-                          price_cents: s.price_at_booking_cents
-                        })) || [],
-                        totalPriceCents: appointment.total_price_cents,
-                        totalPaidCents: appointment.amount_paid_cents || 0,
-                        balanceDueCents: balanceDueCents,
-                      } : undefined}
+                      context={
+                        businessData
+                          ? {
+                              businessName: businessData.name,
+                              businessAddress: businessData.address,
+                              businessPhone: businessData.phone,
+                              businessNit: businessData.nit,
+                              businessAccountId:
+                                businessData.business_account_id || undefined,
+                              customerName:
+                                appointment.user_profile?.user?.name ||
+                                'Cliente',
+                              customerPhone:
+                                appointment.user_profile?.user?.phone,
+                              appointmentDate: appointment.start_time,
+                              services:
+                                appointment.appointment_services?.map((s) => ({
+                                  name: s.service.name,
+                                  price_cents: s.price_at_booking_cents,
+                                })) || [],
+                              totalPriceCents: appointment.total_price_cents,
+                              totalPaidCents:
+                                appointment.amount_paid_cents || 0,
+                              balanceDueCents: balanceDueCents,
+                            }
+                          : undefined
+                      }
                     />
                   </div>
                 </div>
