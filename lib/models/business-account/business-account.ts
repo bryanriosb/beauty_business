@@ -1,3 +1,5 @@
+import type { BillingCycle, PaymentStatus } from '@/lib/models/subscription/subscription'
+
 export type SubscriptionPlan = 'trial' | 'free' | 'basic' | 'pro' | 'enterprise'
 export type AccountStatus = 'active' | 'suspended' | 'cancelled' | 'trial'
 
@@ -24,6 +26,14 @@ export interface BusinessAccount {
   created_by: string
   created_at: string
   updated_at: string
+  mp_subscription_id: string | null
+  mp_customer_id: string | null
+  billing_cycle: BillingCycle | null
+  subscription_expires_at: string | null
+  last_payment_at: string | null
+  payment_status: PaymentStatus
+  payment_method_last4: string | null
+  payment_method_brand: string | null
 }
 
 export class BusinessAccount implements BusinessAccount {
@@ -49,6 +59,14 @@ export class BusinessAccount implements BusinessAccount {
   created_by: string
   created_at: string
   updated_at: string
+  mp_subscription_id: string | null
+  mp_customer_id: string | null
+  billing_cycle: BillingCycle | null
+  subscription_expires_at: string | null
+  last_payment_at: string | null
+  payment_status: PaymentStatus
+  payment_method_last4: string | null
+  payment_method_brand: string | null
 
   constructor(data: BusinessAccount) {
     this.id = data.id
@@ -73,6 +91,14 @@ export class BusinessAccount implements BusinessAccount {
     this.created_by = data.created_by
     this.created_at = data.created_at
     this.updated_at = data.updated_at
+    this.mp_subscription_id = data.mp_subscription_id
+    this.mp_customer_id = data.mp_customer_id
+    this.billing_cycle = data.billing_cycle
+    this.subscription_expires_at = data.subscription_expires_at
+    this.last_payment_at = data.last_payment_at
+    this.payment_status = data.payment_status
+    this.payment_method_last4 = data.payment_method_last4
+    this.payment_method_brand = data.payment_method_brand
   }
 
   isActive(): boolean {
@@ -110,6 +136,14 @@ export interface BusinessAccountInsert {
   plan_id?: string | null
   custom_trial_days?: number | null
   created_by: string
+  mp_subscription_id?: string | null
+  mp_customer_id?: string | null
+  billing_cycle?: BillingCycle | null
+  subscription_expires_at?: string | null
+  last_payment_at?: string | null
+  payment_status?: PaymentStatus
+  payment_method_last4?: string | null
+  payment_method_brand?: string | null
 }
 
 export interface BusinessAccountUpdate {
@@ -131,4 +165,12 @@ export interface BusinessAccountUpdate {
   settings?: Record<string, unknown> | null
   plan_id?: string | null
   custom_trial_days?: number | null
+  mp_subscription_id?: string | null
+  mp_customer_id?: string | null
+  billing_cycle?: BillingCycle | null
+  subscription_expires_at?: string | null
+  last_payment_at?: string | null
+  payment_status?: PaymentStatus
+  payment_method_last4?: string | null
+  payment_method_brand?: string | null
 }

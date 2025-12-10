@@ -224,7 +224,7 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
     title: 'Configuración',
     url: '/admin/settings',
     icon: Settings,
-    moduleCode: 'settings',
+    skipPlanCheck: true, // Siempre visible para acceso a suscripción y pagos
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
     items: [
       {
@@ -254,6 +254,11 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
         url: '/admin/settings/whatsapp',
         allowedRoles: [USER_ROLES.COMPANY_ADMIN],
         moduleCode: 'whatsapp',
+      },
+      {
+        title: 'Suscripción y Pagos',
+        url: '/admin/settings/billing',
+        allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
       },
     ],
   },

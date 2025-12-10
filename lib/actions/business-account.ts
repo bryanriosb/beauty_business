@@ -68,6 +68,28 @@ export async function fetchBusinessAccountsAction(params?: {
   }
 }
 
+export async function getBusinessAccountAction(
+  id: string
+): Promise<BusinessAccount | null> {
+  try {
+    const client = await getSupabaseAdminClient()
+    const { data, error } = await client
+      .from('business_accounts')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    return data
+  } catch (error) {
+    console.error('Error fetching business account:', error)
+    return null
+  }
+}
+
 export async function createBusinessAccountAction(
   data: BusinessAccountInsert,
   startTrial: boolean = true

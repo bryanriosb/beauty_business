@@ -22,13 +22,11 @@ const createMockPlan = (overrides?: Partial<Plan>): Plan => ({
   max_users_per_business: 10,
   max_specialists_per_business: 10,
   features: {
-    // Límites de uso
     max_appointments_per_month: null,
     max_products: null,
     max_services: null,
     max_customers: null,
     max_storage_mb: null,
-    // Configuraciones adicionales
     has_custom_branding: false,
     has_priority_support: true,
     has_api_access: false,
@@ -36,6 +34,11 @@ const createMockPlan = (overrides?: Partial<Plan>): Plan => ({
   sort_order: 2,
   created_at: '2024-01-15T10:00:00Z',
   updated_at: '2024-01-15T10:00:00Z',
+  monthly_price_cents: 9900000,
+  yearly_price_cents: 95040000,
+  yearly_discount_percent: 20,
+  mp_plan_monthly_id: null,
+  mp_plan_yearly_id: null,
   ...overrides,
 })
 

@@ -16,6 +16,11 @@ export interface Plan {
   sort_order: number
   created_at: string
   updated_at: string
+  monthly_price_cents: number
+  yearly_price_cents: number
+  yearly_discount_percent: number
+  mp_plan_monthly_id: string | null
+  mp_plan_yearly_id: string | null
 }
 
 // Features ahora solo contiene límites y configuraciones adicionales
@@ -71,6 +76,11 @@ export interface PlanInsert {
   max_specialists_per_business: number
   features: PlanFeatures
   sort_order?: number
+  monthly_price_cents?: number
+  yearly_price_cents?: number
+  yearly_discount_percent?: number
+  mp_plan_monthly_id?: string | null
+  mp_plan_yearly_id?: string | null
 }
 
 export interface PlanUpdate {
@@ -85,6 +95,11 @@ export interface PlanUpdate {
   max_specialists_per_business?: number
   features?: PlanFeatures
   sort_order?: number
+  monthly_price_cents?: number
+  yearly_price_cents?: number
+  yearly_discount_percent?: number
+  mp_plan_monthly_id?: string | null
+  mp_plan_yearly_id?: string | null
 }
 
 export interface PlanModuleInsert {
