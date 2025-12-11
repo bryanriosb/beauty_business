@@ -13,6 +13,8 @@ export interface AuthUser {
   business_account_id?: string | null
   user_profile_id?: string | null
   specialist_id?: string | null
+  business_type?: string | null
+  subscription_plan?: string | null
   businesses?: Array<{
     id: string
     name: string
@@ -142,11 +144,37 @@ export async function authenticateWithSupabase(
     let businesses = null
     let specialistId: string | null = null
     let businessId: string | null = null
+    let businessType: string | null = null
+    let subscriptionPlan: string | null = null
 
     if (userProfile.role === 'business_admin' && membership?.business_account_id) {
       console.log('Fetching businesses for business_admin...')
       businesses = await getAccountBusinesses(membership.business_account_id)
       console.log('Businesses found:', businesses?.length || 0)
+
+      // Obtener el tipo de negocio del primer negocio y el plan de la cuenta
+      if (businesses && businesses.length > 0) {
+        const { data: firstBusiness } = await supabase
+          .from('businesses')
+          .select('type')
+          .eq('id', businesses[0].id)
+          .single()
+
+        if (firstBusiness) {
+          businessType = firstBusiness.type
+        }
+      }
+
+      // Obtener el plan de suscripción de la cuenta
+      const { data: account } = await supabase
+        .from('business_accounts')
+        .select('subscription_plan')
+        .eq('id', membership.business_account_id)
+        .single()
+
+      if (account) {
+        subscriptionPlan = account.subscription_plan
+      }
     }
 
     // Si el usuario es professional, obtener su specialist_id y business_id
@@ -163,12 +191,24 @@ export async function authenticateWithSupabase(
         if (businessId) {
           const { data: business } = await supabase
             .from('businesses')
-            .select('id, name, business_account_id')
+            .select('id, name, business_account_id, type')
             .eq('id', businessId)
             .single()
 
           if (business) {
             businesses = [business]
+            businessType = business.type
+
+            // Obtener el plan de suscripción de la cuenta
+            const { data: account } = await supabase
+              .from('business_accounts')
+              .select('subscription_plan')
+              .eq('id', business.business_account_id)
+              .single()
+
+            if (account) {
+              subscriptionPlan = account.subscription_plan
+            }
           }
         }
       }
@@ -183,6 +223,8 @@ export async function authenticateWithSupabase(
       business_account_id: membership?.business_account_id || null,
       user_profile_id: userProfile.id,
       specialist_id: specialistId,
+      business_type: businessType,
+      subscription_plan: subscriptionPlan,
       businesses,
     }
   } catch (err) {
@@ -256,9 +298,35 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     let businesses = null
     let specialistId: string | null = null
     let businessId: string | null = null
+    let businessType: string | null = null
+    let subscriptionPlan: string | null = null
 
     if (userProfile.role === 'business_admin' && membership?.business_account_id) {
       businesses = await getAccountBusinesses(membership.business_account_id)
+
+      // Obtener el tipo de negocio del primer negocio y el plan de la cuenta
+      if (businesses && businesses.length > 0) {
+        const { data: firstBusiness } = await supabase
+          .from('businesses')
+          .select('type')
+          .eq('id', businesses[0].id)
+          .single()
+
+        if (firstBusiness) {
+          businessType = firstBusiness.type
+        }
+      }
+
+      // Obtener el plan de suscripción de la cuenta
+      const { data: account } = await supabase
+        .from('business_accounts')
+        .select('subscription_plan')
+        .eq('id', membership.business_account_id)
+        .single()
+
+      if (account) {
+        subscriptionPlan = account.subscription_plan
+      }
     }
 
     // Si el usuario es professional, obtener su specialist_id y business_id
@@ -271,12 +339,24 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
         if (businessId) {
           const { data: business } = await supabase
             .from('businesses')
-            .select('id, name, business_account_id')
+            .select('id, name, business_account_id, type')
             .eq('id', businessId)
             .single()
 
           if (business) {
             businesses = [business]
+            businessType = business.type
+
+            // Obtener el plan de suscripción de la cuenta
+            const { data: account } = await supabase
+              .from('business_accounts')
+              .select('subscription_plan')
+              .eq('id', business.business_account_id)
+              .single()
+
+            if (account) {
+              subscriptionPlan = account.subscription_plan
+            }
           }
         }
       }
@@ -291,6 +371,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       business_account_id: membership?.business_account_id || null,
       user_profile_id: userProfile.id,
       specialist_id: specialistId,
+      business_type: businessType,
+      subscription_plan: subscriptionPlan,
       businesses,
     }
   } catch (err) {

@@ -16,6 +16,7 @@ export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
   PLASTIC_SURGERY_CENTER: 'Centro de Cirugía Plástica',
   SALON: 'Salón',
   BEAUTY_STUDIO: 'Estudio de Belleza',
+  CONSULTORY: 'Consultorio',
 }
 
 /**
@@ -31,6 +32,7 @@ export const BUSINESS_TYPES_OPTIONS: { value: BusinessType; label: string }[] = 
   { value: 'EYEBROWS_EYELASHES_SALON', label: 'Salón de Cejas y Pestañas' },
   { value: 'MAKEUP_CENTER', label: 'Centro de Maquillaje' },
   { value: 'PLASTIC_SURGERY_CENTER', label: 'Centro de Cirugía Plástica' },
+  { value: 'CONSULTORY', label: 'Consultorio' },
   { value: 'SALON', label: 'Salón' },
   { value: 'BEAUTY_STUDIO', label: 'Estudio de Belleza' },
   { value: 'INDEPENDENT', label: 'Independiente' },

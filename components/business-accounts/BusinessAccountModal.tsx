@@ -442,8 +442,8 @@ export function BusinessAccountModal({
                       <FormLabel>Ciudad</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Bogotá"
-                          disabled={isSubmitting || isBusinessAdmin}
+                          placeholder="Cali"
+                          disabled={isSubmitting}
                           {...field}
                         />
                       </FormControl>
@@ -460,8 +460,8 @@ export function BusinessAccountModal({
                       <FormLabel>Departamento</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Cundinamarca"
-                          disabled={isSubmitting || isBusinessAdmin}
+                          placeholder="Valle del Cauca"
+                          disabled={isSubmitting}
                           {...field}
                         />
                       </FormControl>

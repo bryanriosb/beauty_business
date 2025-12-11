@@ -37,7 +37,14 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Upload, X, Image as ImageIcon, Loader2, Images, Clock } from 'lucide-react'
+import {
+  Upload,
+  X,
+  Image as ImageIcon,
+  Loader2,
+  Images,
+  Clock,
+} from 'lucide-react'
 import BusinessStorageService from '@/lib/services/business/business-storage-service'
 import { BusinessHoursEditor } from './BusinessHoursEditor'
 import { BusinessType } from '@/lib/types/enums'
@@ -73,6 +80,7 @@ const formSchema = z.object({
     'PLASTIC_SURGERY_CENTER',
     'SALON',
     'BEAUTY_STUDIO',
+    'CONSULTORY',
   ] as const),
 })
 
@@ -154,6 +162,28 @@ export function BusinessModal({
       }
 
       if (business) {
+        // Si el business viene con business_account (BusinessWithAccount), agregarlo a la lista
+        // para que el select pueda mostrar el nombre aunque esté deshabilitado
+        const businessWithAccount = business as BusinessWithAccount
+        if (businessWithAccount.business_account && isCompanyAdmin) {
+          const accountName = businessWithAccount.business_account.company_name
+          setBusinessAccounts((prev) => {
+            // Verificar si la cuenta ya está en la lista
+            const exists = prev.some(
+              (acc) => acc.id === business.business_account_id
+            )
+            if (!exists) {
+              // Crear un objeto BusinessAccount parcial solo para mostrar en el select
+              const partialAccount: BusinessAccount = {
+                id: business.business_account_id,
+                company_name: accountName,
+              } as BusinessAccount
+              return [...prev, partialAccount]
+            }
+            return prev
+          })
+        }
+
         form.reset({
           business_account_id: business.business_account_id,
           name: business.name,
@@ -436,7 +466,9 @@ export function BusinessModal({
                 </TabsTrigger>
                 <TabsTrigger
                   value="gallery"
-                  disabled={!business?.id || (!isCompanyAdmin && !isBusinessAdmin)}
+                  disabled={
+                    !business?.id || (!isCompanyAdmin && !isBusinessAdmin)
+                  }
                 >
                   Galería
                 </TabsTrigger>

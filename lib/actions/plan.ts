@@ -474,28 +474,72 @@ export async function getAllModuleAccessAction(
   try {
     const client = await getSupabaseAdminClient()
 
+    // Obtener la cuenta con el plan y el tipo de negocio
     const { data: account, error: accountError } = await client
       .from('business_accounts')
-      .select('plan_id')
+      .select('plan_id, subscription_plan')
       .eq('id', businessAccountId)
       .single()
 
-    if (accountError || !account?.plan_id) return {}
+    if (accountError || !account) return {}
 
-    const { data: moduleAccessList, error: accessError } = await client
-      .from('plan_module_access')
-      .select('*, module:plan_modules!inner(code)')
-      .eq('plan_id', account.plan_id)
+    // Obtener el tipo de negocio del primer negocio de la cuenta
+    const { data: businesses } = await client
+      .from('businesses')
+      .select('type')
+      .eq('business_account_id', businessAccountId)
+      .limit(1)
 
-    if (accessError || !moduleAccessList) return {}
+    const businessType = businesses?.[0]?.type || null
+    const subscriptionPlan = account.subscription_plan || 'free'
 
-    return moduleAccessList.reduce((acc, access) => {
-      const moduleCode = (access.module as any)?.code
-      if (moduleCode) {
-        acc[moduleCode] = true
+    // Si hay un plan_id, obtener el acceso basado en el plan
+    let planModuleAccess: Record<string, boolean> = {}
+    if (account.plan_id) {
+      const { data: moduleAccessList } = await client
+        .from('plan_module_access')
+        .select('*, module:plan_modules!inner(code)')
+        .eq('plan_id', account.plan_id)
+
+      if (moduleAccessList) {
+        planModuleAccess = moduleAccessList.reduce((acc, access) => {
+          const moduleCode = (access.module as any)?.code
+          if (moduleCode) {
+            acc[moduleCode] = true
+          }
+          return acc
+        }, {} as Record<string, boolean>)
       }
-      return acc
-    }, {} as Record<string, boolean>)
+    }
+
+    // Aplicar validaciones adicionales de tipo de negocio y plan
+    const {
+      hasModuleAccess,
+      MODULES,
+    } = await import('@/lib/config/module-access')
+
+    const finalAccess: Record<string, boolean> = {}
+
+    // Verificar cada módulo
+    for (const moduleKey of Object.values(MODULES)) {
+      // Si el plan permite el módulo, verificar también el tipo de negocio
+      const hasPlanAccess = planModuleAccess[moduleKey] === true
+
+      if (businessType && subscriptionPlan) {
+        // Validar con la configuración completa (tipo de negocio + plan)
+        const hasAccess = hasModuleAccess(
+          moduleKey as any,
+          businessType as any,
+          subscriptionPlan as any
+        )
+        finalAccess[moduleKey] = hasAccess
+      } else {
+        // Si no hay tipo de negocio o plan, solo usar el acceso del plan
+        finalAccess[moduleKey] = hasPlanAccess
+      }
+    }
+
+    return finalAccess
   } catch (error) {
     console.error('Error getting all module access:', error)
     return {}
