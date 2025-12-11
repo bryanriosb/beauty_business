@@ -11,6 +11,7 @@ import type {
   SendTextMessageParams,
   SendTemplateMessageParams,
 } from '@/lib/models/whatsapp/whatsapp-config'
+import { validateFeatureAccess } from '@/lib/helpers/feature-permission-guard'
 
 const WHATSAPP_API_VERSION = 'v21.0'
 const WHATSAPP_API_URL = 'https://graph.facebook.com'
@@ -183,6 +184,16 @@ export async function sendWhatsAppTextMessageAction(
   params: SendTextMessageParams
 ): Promise<{ success: boolean; data?: WhatsAppMessage; error?: string }> {
   try {
+    const permissionCheck = await validateFeatureAccess(
+      params.business_account_id,
+      'appointments',
+      'whatsapp_notifications'
+    )
+
+    if (!permissionCheck.success) {
+      return { success: false, error: permissionCheck.error }
+    }
+
     const config = await getWhatsAppConfig(params.business_account_id, params.business_id)
     if (!config) {
       return { success: false, error: 'WhatsApp no está configurado' }
@@ -247,6 +258,16 @@ export async function sendWhatsAppTemplateMessageAction(
   params: SendTemplateMessageParams
 ): Promise<{ success: boolean; data?: WhatsAppMessage; error?: string }> {
   try {
+    const permissionCheck = await validateFeatureAccess(
+      params.business_account_id,
+      'appointments',
+      'whatsapp_notifications'
+    )
+
+    if (!permissionCheck.success) {
+      return { success: false, error: permissionCheck.error }
+    }
+
     const config = await getWhatsAppConfig(params.business_account_id, params.business_id)
     if (!config) {
       return { success: false, error: 'WhatsApp no está configurado' }

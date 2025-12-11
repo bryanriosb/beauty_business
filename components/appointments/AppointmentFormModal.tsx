@@ -72,6 +72,7 @@ import type {
 } from '@/lib/actions/appointment'
 import type { SelectedSupply } from '@/lib/models/product'
 import { validateStockForSuppliesAction } from '@/lib/actions/inventory'
+import { FeatureGate } from '@/components/plan/feature-gate'
 
 const appointmentFormSchema = z.object({
   business_id: z.string().min(1, 'El negocio es requerido'),
@@ -817,17 +818,28 @@ export default function AppointmentFormModal({
                 {selectedServices.length > 0 && currentDate && (
                   <FormItem>
                     <FormLabel>4. Especialista y Horario</FormLabel>
-                    <ServiceSpecialistAssignmentComponent
-                      businessId={currentBusinessId || effectiveBusinessId}
-                      services={selectedServices}
-                      date={currentDate}
-                      value={serviceSpecialistAssignments}
-                      onChange={handleServiceSpecialistAssignmentsChange}
-                      onPrimarySpecialistChange={handlePrimarySpecialistChange}
-                      onTimesCalculated={handleTimesCalculated}
-                      disabled={isSubmitting}
-                      excludeAppointmentId={appointment?.id}
-                    />
+                    <FeatureGate
+                      module="appointments"
+                      feature="specialist_assignment"
+                      mode="overlay"
+                      fallback={
+                        <div className="p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
+                          Asignación básica de especialistas disponible. Actualiza tu plan para asignar especialistas por servicio.
+                        </div>
+                      }
+                    >
+                      <ServiceSpecialistAssignmentComponent
+                        businessId={currentBusinessId || effectiveBusinessId}
+                        services={selectedServices}
+                        date={currentDate}
+                        value={serviceSpecialistAssignments}
+                        onChange={handleServiceSpecialistAssignmentsChange}
+                        onPrimarySpecialistChange={handlePrimarySpecialistChange}
+                        onTimesCalculated={handleTimesCalculated}
+                        disabled={isSubmitting}
+                        excludeAppointmentId={appointment?.id}
+                      />
+                    </FeatureGate>
                   </FormItem>
                 )}
 

@@ -41,6 +41,7 @@ import PaymentStatusSelector from './PaymentStatusSelector'
 import AddPaymentModal from './AddPaymentModal'
 import PaymentHistorySection from './PaymentHistorySection'
 import type { AppointmentStatus, PaymentStatus } from '@/lib/types/enums'
+import { FeatureGate } from '../plan/feature-gate'
 
 interface AppointmentDetailsModalProps {
   appointmentId: string | null
@@ -741,47 +742,61 @@ export default function AppointmentDetailsModal({
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <p className="font-medium">Abonos</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAddPaymentModal(true)}
+                      <FeatureGate
+                        module="appointments"
+                        feature="credit"
+                        mode="compact"
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Agregar Abono
-                      </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowAddPaymentModal(true)}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Agregar Abono
+                        </Button>
+                      </FeatureGate>
                     </div>
-                    <PaymentHistorySection
-                      payments={payments}
-                      onDeletePayment={handleDeletePayment}
-                      isDeleting={isDeletingPayment}
-                      context={
-                        businessData
-                          ? {
-                              businessName: businessData.name,
-                              businessAddress: businessData.address,
-                              businessPhone: businessData.phone,
-                              businessNit: businessData.nit,
-                              businessAccountId:
-                                businessData.business_account_id || undefined,
-                              customerName:
-                                appointment.user_profile?.user?.name ||
-                                'Cliente',
-                              customerPhone:
-                                appointment.user_profile?.user?.phone,
-                              appointmentDate: appointment.start_time,
-                              services:
-                                appointment.appointment_services?.map((s) => ({
-                                  name: s.service.name,
-                                  price_cents: s.price_at_booking_cents,
-                                })) || [],
-                              totalPriceCents: appointment.total_price_cents,
-                              totalPaidCents:
-                                appointment.amount_paid_cents || 0,
-                              balanceDueCents: balanceDueCents,
-                            }
-                          : undefined
-                      }
-                    />
+                    <FeatureGate
+                      module="appointments"
+                      feature="credit"
+                      mode="hide"
+                    >
+                      <PaymentHistorySection
+                        payments={payments}
+                        onDeletePayment={handleDeletePayment}
+                        isDeleting={isDeletingPayment}
+                        context={
+                          businessData
+                            ? {
+                                businessName: businessData.name,
+                                businessAddress: businessData.address,
+                                businessPhone: businessData.phone,
+                                businessNit: businessData.nit,
+                                businessAccountId:
+                                  businessData.business_account_id || undefined,
+                                customerName:
+                                  appointment.user_profile?.user?.name ||
+                                  'Cliente',
+                                customerPhone:
+                                  appointment.user_profile?.user?.phone,
+                                appointmentDate: appointment.start_time,
+                                services:
+                                  appointment.appointment_services?.map(
+                                    (s) => ({
+                                      name: s.service.name,
+                                      price_cents: s.price_at_booking_cents,
+                                    })
+                                  ) || [],
+                                totalPriceCents: appointment.total_price_cents,
+                                totalPaidCents:
+                                  appointment.amount_paid_cents || 0,
+                                balanceDueCents: balanceDueCents,
+                              }
+                            : undefined
+                        }
+                      />
+                    </FeatureGate>
                   </div>
                 </div>
               )}

@@ -3,7 +3,14 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Banknote, CreditCard, Trash2, Download, MessageCircle, Loader2 } from 'lucide-react'
+import {
+  Banknote,
+  CreditCard,
+  Trash2,
+  Download,
+  MessageCircle,
+  Loader2,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -25,8 +32,13 @@ import {
 import { toast } from 'sonner'
 import type { AppointmentPaymentWithCreator } from '@/lib/models/appointment-payment/appointment-payment'
 import type { PaymentMethod } from '@/lib/types/enums'
-import { downloadPaymentReceiptPDF, type PaymentReceiptData } from '@/lib/utils/payment-receipt'
+import {
+  downloadPaymentReceiptPDF,
+  type PaymentReceiptData,
+} from '@/lib/utils/payment-receipt'
 import WhatsAppService from '@/lib/services/whatsapp/whatsapp-service'
+import { FeatureGate } from '../plan/feature-gate'
+import Loading from '../ui/loading'
 
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   AT_VENUE: 'Efectivo',
@@ -184,7 +196,7 @@ export default function PaymentHistorySection({
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {format(new Date(payment.payment_date), "d MMM yyyy, HH:mm", {
+                  {format(new Date(payment.payment_date), 'd MMM yyyy, HH:mm', {
                     locale: es,
                   })}
                   {payment.creator?.user?.name && (
@@ -227,7 +239,7 @@ export default function PaymentHistorySection({
                           disabled={sendingWhatsApp === payment.id}
                         >
                           {sendingWhatsApp === payment.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loading />
                           ) : (
                             <MessageCircle className="h-4 w-4" />
                           )}

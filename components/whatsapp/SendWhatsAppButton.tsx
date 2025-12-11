@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { MessageSquare, Send, Loader2 } from 'lucide-react'
 import WhatsAppService from '@/lib/services/whatsapp/whatsapp-service'
+import { ConditionalFeature } from '@/components/plan/feature-gate'
 
 interface SendWhatsAppButtonProps {
   businessAccountId: string
@@ -71,43 +72,45 @@ export function SendWhatsAppButton({
   if (!customerPhone) return null
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant={variant} size={size} title="Enviar WhatsApp">
-          <MessageSquare className="h-4 w-4 text-green-600" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Enviar WhatsApp</DialogTitle>
-          <DialogDescription>
-            Enviar mensaje a {customerName} ({customerPhone})
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label>Mensaje</Label>
-            <Textarea
-              placeholder="Escribe tu mensaje..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-            />
+    <ConditionalFeature module="appointments" feature="whatsapp_notifications">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant={variant} size={size} title="Enviar WhatsApp">
+            <MessageSquare className="h-4 w-4 text-green-600" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar WhatsApp</DialogTitle>
+            <DialogDescription>
+              Enviar mensaje a {customerName} ({customerPhone})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Mensaje</Label>
+              <Textarea
+                placeholder="Escribe tu mensaje..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSend} disabled={isSending || !message.trim()}>
+                {isSending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
+                ) : (
+                  <><Send className="mr-2 h-4 w-4" /> Enviar</>
+                )}
+              </Button>
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSend} disabled={isSending || !message.trim()}>
-              {isSending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
-              ) : (
-                <><Send className="mr-2 h-4 w-4" /> Enviar</>
-              )}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </ConditionalFeature>
   )
 }

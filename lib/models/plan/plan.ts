@@ -49,6 +49,12 @@ export interface PlanModule {
   created_at: string
 }
 
+export interface FeatureMetadata {
+  name: string
+  description: string
+  requiredPlan: string[]
+}
+
 export interface PlanModuleAccess {
   id: string
   plan_id: string
@@ -57,6 +63,7 @@ export interface PlanModuleAccess {
   can_write: boolean
   can_delete: boolean
   custom_permissions: Record<string, boolean> | null
+  features_metadata: Record<string, FeatureMetadata> | null
   created_at: string
 }
 
@@ -117,6 +124,7 @@ export interface PlanModuleAccessInsert {
   can_write?: boolean
   can_delete?: boolean
   custom_permissions?: Record<string, boolean> | null
+  features_metadata?: Record<string, FeatureMetadata> | null
 }
 
 export interface PlanModuleAccessUpdate {
@@ -124,6 +132,7 @@ export interface PlanModuleAccessUpdate {
   can_write?: boolean
   can_delete?: boolean
   custom_permissions?: Record<string, boolean> | null
+  features_metadata?: Record<string, FeatureMetadata> | null
 }
 
 export const DEFAULT_PLAN_FEATURES: PlanFeatures = {

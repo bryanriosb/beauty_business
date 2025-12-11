@@ -21,6 +21,7 @@ import type {
   PlanWithModules,
   PlanStatus,
 } from '@/lib/models/plan/plan'
+import type { FeaturePermission } from '@/lib/models/plan/feature-permissions'
 
 export interface PlanListResponse {
   data: Plan[]
@@ -379,6 +380,7 @@ export async function setPlanModuleAccessAction(
         can_write: access.can_write ?? true,
         can_delete: access.can_delete ?? true,
         custom_permissions: access.custom_permissions ?? null,
+        features_metadata: access.features_metadata ?? null,
       }))
 
       const { error } = await client.from('plan_module_access').insert(accessData)
@@ -700,5 +702,136 @@ export async function bulkAssignPlanToAccountsAction(
   } catch (error: any) {
     console.error('Error bulk assigning plan to accounts:', error)
     return { success: false, updatedCount: 0, error: error.message || 'Error al asignar el plan' }
+  }
+}
+
+export async function checkFeaturePermissionAction(
+  businessAccountId: string,
+  moduleCode: string,
+  featureKey: FeaturePermission
+): Promise<boolean> {
+  try {
+    const client = await getSupabaseAdminClient()
+
+    const { data, error } = await client
+      .from('business_accounts')
+      .select(`
+        plan_id,
+        plan:plans!inner(
+          id,
+          module_access:plan_module_access!inner(
+            custom_permissions,
+            module:plan_modules!inner(code)
+          )
+        )
+      `)
+      .eq('id', businessAccountId)
+      .single()
+
+    if (error || !data?.plan_id) return false
+
+    const plan = data.plan as any
+    if (!plan?.module_access) return false
+
+    const moduleAccess = plan.module_access.find(
+      (ma: any) => ma.module?.code === moduleCode
+    )
+
+    if (!moduleAccess?.custom_permissions) return false
+
+    return moduleAccess.custom_permissions[featureKey] === true
+  } catch (error) {
+    console.error('Error checking feature permission:', error)
+    return false
+  }
+}
+
+export async function getAllFeaturePermissionsAction(
+  businessAccountId: string,
+  moduleCode: string
+): Promise<Record<string, boolean>> {
+  try {
+    const client = await getSupabaseAdminClient()
+
+    const { data, error } = await client
+      .from('business_accounts')
+      .select(`
+        plan_id,
+        plan:plans!inner(
+          id,
+          module_access:plan_module_access!inner(
+            custom_permissions,
+            module:plan_modules!inner(code)
+          )
+        )
+      `)
+      .eq('id', businessAccountId)
+      .single()
+
+    if (error || !data?.plan_id) return {}
+
+    const plan = data.plan as any
+    if (!plan?.module_access) return {}
+
+    const moduleAccess = plan.module_access.find(
+      (ma: any) => ma.module?.code === moduleCode
+    )
+
+    return moduleAccess?.custom_permissions || {}
+  } catch (error) {
+    console.error('Error getting all feature permissions:', error)
+    return {}
+  }
+}
+
+export async function getFeatureMetadataAction(
+  businessAccountId: string,
+  moduleCode: string,
+  featureKey: string
+): Promise<{
+  name: string
+  description: string
+  requiredPlan: string[]
+} | null> {
+  try {
+    const client = await getSupabaseAdminClient()
+
+    const { data, error } = await client
+      .from('business_accounts')
+      .select(`
+        plan_id,
+        plan:plans!inner(
+          id,
+          module_access:plan_module_access!inner(
+            features_metadata,
+            module:plan_modules!inner(code)
+          )
+        )
+      `)
+      .eq('id', businessAccountId)
+      .single()
+
+    if (error || !data?.plan_id) return null
+
+    const plan = data.plan as any
+    if (!plan?.module_access) return null
+
+    const moduleAccess = plan.module_access.find(
+      (ma: any) => ma.module?.code === moduleCode
+    )
+
+    if (!moduleAccess?.features_metadata) return null
+
+    const metadata = moduleAccess.features_metadata[featureKey]
+    if (!metadata) return null
+
+    return {
+      name: metadata.name || featureKey,
+      description: metadata.description || '',
+      requiredPlan: metadata.requiredPlan || [],
+    }
+  } catch (error) {
+    console.error('Error getting feature metadata:', error)
+    return null
   }
 }
