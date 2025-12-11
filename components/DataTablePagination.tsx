@@ -44,6 +44,12 @@ export default function DataTablePagination({
       table.setPageIndex(pageIndex)
     }
   }
+
+  // Obtener el estado de paginación de manera segura
+  const paginationState = table.getState().pagination || { pageIndex: 0, pageSize: 10 }
+  const currentPageSize = paginationState.pageSize
+  const currentPageIndex = paginationState.pageIndex
+
   return (
     <div className="flex w-full items-center gap-8 lg:w-fit">
       <div className="hidden items-center gap-2 lg:flex">
@@ -51,11 +57,11 @@ export default function DataTablePagination({
           Filas por página
         </Label>
         <Select
-          value={`${table.getState().pagination.pageSize}`}
+          value={`${currentPageSize}`}
           onValueChange={handlePageSizeChange}
         >
           <SelectTrigger size="sm" className="w-20" id="rows-per-page">
-            <SelectValue placeholder={table.getState().pagination.pageSize} />
+            <SelectValue placeholder={currentPageSize} />
           </SelectTrigger>
           <SelectContent side="top">
             {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -67,7 +73,7 @@ export default function DataTablePagination({
         </Select>
       </div>
       <div className="flex w-fit items-center justify-center text-sm font-medium">
-        Página {table.getState().pagination.pageIndex + 1} de{' '}
+        Página {currentPageIndex + 1} de{' '}
         {table.getPageCount()} -
         {total && <span className="ml-2">{total} Filas</span>}
       </div>
@@ -86,7 +92,7 @@ export default function DataTablePagination({
           className="size-8"
           size="icon"
           onClick={() =>
-            handlePageChange(table.getState().pagination.pageIndex - 1)
+            handlePageChange(currentPageIndex - 1)
           }
           disabled={!table.getCanPreviousPage()}
         >
@@ -98,7 +104,7 @@ export default function DataTablePagination({
           className="size-8"
           size="icon"
           onClick={() =>
-            handlePageChange(table.getState().pagination.pageIndex + 1)
+            handlePageChange(currentPageIndex + 1)
           }
           disabled={!table.getCanNextPage()}
         >

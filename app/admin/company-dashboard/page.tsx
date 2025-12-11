@@ -6,6 +6,7 @@ import { CompanyRevenueOverview } from '@/components/dashboard/company/CompanyRe
 import { CompanyBusinessPerformance } from '@/components/dashboard/company/CompanyBusinessPerformance'
 import { CompanyOperationalMetrics } from '@/components/dashboard/company/CompanyOperationalMetrics'
 import { CompanyGrowthIndicators } from '@/components/dashboard/company/CompanyGrowthIndicators'
+import { CompanyServiceAnalytics } from '@/components/dashboard/company/CompanyServiceAnalytics'
 import { CompanyDashboardSkeleton } from '@/components/dashboard/company/CompanyDashboardSkeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -106,9 +107,8 @@ export default function CompanyDashboardPage() {
 
       <div className="shrink-0">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="overview">Vista General</TabsTrigger>
-            <TabsTrigger value="geographic">Geográfico</TabsTrigger>
             <TabsTrigger value="services">Servicios</TabsTrigger>
           </TabsList>
 
@@ -148,31 +148,11 @@ export default function CompanyDashboardPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="geographic" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribución Geográfica</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Vista geográfica de ingresos y distribución de clientes próximamente.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="services" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Análisis de Servicios</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Analytics detallados de servicios más populares próximamente.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
+           <TabsContent value="services" className="mt-6">
+             <CompanyServiceAnalytics dateRange={dateRangeProps} />
+           </TabsContent>
         </Tabs>
       </div>
     </div>

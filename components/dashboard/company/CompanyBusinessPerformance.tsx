@@ -120,9 +120,16 @@ export function CompanyBusinessPerformance({ dateRange, limit = 8 }: CompanyBusi
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
                   {index + 1}
                 </div>
-                <div>
-                  <h4 className="font-medium">{business.business_name}</h4>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                 <div>
+                   <div className="flex items-center gap-2">
+                     <h4 className="font-medium">{business.business_name}</h4>
+                     {business.is_trial && (
+                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                         TRIAL
+                       </Badge>
+                     )}
+                   </div>
+                   <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {business.appointments} citas

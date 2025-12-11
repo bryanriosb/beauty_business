@@ -18,7 +18,16 @@ import { CustomersReport } from '@/components/reports/CustomersReport'
 import { SuppliesReport } from '@/components/reports/SuppliesReport'
 import { AccountsReceivableReport } from '@/components/reports/AccountsReceivableReport'
 import { CompanyReportsView } from '@/components/reports/company/CompanyReportsView'
-import { DollarSign, Calendar, Scissors, UserCircle, Users, Syringe, Wallet } from 'lucide-react'
+import {
+  DollarSign,
+  Calendar,
+  Scissors,
+  UserCircle,
+  Users,
+  Syringe,
+  Wallet,
+} from 'lucide-react'
+import Loading from '../loading'
 
 export default function ReportsPage() {
   const { isLoading, role } = useCurrentUser()
@@ -49,8 +58,12 @@ export default function ReportsPage() {
     return (
       <div className="flex flex-col gap-6 w-full overflow-auto">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reportes</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Cargando...</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Reportes
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            <Loading />
+          </p>
         </div>
       </div>
     )
@@ -72,7 +85,9 @@ export default function ReportsPage() {
     return (
       <div className="flex flex-col gap-6 w-full overflow-auto">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reportes</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Reportes
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Selecciona una sucursal para ver los reportes
           </p>
@@ -85,7 +100,9 @@ export default function ReportsPage() {
     <div className="flex flex-col gap-6 w-full overflow-auto">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reportes</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Reportes
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Analiza el rendimiento de tu negocio
           </p>

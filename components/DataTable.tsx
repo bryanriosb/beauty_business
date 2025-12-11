@@ -387,7 +387,7 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
       getFilteredRowModel: getFilteredRowModel(),
       getFacetedRowModel: getFacetedRowModel(),
       getFacetedUniqueValues: getFacetedUniqueValues(),
-      manualPagination: !!pagination,
+      manualPagination: !!pagination && !externalData,
       manualFiltering: isAutonomous || !!externalOnFiltersChange,
       pageCount: pagination?.pageCount ?? -1,
       onColumnFiltersChange: handleColumnFiltersChange,
@@ -399,6 +399,11 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
           ? {
               pageIndex: pagination.pageIndex,
               pageSize: pagination.pageSize,
+            }
+          : externalData
+          ? {
+              pageIndex: 0,
+              pageSize: 10,
             }
           : undefined,
         columnFilters: filterState || [],

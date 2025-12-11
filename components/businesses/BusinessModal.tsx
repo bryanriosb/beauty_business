@@ -58,6 +58,7 @@ import {
 import BusinessAccountService from '@/lib/services/business-account/business-account-service'
 import { BusinessAccount } from '@/lib/models/business-account/business-account'
 import { BUSINESS_TYPES_OPTIONS } from '@/lib/constants/business-type-labels'
+import Loading from '../ui/loading'
 
 const formSchema = z.object({
   business_account_id: z.string().min(1, 'La cuenta de negocio es requerida'),
@@ -501,9 +502,11 @@ export function BusinessModal({
                               <SelectTrigger className="w-full">
                                 <SelectValue
                                   placeholder={
-                                    loadingAccounts
-                                      ? 'Cargando...'
-                                      : 'Selecciona una cuenta'
+                                    loadingAccounts ? (
+                                      <Loading />
+                                    ) : (
+                                      'Selecciona una cuenta'
+                                    )
                                   }
                                 />
                               </SelectTrigger>

@@ -27,6 +27,7 @@ import {
 } from '@/lib/store/active-business-store'
 import { USER_ROLES } from '@/const/roles'
 import BusinessService from '@/lib/services/business/business-service'
+import Loading from './ui/loading'
 
 export function BusinessSwitcher() {
   const { isMobile, state } = useSidebar()
@@ -92,7 +93,7 @@ export function BusinessSwitcher() {
             {!isCollapsed && (
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium text-muted-foreground">
-                  Cargando...
+                  <Loading />
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
                   Sucursales

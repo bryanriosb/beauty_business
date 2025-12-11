@@ -10,6 +10,7 @@ export interface CompanyRevenueStats {
   total_customers: number
   avg_revenue_per_business: number
   growth_percentage: number
+  trial_businesses: number
   top_performing_business: {
     name: string
     revenue: number
@@ -24,6 +25,8 @@ export interface CompanyBusinessPerformance {
   customers?: number
   occupancy_rate?: number
   growth_percentage?: number
+  is_trial?: boolean
+  trial_ends_at?: string | null
 }
 
 export interface CompanyGeographicStats {
@@ -92,6 +95,7 @@ export async function fetchCompanyRevenueStatsAction(
       total_customers: 0,
       avg_revenue_per_business: 0,
       growth_percentage: 0,
+      trial_businesses: 0,
       top_performing_business: { name: 'Sin datos', revenue: 0 }
     }
   }
@@ -132,9 +136,30 @@ export async function fetchCompanyRevenueStatsAction(
   const previousRevenue = previousAppointments?.reduce((sum, apt) => sum + (apt.total_price_cents || 0), 0) || 0
   const growthPercentage = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0
 
+  // Obtener business_ids de la compañía para filtrar clientes
+  const { data: companyBusinesses } = await supabase
+    .from('businesses')
+    .select('id')
+
+  const companyBusinessIds = companyBusinesses?.map(b => b.id) || []
+
   const { count: customersCount } = await supabase
-    .from('customers')
+    .from('business_customers')
     .select('id', { count: 'exact', head: true })
+    .in('business_id', companyBusinessIds)
+
+  // Contar negocios en estado trial - obtener todos los business accounts de la compañía
+  const { data: allBusinessAccounts } = await supabase
+    .from('businesses')
+    .select('business_account_id')
+
+  const uniqueBusinessAccountIds = [...new Set(allBusinessAccounts?.map(b => b.business_account_id).filter(Boolean) || [])]
+
+  const { count: trialBusinessesCount } = await supabase
+    .from('business_accounts')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'trial')
+    .in('id', uniqueBusinessAccountIds)
 
   return {
     total_revenue: totalRevenue,
@@ -143,6 +168,7 @@ export async function fetchCompanyRevenueStatsAction(
     total_customers: customersCount || 0,
     avg_revenue_per_business: avgRevenuePerBusiness,
     growth_percentage: growthPercentage,
+    trial_businesses: trialBusinessesCount || 0,
     top_performing_business: topBusiness
   }
 }
@@ -164,7 +190,11 @@ export async function fetchCompanyBusinessPerformanceAction(
       businesses (
         id,
         name,
-        business_account_id
+        business_account_id,
+        business_accounts (
+          status,
+          trial_ends_at
+        )
       )
     `)
     .eq('status', 'COMPLETED')
@@ -181,6 +211,9 @@ export async function fetchCompanyBusinessPerformanceAction(
     const businessId = apt.business_id
     const businessName = (apt.businesses as any)?.name || 'Sin nombre'
     const revenue = apt.total_price_cents || 0
+    const businessAccount = (apt.businesses as any)?.business_accounts
+    const isTrial = businessAccount?.status === 'trial'
+    const trialEndsAt = businessAccount?.trial_ends_at
 
     if (businessStats.has(businessId)) {
       const stats = businessStats.get(businessId)!
@@ -194,7 +227,9 @@ export async function fetchCompanyBusinessPerformanceAction(
         appointments: 1,
         customers: 0,
         occupancy_rate: 0,
-        growth_percentage: 0
+        growth_percentage: 0,
+        is_trial: isTrial,
+        trial_ends_at: trialEndsAt
       })
     }
   })
@@ -301,12 +336,17 @@ export async function fetchCompanyServiceAnalyticsAction(
     .from('appointment_services')
     .select(`
       price_cents,
+      appointments!inner (
+        start_time,
+        status
+      ),
       services (
         name
       )
     `)
-    .gte('created_at', startDate.toISOString())
-    .lte('created_at', endDate.toISOString())
+    .eq('appointments.status', 'COMPLETED')
+    .gte('appointments.start_time', startDate.toISOString())
+    .lte('appointments.start_time', endDate.toISOString())
 
   if (error || !data) {
     return []

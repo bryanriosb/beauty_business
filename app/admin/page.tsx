@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import Loading from '@/components/ui/loading'
 
 export default function AdminPage() {
   const { isLoading, role } = useCurrentUser()
@@ -22,7 +23,7 @@ export default function AdminPage() {
     <div className="flex flex-col gap-6 w-full overflow-auto">
       <div className="flex items-center justify-center min-h-[200px]">
         <div className="animate-pulse text-muted-foreground">
-          Cargando...
+          <Loading />
         </div>
       </div>
     </div>

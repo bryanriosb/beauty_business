@@ -5,7 +5,9 @@ export default function AdminLoading() {
     <div className="flex items-center justify-center h-[calc(100vh-200px)]">
       <div className="flex flex-col items-center gap-3">
         <Loading className="w-8 h-8" />
-        <p className="text-muted-foreground text-sm">Cargando...</p>
+        <p className="text-muted-foreground text-sm">
+          <Loading />
+        </p>
       </div>
     </div>
   )
