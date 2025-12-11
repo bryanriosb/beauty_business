@@ -4,13 +4,8 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Building2 } from 'lucide-react'
-
-// Mapeo de tipos de negocio a español
-const businessTypeLabels: Record<string, string> = {
-  SALON: 'Salón',
-  INDEPENDENT: 'Independiente',
-  BEAUTY_STUDIO: 'Estudio de Belleza',
-}
+import { getBusinessTypeLabel } from '@/lib/constants/business-type-labels'
+import { BusinessType } from '@/lib/types/enums'
 
 export const BUSINESSES_COLUMNS: ColumnDef<BusinessWithAccount>[] = [
   {
@@ -39,8 +34,8 @@ export const BUSINESSES_COLUMNS: ColumnDef<BusinessWithAccount>[] = [
     accessorKey: 'type',
     header: 'Tipo',
     cell: ({ row }) => {
-      const type = row.getValue('type') as string
-      return <Badge variant="outline">{businessTypeLabels[type] || type}</Badge>
+      const type = row.getValue('type') as BusinessType
+      return <Badge variant="outline">{getBusinessTypeLabel(type)}</Badge>
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))

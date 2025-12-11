@@ -13,6 +13,7 @@ export type BusinessType =
   | 'PLASTIC_SURGERY_CENTER'
   | 'SALON'
   | 'BEAUTY_STUDIO'
+  | 'CONSULTORY'
 
 export type DayOfWeek = '0' | '1' | '2' | '3' | '4' | '5' | '6'
 

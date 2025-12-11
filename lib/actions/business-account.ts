@@ -31,8 +31,33 @@ export async function fetchBusinessAccountsAction(params?: {
     const pageSize = params?.page_size || 10
     const offset = (page - 1) * pageSize
 
-    const client = await getSupabaseClient()
+    // Obtener usuario actual (de NextAuth)
+    const currentUser = await getCurrentUser()
+
+    if (!currentUser) {
+      return { data: [], total: 0, total_pages: 0 }
+    }
+
+    const client = await getSupabaseAdminClient() // Usar admin para bypass RLS
+
     let query = client.from('business_accounts').select('*', { count: 'exact' })
+
+    // Si NO es company_admin, filtrar solo las cuentas donde es miembro activo
+    if (currentUser.role !== USER_ROLES.COMPANY_ADMIN) {
+      const { data: memberships } = await client
+        .from('business_account_members')
+        .select('business_account_id')
+        .eq('user_profile_id', currentUser.user_profile_id)
+        .eq('status', 'active')
+
+      const accountIds = memberships?.map(m => m.business_account_id) || []
+
+      if (accountIds.length === 0) {
+        return { data: [], total: 0, total_pages: 0 }
+      }
+
+      query = query.in('id', accountIds)
+    }
 
     if (params?.company_name && params.company_name.length > 0) {
       const searchTerm = params.company_name[0]
@@ -210,12 +235,75 @@ export async function deleteBusinessAccountAction(
     }
 
     const client = await getSupabaseAdminClient()
-    const { error } = await client
+
+    // 0. Obtener todos los miembros antes de eliminar para eliminar sus usuarios de auth
+    const { data: members } = await client
+      .from('business_account_members')
+      .select('user_profile_id, users_profile!inner(user_id)')
+      .eq('business_account_id', id)
+
+    const userIds = members?.map((m: any) => m.users_profile.user_id).filter(Boolean) || []
+
+    // 1. Eliminar todas las sucursales asociadas
+    const { error: businessesError } = await client
+      .from('businesses')
+      .delete()
+      .eq('business_account_id', id)
+
+    if (businessesError) {
+      console.error('Error deleting businesses:', businessesError)
+      throw new Error(`Error al eliminar sucursales: ${businessesError.message}`)
+    }
+
+    // 2. Eliminar todos los miembros de la cuenta
+    const { error: membersError } = await client
+      .from('business_account_members')
+      .delete()
+      .eq('business_account_id', id)
+
+    if (membersError) {
+      console.error('Error deleting members:', membersError)
+      throw new Error(`Error al eliminar miembros: ${membersError.message}`)
+    }
+
+    // 3. Eliminar users_profile de los miembros
+    if (members && members.length > 0) {
+      const profileIds = members.map((m: any) => m.user_profile_id).filter(Boolean)
+      if (profileIds.length > 0) {
+        const { error: profilesError } = await client
+          .from('users_profile')
+          .delete()
+          .in('id', profileIds)
+
+        if (profilesError) {
+          console.error('Error deleting user profiles:', profilesError)
+          throw new Error(`Error al eliminar perfiles de usuario: ${profilesError.message}`)
+        }
+      }
+    }
+
+    // 4. Eliminar usuarios de Supabase Auth
+    if (userIds.length > 0) {
+      for (const userId of userIds) {
+        try {
+          await client.auth.admin.deleteUser(userId)
+        } catch (authError) {
+          console.error(`Error deleting auth user ${userId}:`, authError)
+          // Continuar con los demás usuarios aunque uno falle
+        }
+      }
+    }
+
+    // 5. Finalmente eliminar la cuenta
+    const { error: accountError } = await client
       .from('business_accounts')
       .delete()
       .eq('id', id)
 
-    if (error) throw error
+    if (accountError) {
+      console.error('Error deleting account:', accountError)
+      throw new Error(`Error al eliminar cuenta: ${accountError.message}`)
+    }
 
     return { success: true, error: null }
   } catch (error: any) {
@@ -237,12 +325,75 @@ export async function deleteBusinessAccountsAction(
     }
 
     const client = await getSupabaseAdminClient()
-    const { error } = await client
+
+    // 0. Obtener todos los miembros antes de eliminar para eliminar sus usuarios de auth
+    const { data: members } = await client
+      .from('business_account_members')
+      .select('user_profile_id, users_profile!inner(user_id)')
+      .in('business_account_id', ids)
+
+    const userIds = members?.map((m: any) => m.users_profile.user_id).filter(Boolean) || []
+
+    // 1. Eliminar todas las sucursales asociadas a estas cuentas
+    const { error: businessesError } = await client
+      .from('businesses')
+      .delete()
+      .in('business_account_id', ids)
+
+    if (businessesError) {
+      console.error('Error deleting businesses:', businessesError)
+      throw new Error(`Error al eliminar sucursales: ${businessesError.message}`)
+    }
+
+    // 2. Eliminar todos los miembros de estas cuentas
+    const { error: membersError } = await client
+      .from('business_account_members')
+      .delete()
+      .in('business_account_id', ids)
+
+    if (membersError) {
+      console.error('Error deleting members:', membersError)
+      throw new Error(`Error al eliminar miembros: ${membersError.message}`)
+    }
+
+    // 3. Eliminar users_profile de los miembros
+    if (members && members.length > 0) {
+      const profileIds = members.map((m: any) => m.user_profile_id).filter(Boolean)
+      if (profileIds.length > 0) {
+        const { error: profilesError } = await client
+          .from('users_profile')
+          .delete()
+          .in('id', profileIds)
+
+        if (profilesError) {
+          console.error('Error deleting user profiles:', profilesError)
+          throw new Error(`Error al eliminar perfiles de usuario: ${profilesError.message}`)
+        }
+      }
+    }
+
+    // 4. Eliminar usuarios de Supabase Auth
+    if (userIds.length > 0) {
+      for (const userId of userIds) {
+        try {
+          await client.auth.admin.deleteUser(userId)
+        } catch (authError) {
+          console.error(`Error deleting auth user ${userId}:`, authError)
+          // Continuar con los demás usuarios aunque uno falle
+        }
+      }
+    }
+
+    // 5. Finalmente eliminar las cuentas
+    const { error: accountsError } = await client
       .from('business_accounts')
       .delete()
       .in('id', ids)
 
-    if (error) throw error
+    if (accountsError) {
+      console.error('Error deleting accounts:', accountsError)
+      throw new Error(`Error al eliminar cuentas: ${accountsError.message}`)
+    }
 
     return { success: true, deletedCount: ids.length, error: null }
   } catch (error: any) {

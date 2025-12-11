@@ -208,22 +208,32 @@ export async function signOutSupabase(): Promise<void> {
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
-    const supabase = await getSupabaseAdminClient()
+    // Obtener sesión de NextAuth en lugar de Supabase Auth
+    const { getServerSession } = await import('next-auth')
+    const { AUTH_OPTIONS } = await import('@/const/auth')
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const session = await getServerSession(AUTH_OPTIONS)
 
-    if (authError || !user) {
+    if (!session?.user) {
       return null
     }
 
-    // Get user profile
+    // NextAuth ya tiene el user en la sesión con todos los datos
+    const user = session.user as any
+
+    // Si el user de NextAuth ya tiene todos los campos, retornarlo directamente
+    if (user.id && user.role) {
+      return user as AuthUser
+    }
+
+    // Si no, buscar en la base de datos
+    const supabase = await getSupabaseAdminClient()
+
+    // Get user profile usando el email de la sesión
     const { data: userProfile, error: profileError } = await supabase
       .from('users_profile')
-      .select('id, user_id, role')
-      .eq('user_id', user.id)
+      .select('id, user_id, role, email')
+      .eq('email', user.email)
       .single()
 
     if (profileError || !userProfile) {
@@ -273,9 +283,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     }
 
     return {
-      id: user.id,
-      email: user.email || '',
-      name: user.user_metadata?.name || userProfile.role || 'User',
+      id: userProfile.user_id,
+      email: userProfile.email || user.email || '',
+      name: user.name || userProfile.role || 'User',
       role: (userProfile.role as UserRole) || 'customer',
       business_id: businessId,
       business_account_id: membership?.business_account_id || null,

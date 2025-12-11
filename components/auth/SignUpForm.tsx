@@ -44,6 +44,7 @@ import {
 } from '@/lib/actions/verification'
 import { VerificationCodeDialog } from './VerificationCodeDialog'
 import { ShieldCheck, CheckCircle2 } from 'lucide-react'
+import Loading from '../ui/loading'
 
 const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: 'BEAUTY_SALON', label: 'Salón de Belleza' },
@@ -56,6 +57,7 @@ const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: 'MAKEUP_CENTER', label: 'Centro de Maquillaje' },
   { value: 'PLASTIC_SURGERY_CENTER', label: 'Centro de Cirugía Plástica' },
   { value: 'INDEPENDENT', label: 'Profesional Independiente' },
+  { value: 'CONSULTORY', label: 'Consultorio' },
 ]
 
 const userSchema = z
@@ -336,6 +338,11 @@ export function SignUpForm() {
                             Verificado
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
                           </span>
+                        ) : isVerifyingEmail ? (
+                          <span className="flex gap-2 text-xs">
+                            Enviando...
+                            <Loading className="h-3 w-3" />
+                          </span>
                         ) : (
                           <span className="flex gap-2">
                             Verificar
@@ -391,6 +398,11 @@ export function SignUpForm() {
                           <span className="flex gap-2 text-xs">
                             Verificado
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          </span>
+                        ) : isVerifyingPhone ? (
+                          <span className="flex gap-2">
+                            Enviando...
+                            <Loading className="h-3 w-3" />
                           </span>
                         ) : (
                           <span className="flex gap-2">
@@ -487,12 +499,7 @@ export function SignUpForm() {
               type="button"
               className="w-full gap-2"
               onClick={validateStep1}
-              disabled={
-                isLoading ||
-                !emailVerified ||
-                (phoneValue && !phoneVerified) ||
-                !form.formState.isValid
-              }
+              disabled={isLoading || !emailVerified || !phoneVerified}
             >
               Continuar
               <ChevronRight className="h-4 w-4" />

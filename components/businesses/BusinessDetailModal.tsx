@@ -23,17 +23,12 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { getBusinessTypeLabel } from '@/lib/constants/business-type-labels'
 
 interface BusinessDetailModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   business: BusinessWithAccount | null
-}
-
-const businessTypeLabels: Record<string, string> = {
-  SALON: 'Salón de Belleza',
-  INDEPENDENT: 'Independiente',
-  BEAUTY_STUDIO: 'Estudio de Belleza',
 }
 
 function InfoRow({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon?: any }) {
@@ -86,7 +81,7 @@ export function BusinessDetailModal({
               )}
             </div>
             <Badge variant="outline">
-              {businessTypeLabels[business.type] || business.type}
+              {getBusinessTypeLabel(business.type)}
             </Badge>
           </div>
         </DialogHeader>

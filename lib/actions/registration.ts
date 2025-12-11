@@ -38,28 +38,46 @@ export async function registerBusinessAction(
     )
 
     if (emailExists) {
-      return { success: false, error: 'Este correo electrónico ya está registrado' }
+      return {
+        success: false,
+        error: 'Este correo electrónico ya está registrado',
+      }
     }
 
     // 2. Crear usuario en Supabase Auth
-    const { data: authData, error: authError } = await client.auth.admin.createUser({
+    const authUserData: any = {
       email: data.email,
       password: data.password,
-      phone: data.phone,
       email_confirm: true,
-      phone_confirm: data.phone ? true : undefined,
       user_metadata: {
         full_name: data.fullName,
         name: data.fullName,
       },
-    })
+    }
+
+    // Solo agregar phone si existe y no está vacío
+    if (data.phone && data.phone.trim() !== '') {
+      authUserData.phone = data.phone
+      authUserData.phone_confirm = true
+    }
+
+    const { data: authData, error: authError } =
+      await client.auth.admin.createUser(authUserData)
 
     if (authError || !authData.user) {
+      console.error('Error creating auth user:', authError)
       return {
         success: false,
         error: authError?.message || 'Error al crear la cuenta',
       }
     }
+
+    console.log('Auth user created successfully:', {
+      id: authData.user.id,
+      email: authData.user.email,
+      phone: authData.user.phone,
+      user_metadata: authData.user.user_metadata,
+    })
 
     authUserId = authData.user.id
 
@@ -69,6 +87,9 @@ export async function registerBusinessAction(
       .insert({
         user_id: authUserId,
         role: 'business_admin',
+        city: data.city,
+        state: data.state,
+        country: 'CO',
       })
       .select()
       .single()
@@ -99,7 +120,9 @@ export async function registerBusinessAction(
       .single()
 
     if (accountError || !accountData) {
-      throw new Error(accountError?.message || 'Error al crear la cuenta de negocio')
+      throw new Error(
+        accountError?.message || 'Error al crear la cuenta de negocio'
+      )
     }
 
     businessAccountId = accountData.id
@@ -115,7 +138,9 @@ export async function registerBusinessAction(
       })
 
     if (memberError) {
-      throw new Error(memberError.message || 'Error al vincular usuario a la cuenta')
+      throw new Error(
+        memberError.message || 'Error al vincular usuario a la cuenta'
+      )
     }
 
     // 6. Crear primera sucursal (business)
@@ -126,6 +151,7 @@ export async function registerBusinessAction(
       city: data.city,
       state: data.state,
       type: data.businessType,
+      phone_number: data.phone || null,
     })
 
     if (businessError) {
@@ -146,9 +172,18 @@ export async function registerBusinessAction(
   } catch (error: any) {
     // Rollback en caso de error
     if (businessAccountId) {
-      await client.from('businesses').delete().eq('business_account_id', businessAccountId)
-      await client.from('business_account_members').delete().eq('business_account_id', businessAccountId)
-      await client.from('business_accounts').delete().eq('id', businessAccountId)
+      await client
+        .from('businesses')
+        .delete()
+        .eq('business_account_id', businessAccountId)
+      await client
+        .from('business_account_members')
+        .delete()
+        .eq('business_account_id', businessAccountId)
+      await client
+        .from('business_accounts')
+        .delete()
+        .eq('id', businessAccountId)
     }
 
     if (userProfileId) {

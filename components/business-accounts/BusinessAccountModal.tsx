@@ -81,7 +81,8 @@ export function BusinessAccountModal({
 }: BusinessAccountModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [settings, setSettings] = useState<SettingEntry[]>([])
-  const [initialValues, setInitialValues] = useState<BusinessAccountFormValues | null>(null)
+  const [initialValues, setInitialValues] =
+    useState<BusinessAccountFormValues | null>(null)
   const isEdit = !!account
   const { role } = useCurrentUser()
 
@@ -229,7 +230,7 @@ export function BusinessAccountModal({
       'subscription_plan',
     ] as const
 
-    return requiredFields.every(field => {
+    return requiredFields.every((field) => {
       const value = formValues[field]
       return value && value.toString().trim() !== ''
     })
@@ -312,7 +313,7 @@ export function BusinessAccountModal({
                       <FormControl>
                         <Input
                           placeholder="900123456-7"
-                          disabled={isSubmitting || isBusinessAdmin}
+                          disabled={isSubmitting}
                           {...field}
                         />
                       </FormControl>
@@ -331,7 +332,7 @@ export function BusinessAccountModal({
                     <FormControl>
                       <Input
                         placeholder="Salón de Belleza XYZ S.A.S"
-                        disabled={isSubmitting || isBusinessAdmin}
+                        disabled={isSubmitting}
                         {...field}
                       />
                     </FormControl>
@@ -423,7 +424,7 @@ export function BusinessAccountModal({
                       <Textarea
                         placeholder="Calle 123 #45-67"
                         rows={2}
-                        disabled={isSubmitting || isBusinessAdmin}
+                        disabled={isSubmitting}
                         {...field}
                       />
                     </FormControl>
@@ -478,7 +479,7 @@ export function BusinessAccountModal({
                       <FormControl>
                         <Input
                           placeholder="110111"
-                          disabled={isSubmitting || isBusinessAdmin}
+                          disabled={isSubmitting}
                           {...field}
                         />
                       </FormControl>

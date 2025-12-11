@@ -50,6 +50,7 @@ import {
 } from '@/lib/actions/business-gallery-image'
 import BusinessAccountService from '@/lib/services/business-account/business-account-service'
 import { BusinessAccount } from '@/lib/models/business-account/business-account'
+import { BUSINESS_TYPES_OPTIONS } from '@/lib/constants/business-type-labels'
 
 const formSchema = z.object({
   business_account_id: z.string().min(1, 'La cuenta de negocio es requerida'),
@@ -59,7 +60,20 @@ const formSchema = z.object({
   city: z.string().min(1, 'La ciudad es requerida'),
   state: z.string().min(1, 'El departamento es requerido'),
   phone_number: z.string().optional().or(z.literal('')),
-  type: z.enum(['SALON', 'INDEPENDENT', 'BEAUTY_STUDIO'] as const),
+  type: z.enum([
+    'AESTHETICS_CENTER',
+    'BARBERSHOP',
+    'HAIR_SALON',
+    'MAKEUP_CENTER',
+    'INDEPENDENT',
+    'EYEBROWS_EYELASHES_SALON',
+    'SPA',
+    'MANICURE_PEDICURE_SALON',
+    'BEAUTY_SALON',
+    'PLASTIC_SURGERY_CENTER',
+    'SALON',
+    'BEAUTY_STUDIO',
+  ] as const),
 })
 
 type BusinessFormValues = z.infer<typeof formSchema>
@@ -70,12 +84,6 @@ interface BusinessModalProps {
   business?: Business | BusinessWithAccount | null
   onSave: (data: BusinessInsert | BusinessUpdate) => Promise<void>
 }
-
-const businessTypes: { value: BusinessType; label: string }[] = [
-  { value: 'SALON', label: 'Salón' },
-  { value: 'INDEPENDENT', label: 'Independiente' },
-  { value: 'BEAUTY_STUDIO', label: 'Estudio de Belleza' },
-]
 
 export function BusinessModal({
   open,
@@ -522,7 +530,7 @@ export function BusinessModal({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {businessTypes.map((t) => (
+                              {BUSINESS_TYPES_OPTIONS.map((t) => (
                                 <SelectItem key={t.value} value={t.value}>
                                   {t.label}
                                 </SelectItem>
