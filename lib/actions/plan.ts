@@ -486,15 +486,8 @@ export async function getAllModuleAccessAction(
 
     if (accountError || !account) return {}
 
-    // Obtener el tipo de negocio del primer negocio de la cuenta
-    const { data: businesses } = await client
-      .from('businesses')
-      .select('type')
-      .eq('business_account_id', businessAccountId)
-      .limit(1)
-
-    const businessType = businesses?.[0]?.type || null
-    const subscriptionPlan = account.subscription_plan || 'free'
+    // NOTA: Eliminadas validaciones por tipo de negocio y plan de suscripción
+    // Ahora el sistema es 100% dependiente de plan_module_access
 
     // Si hay un plan_id, obtener el acceso basado en el plan
     let planModuleAccess: Record<string, boolean> = {}
@@ -515,32 +508,18 @@ export async function getAllModuleAccessAction(
       }
     }
 
-    // Aplicar validaciones adicionales de tipo de negocio y plan
-    const {
-      hasModuleAccess,
-      MODULES,
-    } = await import('@/lib/config/module-access')
+    // SISTEMA SIMPLIFICADO: Solo depender de plan_module_access
+    // Si un módulo está en plan_module_access = accesible
+    // Si un módulo NO está en plan_module_access = no accesible
+    // Eliminadas validaciones hardcodeadas por tipo de negocio/plan
 
     const finalAccess: Record<string, boolean> = {}
 
-    // Verificar cada módulo
-    for (const moduleKey of Object.values(MODULES)) {
-      // Si el plan permite el módulo, verificar también el tipo de negocio
-      const hasPlanAccess = planModuleAccess[moduleKey] === true
-
-      if (businessType && subscriptionPlan) {
-        // Validar con la configuración completa (tipo de negocio + plan)
-        const hasAccess = hasModuleAccess(
-          moduleKey as any,
-          businessType as any,
-          subscriptionPlan as any
-        )
-        finalAccess[moduleKey] = hasAccess
-      } else {
-        // Si no hay tipo de negocio o plan, solo usar el acceso del plan
-        finalAccess[moduleKey] = hasPlanAccess
-      }
-    }
+    // Solo incluir módulos que están explícitamente en plan_module_access
+    // Los módulos que NO están en la tabla = no accesibles
+    Object.keys(planModuleAccess).forEach(moduleKey => {
+      finalAccess[moduleKey] = planModuleAccess[moduleKey]
+    })
 
     return finalAccess
   } catch (error) {

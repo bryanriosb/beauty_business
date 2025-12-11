@@ -13,22 +13,43 @@ import {
   SIDE_APP_MENU_ITEMS,
   SIDE_SYSTEM_MENU_ITEMS,
 } from '@/const/sidebar-menu'
-import Logo from './Logo'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { NavMain } from './NavMain'
 import { BusinessSwitcher } from './BusinessSwitcher'
 import { LowStockAlertBadge } from './inventory/LowStockAlert'
-import { useSidebarAccess } from '@/hooks/use-sidebar-access'
 import Image from 'next/image'
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  accessibleModules: string[]
+}
+
+export function AppSidebar({ accessibleModules }: AppSidebarProps) {
   const { role } = useCurrentUser()
 
-  // Filtrar por rol primero
-  const roleFilteredAppItems = useMemo(() => {
-    const items = SIDE_APP_MENU_ITEMS.filter((item) =>
-      role ? item.allowedRoles.includes(role) : false
-    )
+  // Crear set de módulos accesibles para búsqueda rápida
+  const accessibleModulesSet = useMemo(() => new Set(accessibleModules), [accessibleModules])
+
+  // Filtrar items del menú por rol y módulos accesibles
+  const filteredAppItems = useMemo(() => {
+    const items = SIDE_APP_MENU_ITEMS.filter((item) => {
+      // Verificar rol
+      if (!role || !item.allowedRoles.includes(role)) {
+        return false
+      }
+
+      // Si skipPlanCheck, siempre mostrar
+      if (item.skipPlanCheck) {
+        return true
+      }
+
+      // Si no tiene moduleCode, mostrar
+      if (!item.moduleCode) {
+        return true
+      }
+
+      // Verificar si el módulo es accesible
+      return accessibleModulesSet.has(item.moduleCode)
+    })
 
     // Add badge to Inventory menu item
     return items.map((item) => {
@@ -40,17 +61,74 @@ export function AppSidebar() {
       }
       return item
     })
-  }, [role])
+  }, [role, accessibleModulesSet])
 
-  const roleFilteredSystemItems = useMemo(() => {
-    return SIDE_SYSTEM_MENU_ITEMS.filter((item) =>
-      role ? item.allowedRoles.includes(role) : false
-    )
-  }, [role])
+  const filteredSystemItems = useMemo(() => {
+    return SIDE_SYSTEM_MENU_ITEMS.filter((item) => {
+      // Verificar rol
+      if (!role || !item.allowedRoles.includes(role)) {
+        return false
+      }
 
-  // Luego filtrar por acceso del plan
-  const { filteredItems: planFilteredAppItems } = useSidebarAccess(roleFilteredAppItems)
-  const { filteredItems: planFilteredSystemItems } = useSidebarAccess(roleFilteredSystemItems)
+      // Si skipPlanCheck, siempre mostrar
+      if (item.skipPlanCheck) {
+        return true
+      }
+
+      // Si no tiene moduleCode, mostrar
+      if (!item.moduleCode) {
+        return true
+      }
+
+      // Verificar si el módulo es accesible
+      return accessibleModulesSet.has(item.moduleCode)
+    })
+  }, [role, accessibleModulesSet])
+
+  // Filtrar sub-items también
+  const finalAppItems = useMemo(() => {
+    return filteredAppItems.map((item) => {
+      if (!item.items) return item
+
+      const filteredSubItems = item.items.filter((subItem) => {
+        // Verificar rol en sub-item
+        if (subItem.allowedRoles && (!role || !subItem.allowedRoles.includes(role))) {
+          return false
+        }
+
+        // Verificar módulo en sub-item
+        if (subItem.moduleCode) {
+          return accessibleModulesSet.has(subItem.moduleCode)
+        }
+
+        return true
+      })
+
+      return { ...item, items: filteredSubItems }
+    })
+  }, [filteredAppItems, role, accessibleModulesSet])
+
+  const finalSystemItems = useMemo(() => {
+    return filteredSystemItems.map((item) => {
+      if (!item.items) return item
+
+      const filteredSubItems = item.items.filter((subItem) => {
+        // Verificar rol en sub-item
+        if (subItem.allowedRoles && (!role || !subItem.allowedRoles.includes(role))) {
+          return false
+        }
+
+        // Verificar módulo en sub-item
+        if (subItem.moduleCode) {
+          return accessibleModulesSet.has(subItem.moduleCode)
+        }
+
+        return true
+      })
+
+      return { ...item, items: filteredSubItems }
+    })
+  }, [filteredSystemItems, role, accessibleModulesSet])
 
   return (
     <Sidebar collapsible="icon">
@@ -68,11 +146,11 @@ export function AppSidebar() {
         <BusinessSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        {planFilteredAppItems.length > 0 && (
-          <NavMain items={planFilteredAppItems} label="Aplicación" userRole={role} />
+        {finalAppItems.length > 0 && (
+          <NavMain items={finalAppItems} label="Aplicación" userRole={role} />
         )}
-        {planFilteredSystemItems.length > 0 && (
-          <NavMain items={planFilteredSystemItems} label="Sistema" userRole={role} />
+        {finalSystemItems.length > 0 && (
+          <NavMain items={finalSystemItems} label="Sistema" userRole={role} />
         )}
       </SidebarContent>
       <SidebarFooter>

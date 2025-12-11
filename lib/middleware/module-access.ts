@@ -1,13 +1,8 @@
 'use server'
 
 import { getCurrentUser } from '@/lib/services/auth/supabase-auth'
-import { getSupabaseAdminClient } from '@/lib/actions/supabase'
-import {
-  hasModuleAccess,
-  type ModuleName,
-  type SubscriptionPlan,
-} from '@/lib/config/module-access'
-import type { BusinessType } from '@/lib/types/enums'
+import { getAllModuleAccessAction } from '@/lib/actions/plan'
+import { type ModuleName } from '@/lib/config/module-access'
 import { USER_ROLES } from '@/const/roles'
 
 export interface ModuleAccessValidationResult {
@@ -51,36 +46,24 @@ export async function validateModuleAccess(
       return { hasAccess: true }
     }
 
-    // Obtener el tipo de negocio y plan de suscripción
-    const businessType = currentUser.business_type as BusinessType | null
-    const subscriptionPlan = currentUser.subscription_plan as
-      | SubscriptionPlan
-      | null
-
-    if (!businessType || !subscriptionPlan) {
+    // Verificar que el usuario tenga business_account_id
+    if (!currentUser.business_account_id) {
       return {
         hasAccess: false,
-        reason:
-          'No se pudo verificar tu tipo de negocio o plan de suscripción',
+        reason: 'No se pudo identificar tu cuenta de negocio',
       }
     }
 
-    // Validar acceso al módulo
-    const hasAccess = hasModuleAccess(module, businessType, subscriptionPlan)
+    // Obtener módulos accesibles desde BD (100% dependiente de plan_module_access)
+    const moduleAccess = await getAllModuleAccessAction(currentUser.business_account_id)
+
+    // Verificar si el módulo está en la lista de accesibles
+    const hasAccess = moduleAccess[module] === true
 
     if (!hasAccess) {
-      const { getAccessDeniedReason } = await import(
-        '@/lib/config/module-access'
-      )
-      const reason = getAccessDeniedReason(
-        module,
-        businessType,
-        subscriptionPlan
-      )
-
       return {
         hasAccess: false,
-        reason: reason || 'No tienes acceso a este módulo',
+        reason: 'No tienes acceso a este módulo. Actualiza tu plan para obtener acceso.',
         redirectTo: '/admin',
       }
     }
@@ -95,47 +78,6 @@ export async function validateModuleAccess(
   }
 }
 
-/**
- * Obtiene el tipo de negocio de una cuenta de negocio
- * Útil cuando no tienes el usuario actual pero sí el business_account_id
- */
-export async function getBusinessTypeForAccount(
-  businessAccountId: string
-): Promise<BusinessType | null> {
-  try {
-    const client = await getSupabaseAdminClient()
-
-    const { data: businesses } = await client
-      .from('businesses')
-      .select('type')
-      .eq('business_account_id', businessAccountId)
-      .limit(1)
-
-    return (businesses?.[0]?.type as BusinessType) || null
-  } catch (error) {
-    console.error('Error getting business type:', error)
-    return null
-  }
-}
-
-/**
- * Obtiene el plan de suscripción de una cuenta de negocio
- */
-export async function getSubscriptionPlanForAccount(
-  businessAccountId: string
-): Promise<SubscriptionPlan | null> {
-  try {
-    const client = await getSupabaseAdminClient()
-
-    const { data: account } = await client
-      .from('business_accounts')
-      .select('subscription_plan')
-      .eq('id', businessAccountId)
-      .single()
-
-    return (account?.subscription_plan as SubscriptionPlan) || null
-  } catch (error) {
-    console.error('Error getting subscription plan:', error)
-    return null
-  }
-}
+// NOTA: Las funciones auxiliares getBusinessTypeForAccount y getSubscriptionPlanForAccount
+// se eliminaron porque el sistema ahora es 100% dependiente de plan_module_access
+// y no necesita consultar tipos de negocio o planes de suscripción por separado.

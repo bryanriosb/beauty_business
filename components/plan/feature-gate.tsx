@@ -15,7 +15,7 @@ import {
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Lock, Sparkles, Star } from 'lucide-react'
+import { Lock, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
 interface FeatureGateProps {

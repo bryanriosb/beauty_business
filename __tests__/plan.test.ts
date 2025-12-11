@@ -176,6 +176,7 @@ describe('Plan Model', () => {
         can_write: true,
         can_delete: false,
         custom_permissions: null,
+        features_metadata: null,
         created_at: '2024-01-15T10:00:00Z',
       }
 
@@ -196,6 +197,7 @@ describe('Plan Model', () => {
           can_export: true,
           can_bulk_edit: false,
         },
+        features_metadata: null,
         created_at: '2024-01-15T10:00:00Z',
       }
 

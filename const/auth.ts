@@ -29,10 +29,13 @@ export const AUTH_OPTIONS: AuthOptions = {
     async jwt({ token, user }) {
       return { ...token, ...user }
     },
-    async session({ session, token, user }) {
+    async session({ session, token }) {
       session.user = token as any
       return session
     },
   },
-  pages: { signIn: '/auth/sign-in' },
+  pages: {
+    signIn: '/auth/sign-in',
+    signOut: '/auth/sign-in', // Redirect to sign-in page on sign out
+  },
 }

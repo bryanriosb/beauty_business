@@ -2,14 +2,8 @@
 
 import { useMemo } from 'react'
 import { useSession } from 'next-auth/react'
-import {
-  hasModuleAccess,
-  getAccessDeniedReason,
-  getAvailableModules,
-  type ModuleName,
-  type SubscriptionPlan,
-} from '@/lib/config/module-access'
-import type { BusinessType } from '@/lib/types/enums'
+import { useModuleAccessStore } from '@/lib/store/module-access-store'
+import { type ModuleName } from '@/lib/config/module-access'
 
 interface ModuleAccessResult {
   hasAccess: boolean
@@ -31,49 +25,56 @@ interface ModuleAccessResult {
  */
 export function useModuleAccess() {
   const { data: session } = useSession()
-
-  const businessType = session?.user?.business_type as BusinessType | undefined
-  const plan = session?.user?.subscription_plan as SubscriptionPlan | undefined
+  const { moduleAccess, isLoaded } = useModuleAccessStore()
 
   /**
-   * Verifica si el usuario tiene acceso a un módulo específico
-   */
+    * Verifica si el usuario tiene acceso a un módulo específico
+    */
   const checkModuleAccess = useMemo(() => {
     return (module: ModuleName): ModuleAccessResult => {
-      // Si no hay sesión o no hay información de negocio, denegar acceso
-      if (!session || !businessType || !plan) {
+      // Si no hay sesión, denegar acceso
+      if (!session) {
         return {
           hasAccess: false,
-          reason: 'No se pudo verificar tu información de acceso',
+          reason: 'Usuario no autenticado',
         }
       }
 
-      const hasAccess = hasModuleAccess(module, businessType, plan)
-      const reason = hasAccess
-        ? null
-        : getAccessDeniedReason(module, businessType, plan)
+      // COMPANY_ADMIN tiene acceso completo
+      if (session.user?.role === 'company_admin') {
+        return { hasAccess: true, reason: null }
+      }
+
+      // Si el store no está cargado, denegar acceso temporalmente
+      if (!isLoaded) {
+        return {
+          hasAccess: false,
+          reason: 'Verificando permisos...',
+        }
+      }
+
+      // Verificar acceso en el store (100% dependiente de BD)
+      const hasAccess = moduleAccess[module] === true
 
       return {
         hasAccess,
-        reason,
+        reason: hasAccess ? null : 'No tienes acceso a este módulo',
       }
     }
-  }, [session, businessType, plan])
+  }, [session, moduleAccess, isLoaded])
 
   /**
-   * Lista de todos los módulos disponibles para el usuario actual
-   */
+    * Lista de todos los módulos disponibles para el usuario actual
+    */
   const availableModules = useMemo(() => {
-    if (!businessType || !plan) {
-      return []
-    }
+    if (!isLoaded) return []
 
-    return getAvailableModules(businessType, plan)
-  }, [businessType, plan])
+    return Object.keys(moduleAccess).filter(module => moduleAccess[module] === true) as ModuleName[]
+  }, [moduleAccess, isLoaded])
 
   /**
-   * Verifica si un módulo específico está disponible (versión simple que retorna boolean)
-   */
+    * Verifica si un módulo específico está disponible (versión simple que retorna boolean)
+    */
   const isModuleAvailable = useMemo(() => {
     return (module: ModuleName): boolean => {
       return checkModuleAccess(module).hasAccess
@@ -84,7 +85,5 @@ export function useModuleAccess() {
     checkModuleAccess,
     availableModules,
     isModuleAvailable,
-    businessType,
-    plan,
   }
 }
