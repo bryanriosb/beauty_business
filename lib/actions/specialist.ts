@@ -121,6 +121,7 @@ export interface CreateSpecialistWithAuthData {
   credentials?: {
     email: string
     password: string
+    phone?: string
   }
 }
 
@@ -155,7 +156,9 @@ export async function createSpecialistWithAuthAction(
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: credentials.email,
         password: credentials.password,
+        phone: credentials.phone,
         email_confirm: true,
+        phone_confirm: credentials.phone ? true : undefined,
         user_metadata: {
           name: `${specialistData.first_name} ${specialistData.last_name || ''}`.trim(),
         },

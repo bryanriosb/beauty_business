@@ -151,6 +151,13 @@ export default function SignInPage() {
             </form>
           </Form>
 
+          <div className="text-center text-sm">
+            ¿No tienes una cuenta?{' '}
+            <Link href="/auth/sign-up" className="font-medium underline underline-offset-4">
+              Regístrate
+            </Link>
+          </div>
+
           <FieldDescription className="text-center">
             Al continuar, aceptas nuestros{' '}
             <a href="#" className="underline underline-offset-4">

@@ -56,9 +56,18 @@ export default function BillingPage() {
     setIsLoading(false)
   }
 
-  const handleCheckoutSuccess = () => {
+  const handleCheckoutSuccess = async () => {
     setShowCheckout(false)
     setSelectedPlan(null)
+
+    // Refresh account data to get updated plan
+    if (activeBusiness?.business_account_id) {
+      const account = await getBusinessAccountAction(activeBusiness.business_account_id)
+      if (account?.plan_id) {
+        setCurrentPlanId(account.plan_id)
+      }
+    }
+
     router.refresh()
   }
 

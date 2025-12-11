@@ -482,6 +482,23 @@ export async function createSubscriptionAction(
       .update(updateData)
       .eq('id', businessAccountId)
 
+    // Register initial payment in payment history
+    const amount = billingCycle === 'yearly' ? plan.yearly_price_cents : plan.monthly_price_cents
+    await client.from('payment_history').insert({
+      business_account_id: businessAccountId,
+      mp_payment_id: `subscription_${subscription.id}_initial`,
+      amount_cents: amount,
+      currency: mpConfig.currency,
+      status: 'approved',
+      status_detail: 'accredited',
+      payment_type: 'credit_card',
+      payment_method: 'card',
+      installments: 1,
+      description: `Suscripción ${plan.name} - ${billingCycle === 'yearly' ? 'Anual' : 'Mensual'} - Pago inicial`,
+      external_reference: businessAccountId,
+      payer_email: payerEmail,
+    } as PaymentHistoryInsert)
+
     return { success: true, subscriptionId: subscription.id }
   } catch (error: any) {
     console.error('Error creating subscription:', error)

@@ -4,6 +4,7 @@ import { AppSidebar } from '@/components/AppSidebar'
 import AdminHeader from '@/components/AdminHeader'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { TrialBanner } from '@/components/trial'
+import { ModuleAccessLoader } from '@/components/ModuleAccessLoader'
 
 export default function AdminLayout({
   children,
@@ -12,6 +13,7 @@ export default function AdminLayout({
 }>) {
   return (
     <SidebarProvider defaultOpen={true}>
+      <ModuleAccessLoader />
       <AppSidebar />
       <section className="grid gap-4 w-full h-full overflow-x-hidden">
         <TrialBanner />

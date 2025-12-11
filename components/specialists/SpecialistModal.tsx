@@ -111,6 +111,7 @@ const DEFAULT_SCHEDULE: WeekSchedule = {
 export interface SpecialistCredentials {
   email: string
   password: string
+  phone?: string
 }
 
 export interface SpecialistCredentialsUpdate {

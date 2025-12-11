@@ -468,6 +468,40 @@ export async function checkPlanModuleAccessAction(
   }
 }
 
+export async function getAllModuleAccessAction(
+  businessAccountId: string
+): Promise<Record<string, boolean>> {
+  try {
+    const client = await getSupabaseAdminClient()
+
+    const { data: account, error: accountError } = await client
+      .from('business_accounts')
+      .select('plan_id')
+      .eq('id', businessAccountId)
+      .single()
+
+    if (accountError || !account?.plan_id) return {}
+
+    const { data: moduleAccessList, error: accessError } = await client
+      .from('plan_module_access')
+      .select('*, module:plan_modules!inner(code)')
+      .eq('plan_id', account.plan_id)
+
+    if (accessError || !moduleAccessList) return {}
+
+    return moduleAccessList.reduce((acc, access) => {
+      const moduleCode = (access.module as any)?.code
+      if (moduleCode) {
+        acc[moduleCode] = true
+      }
+      return acc
+    }, {} as Record<string, boolean>)
+  } catch (error) {
+    console.error('Error getting all module access:', error)
+    return {}
+  }
+}
+
 // === PLAN ASSIGNMENT ACTIONS ===
 
 export interface BusinessAccountWithPlan {

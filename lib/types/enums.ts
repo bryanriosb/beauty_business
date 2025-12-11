@@ -1,6 +1,18 @@
 // Database enums matching Supabase schema
 
-export type BusinessType = 'SALON' | 'INDEPENDENT' | 'BEAUTY_STUDIO'
+export type BusinessType =
+  | 'AESTHETICS_CENTER'
+  | 'BARBERSHOP'
+  | 'HAIR_SALON'
+  | 'MAKEUP_CENTER'
+  | 'INDEPENDENT'
+  | 'EYEBROWS_EYELASHES_SALON'
+  | 'SPA'
+  | 'MANICURE_PEDICURE_SALON'
+  | 'BEAUTY_SALON'
+  | 'PLASTIC_SURGERY_CENTER'
+  | 'SALON'
+  | 'BEAUTY_STUDIO'
 
 export type DayOfWeek = '0' | '1' | '2' | '3' | '4' | '5' | '6'
 
