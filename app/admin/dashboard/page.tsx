@@ -1,20 +1,38 @@
 'use client'
 
-import { useActiveBusinessStore } from '@/lib/store/active-business-store'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useActiveBusinessHydrated } from '@/lib/store/active-business-store'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { TodayStats } from '@/components/dashboard/TodayStats'
 import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments'
 import { PendingActions } from '@/components/dashboard/PendingActions'
 import { SpecialistsToday } from '@/components/dashboard/SpecialistsToday'
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export default function DashboardPage() {
-  const { isLoading } = useCurrentUser()
-  const { activeBusiness } = useActiveBusinessStore()
+  const { isLoading, role } = useCurrentUser()
+  const { activeBusiness, hydrated } = useActiveBusinessHydrated()
+  const router = useRouter()
 
   const activeBusinessId = activeBusiness?.id
   const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: es })
+
+  useEffect(() => {
+    if (!isLoading && role === 'company_admin') {
+      router.replace('/admin/company-dashboard')
+    }
+  }, [isLoading, role, router])
+
+  if (isLoading || !hydrated) {
+    return <DashboardSkeleton />
+  }
+
+  if (role === 'company_admin') {
+    return <DashboardSkeleton />
+  }
 
   if (!activeBusinessId) {
     return (
@@ -25,21 +43,6 @@ export default function DashboardPage() {
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Selecciona una sucursal para ver el dashboard
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-6 w-full overflow-auto">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Dashboard
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Cargando...
           </p>
         </div>
       </div>

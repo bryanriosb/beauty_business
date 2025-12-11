@@ -17,10 +17,11 @@ import { SpecialistsReport } from '@/components/reports/SpecialistsReport'
 import { CustomersReport } from '@/components/reports/CustomersReport'
 import { SuppliesReport } from '@/components/reports/SuppliesReport'
 import { AccountsReceivableReport } from '@/components/reports/AccountsReceivableReport'
+import { CompanyReportsView } from '@/components/reports/company/CompanyReportsView'
 import { DollarSign, Calendar, Scissors, UserCircle, Users, Syringe, Wallet } from 'lucide-react'
 
 export default function ReportsPage() {
-  const { isLoading } = useCurrentUser()
+  const { isLoading, role } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
   const [activePreset, setActivePreset] = useState<DatePreset>('month')
   const [dateRange, setDateRange] = useState<DateRange | undefined>(
@@ -28,6 +29,7 @@ export default function ReportsPage() {
   )
 
   const activeBusinessId = activeBusiness?.id
+  const isCompanyAdmin = role === 'company_admin'
 
   const dateRangeProps = useMemo(() => {
     if (!dateRange?.from || !dateRange?.to) {
@@ -43,6 +45,29 @@ export default function ReportsPage() {
     }
   }, [dateRange])
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6 w-full overflow-auto">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reportes</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isCompanyAdmin) {
+    return (
+      <CompanyReportsView
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        activePreset={activePreset}
+        onPresetChange={setActivePreset}
+        dateRangeProps={dateRangeProps}
+      />
+    )
+  }
+
   if (!activeBusinessId) {
     return (
       <div className="flex flex-col gap-6 w-full overflow-auto">
@@ -51,17 +76,6 @@ export default function ReportsPage() {
           <p className="text-sm sm:text-base text-muted-foreground">
             Selecciona una sucursal para ver los reportes
           </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-6 w-full overflow-auto">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reportes</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Cargando...</p>
         </div>
       </div>
     )
