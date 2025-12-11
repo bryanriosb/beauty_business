@@ -15,14 +15,26 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import type {
   Plan,
   PlanModule,
   PlanModuleAccess,
   PlanModuleAccessInsert,
 } from '@/lib/models/plan/plan'
-import { Loader2, Package, ChevronDown, Settings2, Plus, X, Pencil } from 'lucide-react'
+import {
+  Loader2,
+  Package,
+  ChevronDown,
+  Settings2,
+  Plus,
+  X,
+  Pencil,
+} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import PlanService from '@/lib/services/plan/plan-service'
 import { toast } from 'sonner'
@@ -68,7 +80,10 @@ export function PlanModulesModal({
   const [modules, setModules] = useState<PlanModule[]>([])
   const [moduleAccess, setModuleAccess] = useState<ModuleAccessState[]>([])
   const [newPermissions, setNewPermissions] = useState<NewPermissionState>({})
-  const [editingPermission, setEditingPermission] = useState<{ moduleId: string; featureKey: string } | null>(null)
+  const [editingPermission, setEditingPermission] = useState<{
+    moduleId: string
+    featureKey: string
+  } | null>(null)
   const planService = new PlanService()
 
   const loadData = useCallback(async () => {
@@ -91,10 +106,14 @@ export function PlanModulesModal({
           canRead: existing?.can_read ?? true,
           canWrite: existing?.can_write ?? true,
           canDelete: existing?.can_delete ?? true,
-          customPermissions: (existing?.custom_permissions as Record<string, boolean>) || {},
-          featuresMetadata: (existing?.features_metadata as Record<string, FeatureMetadata>) || {},
+          customPermissions:
+            (existing?.custom_permissions as Record<string, boolean>) || {},
+          featuresMetadata:
+            (existing?.features_metadata as Record<string, FeatureMetadata>) ||
+            {},
         }
       })
+
       setModuleAccess(accessState)
     } catch (error) {
       console.error('Error loading modules:', error)
@@ -179,9 +198,13 @@ export function PlanModulesModal({
     }
 
     // Convert string to array if needed
-    const requiredPlanArray = typeof newPerm.requiredPlan === 'string'
-      ? newPerm.requiredPlan.split(',').map(p => p.trim()).filter(Boolean)
-      : newPerm.requiredPlan || []
+    const requiredPlanArray =
+      typeof newPerm.requiredPlan === 'string'
+        ? newPerm.requiredPlan
+            .split(',')
+            .map((p) => p.trim())
+            .filter(Boolean)
+        : newPerm.requiredPlan || []
 
     setModuleAccess((prev) =>
       prev.map((access) =>
@@ -218,12 +241,14 @@ export function PlanModulesModal({
     setModuleAccess((prev) =>
       prev.map((access) => {
         if (access.moduleId === moduleId) {
-          const { [featureKey]: removedPerm, ...restPermissions } = access.customPermissions
-          const { [featureKey]: removedMeta, ...restMetadata } = access.featuresMetadata
+          const { [featureKey]: removedPerm, ...restPermissions } =
+            access.customPermissions
+          const { [featureKey]: removedMeta, ...restMetadata } =
+            access.featuresMetadata
           return {
             ...access,
             customPermissions: restPermissions,
-            featuresMetadata: restMetadata
+            featuresMetadata: restMetadata,
           }
         }
         return access
@@ -241,7 +266,12 @@ export function PlanModulesModal({
     setNewPermissions((prev) => ({
       ...prev,
       [moduleId]: {
-        ...(prev[moduleId] || { key: '', name: '', description: '', requiredPlan: '' }),
+        ...(prev[moduleId] || {
+          key: '',
+          name: '',
+          description: '',
+          requiredPlan: '',
+        }),
         [field]: value,
       },
     }))
@@ -285,7 +315,9 @@ export function PlanModulesModal({
 
       // Scroll to form after state update
       setTimeout(() => {
-        const formElement = document.getElementById(`permission-form-${moduleId}`)
+        const formElement = document.getElementById(
+          `permission-form-${moduleId}`
+        )
         if (formElement) {
           formElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
         }
@@ -302,9 +334,13 @@ export function PlanModulesModal({
       return
     }
 
-    const requiredPlanArray = typeof newPerm.requiredPlan === 'string'
-      ? newPerm.requiredPlan.split(',').map(p => p.trim()).filter(Boolean)
-      : newPerm.requiredPlan || []
+    const requiredPlanArray =
+      typeof newPerm.requiredPlan === 'string'
+        ? newPerm.requiredPlan
+            .split(',')
+            .map((p) => p.trim())
+            .filter(Boolean)
+        : newPerm.requiredPlan || []
 
     updateFeatureMetadata(moduleId, editingPermission.featureKey, {
       name: newPerm.name,
@@ -342,12 +378,14 @@ export function PlanModulesModal({
           can_read: access.canRead,
           can_write: access.canWrite,
           can_delete: access.canDelete,
-          custom_permissions: Object.keys(access.customPermissions).length > 0
-            ? access.customPermissions
-            : null,
-          features_metadata: Object.keys(access.featuresMetadata).length > 0
-            ? access.featuresMetadata
-            : null,
+          custom_permissions:
+            Object.keys(access.customPermissions).length > 0
+              ? access.customPermissions
+              : null,
+          features_metadata:
+            Object.keys(access.featuresMetadata).length > 0
+              ? access.featuresMetadata
+              : null,
         }))
 
       const result = await planService.setModuleAccess(plan.id, accessData)
@@ -390,12 +428,16 @@ export function PlanModulesModal({
                 <div className="text-center py-8 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>No hay módulos disponibles</p>
-                  <p className="text-sm">Crea módulos primero desde la configuración</p>
+                  <p className="text-sm">
+                    Crea módulos primero desde la configuración
+                  </p>
                 </div>
               ) : (
                 modules.map((module) => {
                   const access = getModuleAccess(module.id)
                   const isEnabled = access?.enabled ?? false
+
+                  console.log('access', access)
 
                   return (
                     <div
@@ -490,29 +532,38 @@ export function PlanModulesModal({
                                 <span className="flex items-center gap-2">
                                   <Settings2 className="h-4 w-4" />
                                   Permisos Granulares
-                                  {access?.customPermissions && Object.keys(access.customPermissions).length > 0 && (
-                                    <span className="ml-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                      {Object.keys(access.customPermissions).length}
-                                    </span>
-                                  )}
+                                  {access?.customPermissions &&
+                                    Object.keys(access.customPermissions)
+                                      .length > 0 && (
+                                      <span className="ml-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                        {
+                                          Object.keys(access.customPermissions)
+                                            .length
+                                        }
+                                      </span>
+                                    )}
                                 </span>
                                 <ChevronDown className="h-4 w-4" />
                               </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-3 space-y-3">
                               <p className="text-xs text-muted-foreground">
-                                Controla el acceso a funcionalidades específicas dentro del módulo
+                                Controla el acceso a funcionalidades específicas
+                                dentro del módulo
                               </p>
 
                               {/* Todos los permisos configurados */}
-                              {access?.featuresMetadata && Object.keys(access.featuresMetadata).length > 0 && (
-                                <>
-                                  <div className="space-y-2">
-                                    <p className="text-xs font-medium text-muted-foreground">
-                                      Permisos Configurados
-                                    </p>
-                                    {Object.entries(access.featuresMetadata).map(
-                                      ([featureKey, metadata]) => (
+                              {access?.featuresMetadata &&
+                                Object.keys(access.featuresMetadata).length >
+                                  0 && (
+                                  <>
+                                    <div className="space-y-2">
+                                      <p className="text-xs font-medium text-muted-foreground">
+                                        Permisos Configurados
+                                      </p>
+                                      {Object.entries(
+                                        access.featuresMetadata
+                                      ).map(([featureKey, metadata]) => (
                                         <div
                                           key={featureKey}
                                           className="flex items-start justify-between py-2 px-3 rounded bg-muted/50"
@@ -532,27 +583,43 @@ export function PlanModulesModal({
                                             <p className="text-xs text-muted-foreground">
                                               {metadata.description}
                                             </p>
-                                            {metadata.requiredPlan && metadata.requiredPlan.length > 0 && (
-                                              <p className="text-xs text-primary mt-1">
-                                                Planes: {metadata.requiredPlan.join(', ')}
-                                              </p>
-                                            )}
+                                            {metadata.requiredPlan &&
+                                              metadata.requiredPlan.length >
+                                                0 && (
+                                                <p className="text-xs text-primary mt-1">
+                                                  Planes:{' '}
+                                                  {metadata.requiredPlan.join(
+                                                    ', '
+                                                  )}
+                                                </p>
+                                              )}
                                           </div>
                                           <div className="flex items-center gap-1">
                                             <Switch
                                               id={`${module.id}-${featureKey}`}
                                               checked={
-                                                access?.customPermissions?.[featureKey] ?? false
+                                                access?.customPermissions?.[
+                                                  featureKey
+                                                ] ?? false
                                               }
                                               onCheckedChange={(v) =>
-                                                updateCustomPermission(module.id, featureKey, v)
+                                                updateCustomPermission(
+                                                  module.id,
+                                                  featureKey,
+                                                  v
+                                                )
                                               }
                                             />
                                             <Button
                                               variant="ghost"
                                               size="icon"
                                               className="h-8 w-8"
-                                              onClick={() => startEditingPermission(module.id, featureKey)}
+                                              onClick={() =>
+                                                startEditingPermission(
+                                                  module.id,
+                                                  featureKey
+                                                )
+                                              }
                                               title="Editar permiso"
                                             >
                                               <Pencil className="h-3.5 w-3.5" />
@@ -561,39 +628,56 @@ export function PlanModulesModal({
                                               variant="ghost"
                                               size="icon"
                                               className="h-8 w-8"
-                                              onClick={() => removeCustomPermission(module.id, featureKey)}
+                                              onClick={() =>
+                                                removeCustomPermission(
+                                                  module.id,
+                                                  featureKey
+                                                )
+                                              }
                                               title="Eliminar permiso"
                                             >
                                               <X className="h-4 w-4 text-destructive" />
                                             </Button>
                                           </div>
                                         </div>
-                                      )
-                                    )}
-                                  </div>
-                                  <Separator />
-                                </>
-                              )}
+                                      ))}
+                                    </div>
+                                    <Separator />
+                                  </>
+                                )}
 
                               {/* Formulario para agregar/editar permiso */}
-                              <div id={`permission-form-${module.id}`} className="space-y-3 pt-2">
+                              <div
+                                id={`permission-form-${module.id}`}
+                                className="space-y-3 pt-2"
+                              >
                                 <p className="text-xs font-medium text-muted-foreground">
                                   {editingPermission?.moduleId === module.id
                                     ? 'Editar Permiso'
                                     : 'Agregar Nuevo Permiso'}
                                 </p>
                                 <div className="space-y-3">
-                                  {editingPermission?.moduleId !== module.id && (
+                                  {editingPermission?.moduleId !==
+                                    module.id && (
                                     <div>
-                                      <Label htmlFor={`new-key-${module.id}`} className="text-xs">
+                                      <Label
+                                        htmlFor={`new-key-${module.id}`}
+                                        className="text-xs"
+                                      >
                                         Clave (requerido)
                                       </Label>
                                       <Input
                                         id={`new-key-${module.id}`}
                                         placeholder="clave_del_permiso"
-                                        value={newPermissions[module.id]?.key || ''}
+                                        value={
+                                          newPermissions[module.id]?.key || ''
+                                        }
                                         onChange={(e) =>
-                                          updateNewPermissionInput(module.id, 'key', e.target.value)
+                                          updateNewPermissionInput(
+                                            module.id,
+                                            'key',
+                                            e.target.value
+                                          )
                                         }
                                         className="text-sm mt-1"
                                       />
@@ -602,51 +686,78 @@ export function PlanModulesModal({
                                       </p>
                                     </div>
                                   )}
-                                  {editingPermission?.moduleId === module.id && (
+                                  {editingPermission?.moduleId ===
+                                    module.id && (
                                     <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded p-2">
-                                      <p className="text-xs text-muted-foreground mb-1">Editando permiso:</p>
+                                      <p className="text-xs text-muted-foreground mb-1">
+                                        Editando permiso:
+                                      </p>
                                       <code className="text-xs font-medium">
                                         {editingPermission.featureKey}
                                       </code>
                                     </div>
                                   )}
                                   <div>
-                                    <Label htmlFor={`new-name-${module.id}`} className="text-xs">
+                                    <Label
+                                      htmlFor={`new-name-${module.id}`}
+                                      className="text-xs"
+                                    >
                                       Nombre (requerido)
                                     </Label>
                                     <Input
                                       id={`new-name-${module.id}`}
                                       placeholder="Nombre del permiso"
-                                      value={newPermissions[module.id]?.name || ''}
+                                      value={
+                                        newPermissions[module.id]?.name || ''
+                                      }
                                       onChange={(e) =>
-                                        updateNewPermissionInput(module.id, 'name', e.target.value)
+                                        updateNewPermissionInput(
+                                          module.id,
+                                          'name',
+                                          e.target.value
+                                        )
                                       }
                                       className="text-sm mt-1"
                                     />
                                   </div>
                                   <div>
-                                    <Label htmlFor={`new-description-${module.id}`} className="text-xs">
+                                    <Label
+                                      htmlFor={`new-description-${module.id}`}
+                                      className="text-xs"
+                                    >
                                       Descripción (opcional)
                                     </Label>
                                     <Input
                                       id={`new-description-${module.id}`}
                                       placeholder="Descripción del permiso"
-                                      value={newPermissions[module.id]?.description || ''}
+                                      value={
+                                        newPermissions[module.id]
+                                          ?.description || ''
+                                      }
                                       onChange={(e) =>
-                                        updateNewPermissionInput(module.id, 'description', e.target.value)
+                                        updateNewPermissionInput(
+                                          module.id,
+                                          'description',
+                                          e.target.value
+                                        )
                                       }
                                       className="text-sm mt-1"
                                     />
                                   </div>
                                   <div>
-                                    <Label htmlFor={`new-plans-${module.id}`} className="text-xs">
+                                    <Label
+                                      htmlFor={`new-plans-${module.id}`}
+                                      className="text-xs"
+                                    >
                                       Planes requeridos (opcional)
                                     </Label>
                                     <Input
                                       id={`new-plans-${module.id}`}
                                       placeholder="free, basic, pro, enterprise (separados por coma)"
                                       value={(() => {
-                                        const plans = newPermissions[module.id]?.requiredPlan
+                                        const plans =
+                                          newPermissions[module.id]
+                                            ?.requiredPlan
                                         if (Array.isArray(plans)) {
                                           return plans.join(', ')
                                         }
@@ -668,7 +779,9 @@ export function PlanModulesModal({
                                         variant="outline"
                                         size="sm"
                                         className="flex-1"
-                                        onClick={() => cancelEditingPermission(module.id)}
+                                        onClick={() =>
+                                          cancelEditingPermission(module.id)
+                                        }
                                       >
                                         Cancelar
                                       </Button>
@@ -676,7 +789,9 @@ export function PlanModulesModal({
                                         variant="default"
                                         size="sm"
                                         className="flex-1"
-                                        onClick={() => saveEditedPermission(module.id)}
+                                        onClick={() =>
+                                          saveEditedPermission(module.id)
+                                        }
                                       >
                                         <Pencil className="mr-2 h-4 w-4" />
                                         Guardar Cambios
@@ -687,7 +802,9 @@ export function PlanModulesModal({
                                       variant="outline"
                                       size="sm"
                                       className="w-full"
-                                      onClick={() => addCustomPermission(module.id)}
+                                      onClick={() =>
+                                        addCustomPermission(module.id)
+                                      }
                                     >
                                       <Plus className="mr-2 h-4 w-4" />
                                       Agregar Permiso

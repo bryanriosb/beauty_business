@@ -1,7 +1,15 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Check, ChevronsUpDown, X, Clock, DollarSign, Pencil, AlertTriangle } from 'lucide-react'
+import {
+  Check,
+  ChevronsUpDown,
+  X,
+  Clock,
+  DollarSign,
+  Pencil,
+  AlertTriangle,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +35,7 @@ import {
 } from '@/components/ui/tooltip'
 import type { Service } from '@/lib/models/service/service'
 import type { ServiceStockStatus } from '@/hooks/use-service-stock-check'
+import { FeatureGate } from '../plan/feature-gate'
 
 export interface SelectedService {
   id: string
@@ -101,7 +110,9 @@ export function MultiServiceSelector({
     if (selectedIds.has(service.id)) {
       onChange(selectedServices.filter((s) => s.id !== service.id))
     } else {
-      const serviceWithCategory = service as Service & { category?: { id: string; name: string } | null }
+      const serviceWithCategory = service as Service & {
+        category?: { id: string; name: string } | null
+      }
       onChange([
         ...selectedServices,
         {
@@ -120,13 +131,17 @@ export function MultiServiceSelector({
     }
   }
 
-  const getStockStatus = (serviceId: string): ServiceStockStatus | undefined => {
+  const getStockStatus = (
+    serviceId: string
+  ): ServiceStockStatus | undefined => {
     return stockStatusMap?.get(serviceId)
   }
 
   const hasAnyStockIssues = useMemo(() => {
     if (!stockStatusMap) return false
-    return selectedServices.some((s) => stockStatusMap.get(s.id)?.hasStockIssues)
+    return selectedServices.some(
+      (s) => stockStatusMap.get(s.id)?.hasStockIssues
+    )
   }, [selectedServices, stockStatusMap])
 
   const handlePriceEdit = (serviceId: string) => {
@@ -196,7 +211,9 @@ export function MultiServiceSelector({
             {isLoading
               ? 'Cargando servicios...'
               : selectedServices.length > 0
-              ? `${selectedServices.length} servicio${selectedServices.length > 1 ? 's' : ''} seleccionado${selectedServices.length > 1 ? 's' : ''}`
+              ? `${selectedServices.length} servicio${
+                  selectedServices.length > 1 ? 's' : ''
+                } seleccionado${selectedServices.length > 1 ? 's' : ''}`
               : 'Seleccionar servicios...'}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -230,7 +247,8 @@ export function MultiServiceSelector({
                           {service.name}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {service.duration_minutes} min • {formatPrice(service.price_cents)}
+                          {service.duration_minutes} min •{' '}
+                          {formatPrice(service.price_cents)}
                         </span>
                       </div>
                     </CommandItem>
@@ -266,11 +284,15 @@ export function MultiServiceSelector({
                           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs">
-                          <p className="font-medium mb-1">Stock insuficiente:</p>
+                          <p className="font-medium mb-1">
+                            Stock insuficiente:
+                          </p>
                           <ul className="text-xs space-y-0.5">
                             {stockStatus?.issues.map((issue) => (
                               <li key={issue.productId}>
-                                {issue.productName}: {issue.currentStock.toFixed(1)} disponible, necesita {issue.requiredQuantity.toFixed(1)}
+                                {issue.productName}:{' '}
+                                {issue.currentStock.toFixed(1)} disponible,
+                                necesita {issue.requiredQuantity.toFixed(1)}
                               </li>
                             ))}
                           </ul>
@@ -287,82 +309,94 @@ export function MultiServiceSelector({
                     )}
                   </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  {editingServiceId === service.id ? (
-                    <>
-                      <Input
-                        type="number"
-                        min={0}
-                        step={100}
-                        value={editPrice}
-                        onChange={(e) => handlePriceChange(service.id, Number(e.target.value) || 0)}
-                        className="w-28 h-7 text-sm"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handlePriceSave()
-                          if (e.key === 'Escape') setEditingServiceId(null)
-                        }}
-                        onBlur={handlePriceSave}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2"
-                        onClick={handlePriceSave}
-                      >
-                        OK
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <span
-                        className={cn(
-                          'text-sm',
-                          service.has_custom_price && 'text-blue-600 font-medium'
+                  <div className="flex items-center gap-2 shrink-0">
+                    {editingServiceId === service.id ? (
+                      <>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={100}
+                          value={editPrice}
+                          onChange={(e) =>
+                            handlePriceChange(
+                              service.id,
+                              Number(e.target.value) || 0
+                            )
+                          }
+                          className="w-28 h-7 text-sm"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handlePriceSave()
+                            if (e.key === 'Escape') setEditingServiceId(null)
+                          }}
+                          onBlur={handlePriceSave}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2"
+                          onClick={handlePriceSave}
+                        >
+                          OK
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className={cn(
+                            'text-sm',
+                            service.has_custom_price &&
+                              'text-blue-600 font-medium'
+                          )}
+                        >
+                          {formatPrice(service.price_cents)}
+                        </span>
+                        {allowPriceEdit && !disabled && (
+                          <FeatureGate
+                            module="appointments"
+                            feature="price_editing"
+                            mode="compact"
+                          >
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => handlePriceEdit(service.id)}
+                              title="Editar precio"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </FeatureGate>
                         )}
-                      >
-                        {formatPrice(service.price_cents)}
-                      </span>
-                      {allowPriceEdit && !disabled && (
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => handlePriceEdit(service.id)}
-                          title="Editar precio"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      )}
-                      {service.has_custom_price && (
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-muted-foreground"
-                          onClick={() => handlePriceReset(service.id)}
-                          title="Restaurar precio original"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </>
-                  )}
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={() => handleRemove(service.id)}
-                    disabled={disabled}
-                    title="Quitar servicio"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                        {service.has_custom_price && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-muted-foreground"
+                            onClick={() => handlePriceReset(service.id)}
+                            title="Restaurar precio original"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => handleRemove(service.id)}
+                      disabled={disabled}
+                      title="Quitar servicio"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
               )
             })}
           </div>
@@ -371,7 +405,8 @@ export function MultiServiceSelector({
             <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
               <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
               <span className="text-xs text-amber-700 dark:text-amber-400">
-                Algunos servicios tienen insumos con stock insuficiente. Revisa antes de agendar.
+                Algunos servicios tienen insumos con stock insuficiente. Revisa
+                antes de agendar.
               </span>
             </div>
           )}

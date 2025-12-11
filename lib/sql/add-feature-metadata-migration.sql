@@ -25,41 +25,34 @@ COMMENT ON COLUMN plan_module_access.features_metadata IS 'Stores metadata for c
 -- Migrate existing hardcoded metadata to database for appointments module
 DO $$
 DECLARE
-  v_appointments_module_id UUID;
+  v_services_module_id UUID;
 BEGIN
-  -- Get appointments module ID
-  SELECT id INTO v_appointments_module_id
+  -- Get services module ID
+  SELECT id INTO v_services_module_id
   FROM plan_modules
-  WHERE code = 'appointments' AND is_active = true
+  WHERE code = 'services' AND is_active = true
   LIMIT 1;
 
-  IF v_appointments_module_id IS NOT NULL THEN
-    -- Update all plan_module_access records for appointments with metadata
+  IF v_services_module_id IS NOT NULL THENº
+    -- Update all plan_module_access records with metadata
     UPDATE plan_module_access
-    SET features_metadata = jsonb_build_object(
-      'whatsapp_notifications', jsonb_build_object(
-        'name', 'Notificaciones de WhatsApp',
-        'description', 'Enviar recordatorios y notificaciones por WhatsApp',
-        'requiredPlan', jsonb_build_array('pro', 'enterprise')
+    SET 
+      features_metadata = jsonb_build_object(
+        'supply_management', jsonb_build_object(
+          'name', 'Gestión de insumos',
+          'description', 'Habilita la capacidad de gestionar productos de tipo insumo con gestión de inventario y descuento automático de cantidades al completar servicios',
+          'requiredPlan', jsonb_build_array('pro', 'enterprise')
+        )
       ),
-      'specialist_assignment', jsonb_build_object(
-        'name', 'Asignación por servicio',
-        'description', 'Asignar especialistas específicos a cada servicio',
-        'requiredPlan', jsonb_build_array('pro', 'enterprise')
-      ),
-      'price_editing', jsonb_build_object(
-        'name', 'Edición de precios',
-        'description', 'Modificar precios de servicios durante la creación de citas',
-        'requiredPlan', jsonb_build_array('pro', 'enterprise')
+      custom_permissions = jsonb_build_object(
+        'supply_management', true
       )
-    )
-    WHERE module_id = v_appointments_module_id;
+    WHERE module_id = v_services_module_id;
   END IF;
 END $$;
 
 -- Create index for JSONB queries on features_metadata
-CREATE INDEX IF NOT EXISTS idx_plan_module_access_features_metadata
-ON plan_module_access USING gin(features_metadata);
+CREATE INDEX IF NOT EXISTS idx_plan_module_access_features_metadata ON plan_module_access USING gin (features_metadata);
 
 -- Create a helper function to get feature metadata
 CREATE OR REPLACE FUNCTION get_feature_metadata(

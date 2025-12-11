@@ -228,7 +228,10 @@ export default function AppointmentFormModal({
         setSelectedServices(servicesFromAppointment)
 
         // Initialize prevServiceIdsRef to prevent reset on first render
-        prevServiceIdsRef.current = servicesFromAppointment.map(s => s.id).sort().join(',')
+        prevServiceIdsRef.current = servicesFromAppointment
+          .map((s) => s.id)
+          .sort()
+          .join(',')
 
         // Load specialist assignments from appointment_services
         const assignmentsFromAppointment: ServiceSpecialistAssignment[] =
@@ -240,7 +243,9 @@ export default function AppointmentFormModal({
               ? format(new Date(as.end_time), 'HH:mm')
               : null
             const specialistName = as.specialist
-              ? `${as.specialist.first_name} ${as.specialist.last_name || ''}`.trim()
+              ? `${as.specialist.first_name} ${
+                  as.specialist.last_name || ''
+                }`.trim()
               : null
 
             return {
@@ -346,7 +351,10 @@ export default function AppointmentFormModal({
   useEffect(() => {
     if (isInitializingRef.current) return
 
-    const currentServiceIds = selectedServices.map(s => s.id).sort().join(',')
+    const currentServiceIds = selectedServices
+      .map((s) => s.id)
+      .sort()
+      .join(',')
     if (currentServiceIds === prevServiceIdsRef.current) {
       // Service IDs haven't changed, don't reset
       return
@@ -358,17 +366,19 @@ export default function AppointmentFormModal({
     form.setValue('specialist_id', '')
     form.setValue('service_id', firstServiceId)
     // Recreate assignments structure without specialist/time
-    const newAssignments: ServiceSpecialistAssignment[] = selectedServices.map(s => ({
-      serviceId: s.id,
-      serviceName: s.name,
-      categoryId: s.category_id || null,
-      categoryName: s.category_name || null,
-      specialistId: null,
-      specialistName: null,
-      durationMinutes: s.duration_minutes,
-      startTime: null,
-      endTime: null,
-    }))
+    const newAssignments: ServiceSpecialistAssignment[] = selectedServices.map(
+      (s) => ({
+        serviceId: s.id,
+        serviceName: s.name,
+        categoryId: s.category_id || null,
+        categoryName: s.category_name || null,
+        specialistId: null,
+        specialistName: null,
+        durationMinutes: s.duration_minutes,
+        startTime: null,
+        endTime: null,
+      })
+    )
     setServiceSpecialistAssignments(newAssignments)
   }, [selectedServices, firstServiceId, form])
 
@@ -379,13 +389,15 @@ export default function AppointmentFormModal({
     form.setValue('end_time', '')
     form.setValue('specialist_id', '')
     // Reset assignments to clear specialist/time but keep structure
-    setServiceSpecialistAssignments(prev => prev.map(a => ({
-      ...a,
-      specialistId: null,
-      specialistName: null,
-      startTime: null,
-      endTime: null,
-    })))
+    setServiceSpecialistAssignments((prev) =>
+      prev.map((a) => ({
+        ...a,
+        specialistId: null,
+        specialistName: null,
+        startTime: null,
+        endTime: null,
+      }))
+    )
   }, [currentDate, form])
 
   const handleCustomerSelect = (customerId: string) => {
@@ -431,7 +443,9 @@ export default function AppointmentFormModal({
       }
 
       if (!allServicesHaveSpecialistAndTime) {
-        toast.error('Debes asignar especialista y horario a todos los servicios')
+        toast.error(
+          'Debes asignar especialista y horario a todos los servicios'
+        )
         setIsSubmitting(false)
         return
       }
@@ -499,7 +513,9 @@ export default function AppointmentFormModal({
           )
           // Build full datetime strings for start_time and end_time
           const serviceStartTime = assignment?.startTime
-            ? new Date(`${values.date}T${assignment.startTime}:00`).toISOString()
+            ? new Date(
+                `${values.date}T${assignment.startTime}:00`
+              ).toISOString()
             : null
           const serviceEndTime = assignment?.endTime
             ? new Date(`${values.date}T${assignment.endTime}:00`).toISOString()
@@ -818,28 +834,17 @@ export default function AppointmentFormModal({
                 {selectedServices.length > 0 && currentDate && (
                   <FormItem>
                     <FormLabel>4. Especialista y Horario</FormLabel>
-                    <FeatureGate
-                      module="appointments"
-                      feature="specialist_assignment"
-                      mode="overlay"
-                      fallback={
-                        <div className="p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
-                          Asignación básica de especialistas disponible. Actualiza tu plan para asignar especialistas por servicio.
-                        </div>
-                      }
-                    >
-                      <ServiceSpecialistAssignmentComponent
-                        businessId={currentBusinessId || effectiveBusinessId}
-                        services={selectedServices}
-                        date={currentDate}
-                        value={serviceSpecialistAssignments}
-                        onChange={handleServiceSpecialistAssignmentsChange}
-                        onPrimarySpecialistChange={handlePrimarySpecialistChange}
-                        onTimesCalculated={handleTimesCalculated}
-                        disabled={isSubmitting}
-                        excludeAppointmentId={appointment?.id}
-                      />
-                    </FeatureGate>
+                    <ServiceSpecialistAssignmentComponent
+                      businessId={currentBusinessId || effectiveBusinessId}
+                      services={selectedServices}
+                      date={currentDate}
+                      value={serviceSpecialistAssignments}
+                      onChange={handleServiceSpecialistAssignmentsChange}
+                      onPrimarySpecialistChange={handlePrimarySpecialistChange}
+                      onTimesCalculated={handleTimesCalculated}
+                      disabled={isSubmitting}
+                      excludeAppointmentId={appointment?.id}
+                    />
                   </FormItem>
                 )}
 

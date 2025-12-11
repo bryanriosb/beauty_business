@@ -9,6 +9,7 @@ import {
   deleteRecords,
   getSupabaseAdminClient,
 } from '@/lib/actions/supabase'
+import { getFeatureMetadata } from '@/lib/models/plan/feature-permissions'
 import type {
   Plan,
   PlanInsert,
@@ -719,6 +720,7 @@ export async function checkFeaturePermissionAction(
         plan_id,
         plan:plans!inner(
           id,
+          code,
           module_access:plan_module_access!inner(
             custom_permissions,
             module:plan_modules!inner(code)
@@ -737,9 +739,18 @@ export async function checkFeaturePermissionAction(
       (ma: any) => ma.module?.code === moduleCode
     )
 
-    if (!moduleAccess?.custom_permissions) return false
+    // Check custom permissions first
+    if (moduleAccess?.custom_permissions?.[featureKey] === true) {
+      return true
+    }
 
-    return moduleAccess.custom_permissions[featureKey] === true
+    // If custom permissions is false or not set, check if plan is in required plans
+    const metadata = getFeatureMetadata(moduleCode as any, featureKey)
+    if (metadata?.requiredPlan?.includes(plan.code)) {
+      return true
+    }
+
+    return false
   } catch (error) {
     console.error('Error checking feature permission:', error)
     return false
