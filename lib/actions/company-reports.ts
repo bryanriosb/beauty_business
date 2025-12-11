@@ -326,19 +326,21 @@ export async function fetchCompanyGeographicDistributionAction(
 export async function fetchCompanyServiceAnalyticsAction(
   startDateISO: string,
   endDateISO: string,
+  businessIds?: string[] | string,
   limit: number = 10
 ): Promise<CompanyServiceAnalytics[]> {
   const supabase = await getSupabaseAdminClient()
   const startDate = new Date(startDateISO)
   const endDate = new Date(endDateISO)
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('appointment_services')
     .select(`
-      price_cents,
+      price_at_booking_cents,
       appointments!inner (
         start_time,
-        status
+        status,
+        business_id
       ),
       services (
         name
@@ -347,6 +349,17 @@ export async function fetchCompanyServiceAnalyticsAction(
     .eq('appointments.status', 'COMPLETED')
     .gte('appointments.start_time', startDate.toISOString())
     .lte('appointments.start_time', endDate.toISOString())
+
+  // Filter by business(es) if provided
+  if (businessIds) {
+    if (Array.isArray(businessIds)) {
+      query = query.in('appointments.business_id', businessIds)
+    } else {
+      query = query.eq('appointments.business_id', businessIds)
+    }
+  }
+
+  const { data, error } = await query
 
   if (error || !data) {
     return []
@@ -358,23 +371,23 @@ export async function fetchCompanyServiceAnalyticsAction(
     prices: number[]
   }>()
 
-  data.forEach(item => {
-    const serviceName = (item.services as any)?.name || 'Sin nombre'
-    const revenue = item.price_cents || 0
+   data.forEach(item => {
+     const serviceName = (item.services as any)?.name || 'Sin nombre'
+     const revenue = item.price_at_booking_cents || 0
 
-    if (serviceStats.has(serviceName)) {
-      const stats = serviceStats.get(serviceName)!
-      stats.total_appointments += 1
-      stats.total_revenue += revenue
-      stats.prices.push(revenue)
-    } else {
-      serviceStats.set(serviceName, {
-        total_appointments: 1,
-        total_revenue: revenue,
-        prices: [revenue]
-      })
-    }
-  })
+     if (serviceStats.has(serviceName)) {
+       const stats = serviceStats.get(serviceName)!
+       stats.total_appointments += 1
+       stats.total_revenue += revenue
+       stats.prices.push(revenue)
+     } else {
+       serviceStats.set(serviceName, {
+         total_appointments: 1,
+         total_revenue: revenue,
+         prices: [revenue]
+       })
+     }
+   })
 
   const totalAppointments = Array.from(serviceStats.values()).reduce((sum, stats) => sum + stats.total_appointments, 0)
 

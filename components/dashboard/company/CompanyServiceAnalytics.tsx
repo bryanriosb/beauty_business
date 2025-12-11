@@ -104,9 +104,11 @@ export function CompanyServiceAnalytics({ dateRange }: CompanyServiceAnalyticsPr
     const fetchData = async () => {
       setLoading(true)
       try {
+        // For company dashboard, show global analytics across all businesses
         const result = await fetchCompanyServiceAnalyticsAction(
           dateRange.startDate.toISOString(),
           dateRange.endDate.toISOString(),
+          undefined, // No business filter for company admin
           50 // Mostrar más servicios en analytics
         )
         setData(result)

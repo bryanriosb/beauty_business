@@ -13,6 +13,7 @@ import { Scissors, DollarSign, Calendar, TrendingUp } from 'lucide-react'
 interface CompanyServicesReportProps {
   startDate: Date
   endDate: Date
+  businessId?: string
 }
 
 function ServiceRowSkeleton() {
@@ -30,15 +31,21 @@ function ServiceRowSkeleton() {
   )
 }
 
-export function CompanyServicesReport({ startDate, endDate }: CompanyServicesReportProps) {
-  const [loading, setLoading] = useState(true)
+export function CompanyServicesReport({ startDate, endDate, businessId }: CompanyServicesReportProps) {
   const [services, setServices] = useState<CompanyServiceAnalytics[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const data = await fetchCompanyServiceAnalyticsAction(startDate.toISOString(), endDate.toISOString(), 15)
+        // For company reports, show global analytics unless specific businessId is provided
+        const data = await fetchCompanyServiceAnalyticsAction(
+          startDate.toISOString(),
+          endDate.toISOString(),
+          businessId, // Pass businessId if provided, otherwise show global data
+          15
+        )
         setServices(data)
       } catch (error) {
         console.error('Error fetching services report:', error)
@@ -48,7 +55,7 @@ export function CompanyServicesReport({ startDate, endDate }: CompanyServicesRep
     }
 
     fetchData()
-  }, [startDate, endDate])
+  }, [startDate, endDate, businessId])
 
   const totalRevenue = services.reduce((sum, s) => sum + s.total_revenue, 0)
   const totalAppointments = services.reduce((sum, s) => sum + s.total_appointments, 0)

@@ -135,14 +135,13 @@ export default function CompanyDashboardPage() {
                       <li>• Optimizar servicios populares</li>
                     </ul>
                   </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Acciones Prioritarias</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Monitorear cuentas con bajo rendimiento</li>
-                      <li>• Implementar programa de retención</li>
-                      <li>• Analizar demanda por ubicación</li>
-                    </ul>
-                  </div>
+                   <div className="space-y-2">
+                     <h4 className="font-semibold text-sm">Acciones Prioritarias</h4>
+                     <ul className="text-sm text-muted-foreground space-y-1">
+                       <li>• Monitorear cuentas con bajo rendimiento</li>
+                       <li>• Implementar programa de retención</li>
+                     </ul>
+                   </div>
                 </div>
               </CardContent>
             </Card>

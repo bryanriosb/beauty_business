@@ -1,1 +1,0 @@
-SELECT p.code as plan_code, pm.code as module_code FROM plans p JOIN plan_module_access pma ON p.id = pma.plan_id JOIN plan_modules pm ON pm.id = pma.module_id WHERE p.code = 'basic' AND pm.code IN ('products', 'inventory') ORDER BY p.code, pm.code;
