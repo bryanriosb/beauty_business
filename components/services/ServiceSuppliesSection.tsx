@@ -10,6 +10,7 @@ import { ProductSelector } from '@/components/products/ProductSelector'
 import { Plus, Trash2, AlertTriangle, Syringe } from 'lucide-react'
 import type { ServiceSupplyWithProduct } from '@/lib/models/product'
 import { FeatureGate } from '../plan/feature-gate'
+import Loading from '@/components/ui/loading'
 
 interface SupplyItem {
   id?: string
@@ -96,6 +97,14 @@ export function ServiceSuppliesSection({
       module="services"
       feature="supply_management"
       mode="overlay"
+      loadingComponent={
+        <div className="flex items-center justify-center p-8 min-h-[120px]">
+          <div className="text-center space-y-2">
+            <Loading className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Verificando permisos...</p>
+          </div>
+        </div>
+      }
       fallback={
         <div className="p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
           La asociación de insumos a servicios se encuentra desactivada.

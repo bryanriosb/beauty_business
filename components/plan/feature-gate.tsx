@@ -14,6 +14,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Lock, Sparkles, Star } from 'lucide-react'
 import Link from 'next/link'
 
@@ -24,6 +25,8 @@ interface FeatureGateProps {
   fallback?: ReactNode
   mode?: 'hide' | 'disable' | 'overlay' | 'compact'
   showUpgradeMessage?: boolean
+  loadingComponent?: ReactNode
+  showLoading?: boolean
 }
 
 export function FeatureGate({
@@ -33,12 +36,14 @@ export function FeatureGate({
   fallback,
   mode = 'hide',
   showUpgradeMessage = true,
+  loadingComponent,
+  showLoading = true,
 }: FeatureGateProps) {
   const { hasPermission, isLoading } = useFeaturePermission(module, feature)
 
   if (isLoading) {
-    if (mode === 'hide') return null
-    return <>{children}</>
+    if (!showLoading) return null
+    return loadingComponent ? <>{loadingComponent}</> : <DefaultLoadingComponent />
   }
 
   if (hasPermission) {
@@ -165,6 +170,14 @@ export function FeatureGate({
   }
 
   return null
+}
+
+function DefaultLoadingComponent() {
+  return (
+    <div className="flex items-center justify-center p-4 min-h-[120px]">
+      <Skeleton className="h-16 w-full max-w-md" />
+    </div>
+  )
 }
 
 interface FeatureLockedMessageProps {
