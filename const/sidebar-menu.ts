@@ -238,6 +238,7 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
       {
         title: 'Comisiones',
         url: '/admin/settings/commissions',
+        moduleCode: 'commissions',
       },
       {
         title: 'Período de Prueba',

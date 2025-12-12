@@ -7,6 +7,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import { TrialBanner } from '@/components/trial'
 import { SidebarSkeleton } from '@/components/SidebarSkeleton'
 import { getAccessibleModules } from '@/lib/actions/sidebar'
+import { NavigationLoader } from '@/components/NavigationLoader'
 
 export default async function AdminLayout({
   children,
@@ -32,7 +33,9 @@ export default async function AdminLayout({
         <TrialBanner />
         <div className="grid gap-4 p-4">
           <AdminHeader />
-          {children}
+          <Suspense fallback={null}>
+            <NavigationLoader>{children}</NavigationLoader>
+          </Suspense>
         </div>
       </section>
     </SidebarProvider>
