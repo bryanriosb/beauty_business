@@ -8,6 +8,7 @@ import { TrialBanner } from '@/components/trial'
 import { SidebarSkeleton } from '@/components/SidebarSkeleton'
 import { getAccessibleModules } from '@/lib/actions/sidebar'
 import { NavigationLoader } from '@/components/NavigationLoader'
+import { PermissionsLoader } from '@/components/PermissionsLoader'
 
 export default async function AdminLayout({
   children,
@@ -30,6 +31,7 @@ export default async function AdminLayout({
         <AppSidebar accessibleModules={accessibleModules} />
       </Suspense>
       <section className="grid gap-4 w-full h-full overflow-x-hidden">
+        <PermissionsLoader />
         <TrialBanner />
         <div className="grid gap-4 p-4">
           <AdminHeader />

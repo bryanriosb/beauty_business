@@ -189,7 +189,7 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
   {
     title: 'Suscripción',
     icon: CreditCard,
-    url: '/admin/settings/billing',
+    url: '/admin/suscription',
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
   },
   {

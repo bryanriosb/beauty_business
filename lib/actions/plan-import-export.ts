@@ -13,9 +13,7 @@ import {
   DEFAULT_PLAN_TEMPLATES,
   type FeaturesMetadataRow,
 } from '@/lib/data-templates/const/plan-import-template'
-import importService, {
-  type ImportResult as GenericImportResult,
-} from '@/lib/services/data-templates/generic-import-service'
+import importService from '@/lib/services/data-templates/generic-import-service'
 import type {
   Plan,
   PlanInsert,
@@ -26,7 +24,6 @@ import type {
   FeatureMetadata,
   PlanFeatures,
 } from '@/lib/models/plan/plan'
-import type { ModuleFeaturePermissions } from '@/lib/models/plan/feature-permissions'
 
 // Función helper para convertir strings booleanos de Excel a booleanos reales
 function normalizeBoolean(value: any): boolean {
@@ -702,7 +699,7 @@ export async function importPlansWithProgress(
     importService
       .importWithProgress(
         plansData,
-        async (planRow, index, sessionId) => {
+        async (planRow) => {
           // Procesar cada plan individualmente
           await processPlan(
             planRow,

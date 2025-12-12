@@ -57,12 +57,13 @@ export const FEATURES = (plan: Plan) => {
       'Gestión de historias clinicas (Según tipo de negocio)',
     has_products && `${max_products} Productos e Insumos`,
     has_stock && 'Gestión inteligente de insumos entre servicios completados',
-    has_ai_assistant_web && 'Asistente inteligente web',
+    has_ai_assistant_web && 'Asistente inteligente web (Próximamente)',
     has_custom_branding && 'Marca personalizada',
     has_priority_support && 'Soporte prioritario',
     has_personalized_support && 'Soporte personalizado',
     has_api_access && 'Acceso API',
     has_whatsapp_owner && 'Configuración de WhatsApp Propietaria',
-    has_ai_assistant_phone && 'Asistente inteligente de WhatsApp/Llamadas',
+    has_ai_assistant_phone &&
+      'Asistente inteligente de WhatsApp/Llamadas (Próximamente)',
   ].filter(Boolean) as string[]
 }

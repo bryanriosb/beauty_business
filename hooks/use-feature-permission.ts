@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
+import { useUnifiedPermissionsStore } from '@/lib/store/unified-permissions-store'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { USER_ROLES } from '@/const/roles'
 import {
-  checkFeaturePermissionAction,
   getAllFeaturePermissionsAction,
 } from '@/lib/actions/plan'
 import type { FeaturePermission, ModuleCode } from '@/lib/models/plan/feature-permissions'
@@ -19,11 +19,6 @@ export interface ModuleFeaturePermissions {
   [featureKey: string]: boolean
 }
 
-const DEFAULT_PERMISSION: FeaturePermissionResult = {
-  hasPermission: false,
-  isLoading: true,
-}
-
 const FULL_PERMISSION: FeaturePermissionResult = {
   hasPermission: true,
   isLoading: false,
@@ -33,54 +28,28 @@ export function useFeaturePermission(
   moduleCode: ModuleCode,
   featureKey: FeaturePermission
 ): FeaturePermissionResult {
-  const { activeBusiness } = useActiveBusinessStore()
+  const { hasFeaturePermission, isLoading } = useUnifiedPermissionsStore()
   const { role } = useCurrentUser()
-  const [result, setResult] = useState<FeaturePermissionResult>(DEFAULT_PERMISSION)
+  const { activeBusiness } = useActiveBusinessStore()
 
   const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
 
-  useEffect(() => {
-    if (isCompanyAdmin) {
-      setResult(FULL_PERMISSION)
-      return
-    }
-
-    const checkPermission = async () => {
-      if (!activeBusiness?.business_account_id) {
-        setResult({ hasPermission: false, isLoading: false })
-        return
-      }
-
-      setResult((prev) => ({ ...prev, isLoading: true }))
-
-      try {
-        const hasPermission = await checkFeaturePermissionAction(
-          activeBusiness.business_account_id,
-          moduleCode,
-          featureKey
-        )
-
-        setResult({
-          hasPermission,
-          isLoading: false,
-        })
-      } catch (error) {
-        console.error(
-          `Error checking feature permission ${moduleCode}.${featureKey}:`,
-          error
-        )
-        setResult({ hasPermission: false, isLoading: false })
-      }
-    }
-
-    checkPermission()
-  }, [activeBusiness?.business_account_id, moduleCode, featureKey, isCompanyAdmin])
-
+  // COMPANY_ADMIN tiene acceso completo
   if (isCompanyAdmin) {
     return FULL_PERMISSION
   }
 
-  return result
+  // Si no hay business activo, denegar acceso
+  if (!activeBusiness?.business_account_id) {
+    return { hasPermission: false, isLoading: false }
+  }
+
+  const hasPermission = hasFeaturePermission(moduleCode, featureKey)
+
+  return {
+    hasPermission,
+    isLoading: isLoading,
+  }
 }
 
 export function useModuleFeaturePermissions(
@@ -156,88 +125,41 @@ export function useMultipleFeaturePermissions(
   isLoading: boolean
   hasAllPermissions: boolean
 } {
-  const { activeBusiness } = useActiveBusinessStore()
+  const { hasFeaturePermission, isLoading } = useUnifiedPermissionsStore()
   const { role } = useCurrentUser()
-  const [permissions, setPermissions] = useState<Record<string, boolean>>({})
-  const [isLoading, setIsLoading] = useState(true)
+  const { activeBusiness } = useActiveBusinessStore()
 
   const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
 
-  useEffect(() => {
+  const permissions = useMemo(() => {
     if (isCompanyAdmin) {
-      const allPermissions = checks.reduce(
+      return checks.reduce(
         (acc, check) => ({
           ...acc,
           [`${check.module}.${check.feature}`]: true,
         }),
         {}
       )
-      setPermissions(allPermissions)
-      setIsLoading(false)
-      return
     }
 
-    const fetchAllPermissions = async () => {
-      if (!activeBusiness?.business_account_id) {
-        const emptyPermissions = checks.reduce(
-          (acc, check) => ({
-            ...acc,
-            [`${check.module}.${check.feature}`]: false,
-          }),
-          {}
-        )
-        setPermissions(emptyPermissions)
-        setIsLoading(false)
-        return
-      }
-
-      setIsLoading(true)
-
-      try {
-        const results = await Promise.all(
-          checks.map(async (check) => {
-            const hasPermission = await checkFeaturePermissionAction(
-              activeBusiness.business_account_id,
-              check.module,
-              check.feature
-            )
-            return {
-              key: `${check.module}.${check.feature}`,
-              hasPermission,
-            }
-          })
-        )
-
-        const permissionsMap = results.reduce(
-          (acc, result) => ({
-            ...acc,
-            [result.key]: result.hasPermission,
-          }),
-          {}
-        )
-
-        setPermissions(permissionsMap)
-      } catch (error) {
-        console.error('Error fetching multiple feature permissions:', error)
-        const emptyPermissions = checks.reduce(
-          (acc, check) => ({
-            ...acc,
-            [`${check.module}.${check.feature}`]: false,
-          }),
-          {}
-        )
-        setPermissions(emptyPermissions)
-      } finally {
-        setIsLoading(false)
-      }
+    if (!activeBusiness?.business_account_id) {
+      return checks.reduce(
+        (acc, check) => ({
+          ...acc,
+          [`${check.module}.${check.feature}`]: false,
+        }),
+        {}
+      )
     }
 
-    fetchAllPermissions()
-  }, [
-    activeBusiness?.business_account_id,
-    JSON.stringify(checks),
-    isCompanyAdmin,
-  ])
+    return checks.reduce((acc, check) => {
+      const hasPermission = hasFeaturePermission(check.module, check.feature)
+      return {
+        ...acc,
+        [`${check.module}.${check.feature}`]: hasPermission,
+      }
+    }, {})
+  }, [checks, hasFeaturePermission, isCompanyAdmin, activeBusiness?.business_account_id])
 
   const hasAllPermissions = useMemo(() => {
     if (isCompanyAdmin) return true
@@ -246,7 +168,55 @@ export function useMultipleFeaturePermissions(
 
   return {
     permissions,
-    isLoading,
+    isLoading: isLoading && !isCompanyAdmin,
     hasAllPermissions,
+  }
+}
+
+export interface FeatureMetadata {
+  name: string
+  description: string
+  requiredPlan: string[]
+}
+
+export interface FeatureMetadataResult {
+  metadata: FeatureMetadata | null
+  isLoading: boolean
+}
+
+
+
+export function useFeatureMetadata(
+  moduleCode: ModuleCode,
+  featureKey: FeaturePermission
+): FeatureMetadataResult {
+  const { getFeatureMetadata, isLoading } = useUnifiedPermissionsStore()
+  const { role } = useCurrentUser()
+  const { activeBusiness } = useActiveBusinessStore()
+
+  const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
+
+  // COMPANY_ADMIN no necesita metadata pero se la proporcionamos por consistencia
+  if (isCompanyAdmin) {
+    return {
+      metadata: {
+        name: featureKey,
+        description: '',
+        requiredPlan: []
+      },
+      isLoading: false,
+    }
+  }
+
+  // Si no hay business activo, no hay metadata
+  if (!activeBusiness?.business_account_id) {
+    return { metadata: null, isLoading: false }
+  }
+
+  const metadata = getFeatureMetadata(moduleCode, featureKey)
+
+  return {
+    metadata,
+    isLoading: isLoading,
   }
 }

@@ -1,12 +1,12 @@
 'use client'
 
 import { ReactNode } from 'react'
-import { useFeaturePermission } from '@/hooks/use-feature-permission'
+import { useFeaturePermission, useFeatureMetadata } from '@/hooks/use-feature-permission'
 import type {
   FeaturePermission,
   ModuleCode,
 } from '@/lib/models/plan/feature-permissions'
-import { getFeatureMetadata } from '@/lib/models/plan/feature-permissions'
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,8 +40,9 @@ export function FeatureGate({
   showLoading = true,
 }: FeatureGateProps) {
   const { hasPermission, isLoading } = useFeaturePermission(module, feature)
+  const { metadata, isLoading: isMetadataLoading } = useFeatureMetadata(module, feature)
 
-  if (isLoading) {
+  if (isLoading || (isMetadataLoading && (mode === 'compact' || mode === 'overlay'))) {
     if (!showLoading) return null
     return loadingComponent ? <>{loadingComponent}</> : <DefaultLoadingComponent />
   }
@@ -65,7 +66,6 @@ export function FeatureGate({
   }
 
   if (mode === 'compact') {
-    const metadata = getFeatureMetadata(module, feature)
     const featureName = metadata?.name || 'Esta función'
     const featureDescription = metadata?.description
     const requiredPlans =
@@ -120,7 +120,6 @@ export function FeatureGate({
   }
 
   if (mode === 'overlay') {
-    const metadata = getFeatureMetadata(module, feature)
     const featureName = metadata?.name || 'Esta función'
     const featureDescription = metadata?.description
     const requiredPlans =
@@ -193,7 +192,7 @@ export function FeatureLockedMessage({
   title,
   description,
 }: FeatureLockedMessageProps) {
-  const metadata = getFeatureMetadata(module, feature)
+  const { metadata } = useFeatureMetadata(module, feature)
   const featureName = metadata?.name || 'Esta función'
   const featureDescription = metadata?.description || description
   const requiredPlans =
