@@ -205,6 +205,12 @@ export function NavMain({
                   asChild
                   tooltip={item.title}
                   isActive={isActive}
+                  data-tutorial={
+                    item.url === '/admin/services' ? 'services-menu' :
+                    item.url === '/admin/specialists/goals' || item.url === '/admin/specialists/team' ? 'specialists-menu' :
+                    item.url === '/admin/appointments' ? 'appointments-menu' :
+                    undefined
+                  }
                 >
                   <Link href={item.url}>
                     {item.icon && <item.icon />}
@@ -265,14 +271,20 @@ export function NavMain({
                           key={subItem.title}
                           className="!text-muted-foreground"
                         >
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={isSubItemActive}
-                          >
-                            <Link href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
+                         <SidebarMenuSubButton
+                             asChild
+                             isActive={isSubItemActive}
+                             data-tutorial={
+                               subItem.url === '/admin/services' ? 'services-menu' :
+                               subItem.url === '/admin/specialists/team' ? 'specialists-menu' :
+                               subItem.url === '/admin/appointments' ? 'appointments-menu' :
+                               undefined
+                             }
+                           >
+                             <Link href={subItem.url}>
+                               <span>{subItem.title}</span>
+                             </Link>
+                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       )
                     })}

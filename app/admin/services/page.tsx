@@ -262,7 +262,7 @@ export default function ServicesPage() {
           </p>
         </div>
         {canCreateService && (
-          <Button onClick={handleCreateService} className="w-full sm:w-auto">
+          <Button onClick={handleCreateService} className="w-full sm:w-auto" data-tutorial="add-service-button">
             <Plus className="mr-2 h-4 w-4" />
             Crear Servicio
           </Button>

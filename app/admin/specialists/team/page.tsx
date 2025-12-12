@@ -329,7 +329,7 @@ export default function SpecialistsTeamPage() {
           </div>
           {!isProfessional && (
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleCreateSpecialist}>
+              <Button size="sm" onClick={handleCreateSpecialist} data-tutorial="add-specialist-button">
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar Especialista
               </Button>

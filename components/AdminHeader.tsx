@@ -3,18 +3,24 @@
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
 import { SidebarTrigger } from './ui/sidebar'
-import { MessageCircle, Moon, Sun } from 'lucide-react'
+import { MessageCircle, Moon, Sun, LifeBuoy } from 'lucide-react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import NotificationPanel from './notifications/NotificationPanel'
 import ChatSheet from './chat/ChatSheet'
 import { useUnreadMessages } from '@/hooks/use-unread-messages'
+import { useCurrentUser } from '@/hooks/use-current-user'
+import { FeedbackDialog } from './feedback/FeedbackDialog'
+import { TutorialDropdown } from './tutorials/TutorialDropdown'
+import { TutorialProvider } from './tutorials/TutorialProvider'
 
 export default function AdminHeader() {
   const [chatOpen, setChatOpen] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const unreadCount = useUnreadMessages()
+  const { businessAccountId, user } = useCurrentUser()
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -27,6 +33,24 @@ export default function AdminHeader() {
           <SidebarTrigger />
         </div>
         <div className="flex gap-2 items-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                onClick={() => setFeedbackOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <LifeBuoy className="!h-4.5 !w-4.5" />
+                <span className="hidden sm:inline">Feedback</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Reportar problemas o enviar sugerencias</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <TutorialDropdown />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" onClick={toggleTheme}>
@@ -78,6 +102,17 @@ export default function AdminHeader() {
       </header>
 
       <ChatSheet open={chatOpen} onOpenChange={setChatOpen} />
+
+      {businessAccountId && user && (
+        <FeedbackDialog
+          open={feedbackOpen}
+          onOpenChange={setFeedbackOpen}
+          businessId={businessAccountId}
+          userId={user.id}
+        />
+      )}
+
+      <TutorialProvider />
     </>
   )
 }

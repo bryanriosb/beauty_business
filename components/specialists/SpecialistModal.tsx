@@ -350,7 +350,7 @@ export function SpecialistModal({
                       Nombre <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="María" disabled={isSubmitting} {...field} />
+                      <Input placeholder="María" disabled={isSubmitting} data-tutorial="specialist-name-input" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -544,9 +544,10 @@ export function SpecialistModal({
                   <FormLabel>Biografía</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Escribe una breve descripción..."
+                      placeholder="Especialidad: Cortes modernos, tintes, tratamientos..."
                       rows={2}
                       disabled={isSubmitting}
+                      data-tutorial="specialist-specialty-input"
                       {...field}
                     />
                   </FormControl>
@@ -671,7 +672,7 @@ export function SpecialistModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} data-tutorial="save-specialist-button">
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {specialist ? 'Actualizar' : 'Crear'}
               </Button>

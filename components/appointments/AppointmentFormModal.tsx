@@ -665,6 +665,7 @@ export default function AppointmentFormModal({
                           isSubmitting ||
                           (!currentBusinessId && !effectiveBusinessId)
                         }
+                        data-tutorial="appointment-customer-search"
                       />
                       <FormMessage />
                     </FormItem>
@@ -682,6 +683,7 @@ export default function AppointmentFormModal({
                     isLoading={isLoadingServices}
                     stockStatusMap={stockStatusMap}
                     onServiceSelect={checkService}
+                    data-tutorial="appointment-service-select"
                   />
                   {selectedServices.length === 0 && (
                     <p className="text-sm text-destructive">

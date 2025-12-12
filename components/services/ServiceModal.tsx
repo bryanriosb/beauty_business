@@ -311,6 +311,7 @@ export function ServiceModal({
                     <Input
                       placeholder="Corte de cabello"
                       disabled={isSubmitting}
+                      data-tutorial="service-name-input"
                       {...field}
                     />
                   </FormControl>
@@ -382,6 +383,7 @@ export function ServiceModal({
                       onChange={field.onChange}
                       onCreateNew={handleCreateCategory}
                       placeholder="Seleccionar categoría..."
+                      data-tutorial="service-category-select"
                       searchPlaceholder="Buscar o crear categoría..."
                       emptyText="No hay categorías"
                       createText="Crear categoría"
@@ -408,6 +410,7 @@ export function ServiceModal({
                         className="w-full"
                         placeholder="50000"
                         disabled={isSubmitting}
+                        data-tutorial="service-price-input"
                         value={field.value}
                         onChange={(value) => field.onChange(value || 0)}
                       />
@@ -426,15 +429,13 @@ export function ServiceModal({
                       Duración (min) <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input
+                    <Input
                         type="number"
                         min={10}
                         placeholder="30"
                         disabled={isSubmitting}
-                        value={field.value}
-                        onChange={(e) =>
-                          field.onChange(Number(e.target.value) || 0)
-                        }
+                        data-tutorial="service-duration-input"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -541,7 +542,7 @@ export function ServiceModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} data-tutorial="save-service-button">
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
