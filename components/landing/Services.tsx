@@ -2,22 +2,46 @@
 
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Scissors, Sparkles, Heart, Palette, Brush, Eye, CheckCircle2 } from 'lucide-react'
+import {
+  Scissors,
+  Sparkles,
+  Heart,
+  Palette,
+  Brush,
+  Eye,
+  CheckCircle2,
+} from 'lucide-react'
 
 const services = [
-  { icon: Scissors, name: 'Cortes y peinados', gradient: 'from-primary to-primary/50' },
-  { icon: Sparkles, name: 'Tratamientos faciales', gradient: 'from-secondary to-accent' },
-  { icon: Heart, name: 'Manicure y pedicure', gradient: 'from-pink-400 to-pink-600' },
+  {
+    icon: Scissors,
+    name: 'Cortes y peinados',
+    gradient: 'from-primary to-primary/50',
+  },
+  {
+    icon: Sparkles,
+    name: 'Tratamientos faciales',
+    gradient: 'from-secondary to-accent',
+  },
+  {
+    icon: Heart,
+    name: 'Manicure y pedicure',
+    gradient: 'from-pink-400 to-pink-600',
+  },
   { icon: Palette, name: 'Colorimetria', gradient: 'from-accent to-secondary' },
   { icon: Brush, name: 'Maquillaje', gradient: 'from-rose-400 to-rose-600' },
-  { icon: Eye, name: 'Pestanas y cejas', gradient: 'from-purple-400 to-purple-600' },
+  {
+    icon: Eye,
+    name: 'Pestanas y cejas',
+    gradient: 'from-purple-400 to-purple-600',
+  },
 ]
 
 const benefits = [
   'Configura servicios en minutos',
   'Asigna especialistas por servicio',
   'Define duraciones flexibles',
-  'Crea combos y promociones',
+  'Gestión de abonos y cartera',
   'Precios diferenciados por profesional',
   'Comisiones automaticas',
 ]
@@ -70,10 +94,14 @@ export function Services() {
                   <div className="absolute inset-0 bg-[url('/photo-login.png')] bg-cover opacity-10" />
                   <div className="relative">
                     <p className="text-5xl font-bold">98%</p>
-                    <p className="text-white/80 text-sm mt-1">Satisfaccion de clientes</p>
+                    <p className="text-white/80 text-sm mt-1">
+                      Satisfaccion de clientes
+                    </p>
                     <div className="flex items-center gap-1 mt-2">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <span key={i} className="text-primary">★</span>
+                        <span key={i} className="text-primary">
+                          ★
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -91,7 +119,9 @@ export function Services() {
                 >
                   <div className="relative">
                     <p className="text-5xl font-bold text-secondary">+5k</p>
-                    <p className="text-foreground/70 text-sm mt-1">Citas gestionadas cada mes</p>
+                    <p className="text-foreground/70 text-sm mt-1">
+                      Citas gestionadas cada mes
+                    </p>
                     <div className="mt-3 h-2 bg-background/30 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
@@ -149,11 +179,12 @@ export function Services() {
                 Configura todos los{' '}
                 <span className="bg-gradient-to-r from-secondary via-accent to-secondary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                   servicios
-                </span>
-                {' '}de tu negocio
+                </span>{' '}
+                de tu negocio
               </h2>
               <p className="text-lg text-muted-foreground">
-                Desde cortes hasta tratamientos complejos, gestiona cada servicio con total flexibilidad y control.
+                Desde cortes hasta tratamientos complejos, gestiona cada
+                servicio con total flexibilidad y control.
               </p>
             </div>
 
@@ -168,11 +199,15 @@ export function Services() {
                   transition={{ duration: 0.4, delay: index * 0.05 }}
                   className="group"
                 >
-                  <div className={`flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br ${service.gradient} hover:shadow-lg transition-all duration-300`}>
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br ${service.gradient} hover:shadow-lg transition-all duration-300`}
+                  >
                     <div className="w-8 h-8 rounded-lg bg-background/90 flex items-center justify-center shrink-0">
                       <service.icon className="h-4 w-4 text-secondary" />
                     </div>
-                    <span className="text-sm font-medium text-white truncate">{service.name}</span>
+                    <span className="text-sm font-medium text-white truncate">
+                      {service.name}
+                    </span>
                   </div>
                 </motion.div>
               ))}

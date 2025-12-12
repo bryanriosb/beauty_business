@@ -156,15 +156,14 @@ export function Features() {
                     ))}
                   </div>
 
-                  <Link href="/auth/sign-in">
-                    <Button
-                      size="lg"
-                      className="gap-2 rounded-full px-8 bg-white text-secondary hover:bg-white/90 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 mt-4"
-                    >
-                      Probar asistente IA
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
+                 <Button
+                     size="lg"
+                     className="gap-2 rounded-full px-8 bg-white text-secondary hover:bg-white/90 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 mt-4 cursor-default"
+                     onClick={(e) => e.preventDefault()}
+                   >
+                       Próximamente
+                       <ArrowRight className="h-4 w-4" />
+                     </Button>
                 </div>
 
                 {/* Right - Chat mockup */}

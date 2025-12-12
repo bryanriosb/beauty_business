@@ -8,7 +8,7 @@ import {
   Pricing,
   FAQ,
   CTA,
-  Footer
+  Footer,
 } from '@/components/landing'
 
 export default function Home() {
@@ -27,7 +27,7 @@ export default function Home() {
       <Features />
 
       {/* Testimonials - Prueba social */}
-      <Testimonials />
+      {/* <Testimonials /> */}
 
       {/* Services - Servicios que se pueden gestionar */}
       <Services />
