@@ -187,6 +187,12 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
 
 export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
   {
+    title: 'Suscripción',
+    icon: CreditCard,
+    url: '/admin/settings/billing',
+    allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+  },
+  {
     title: 'Planes',
     url: '/admin/plans',
     icon: CreditCard,
@@ -255,11 +261,6 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
         url: '/admin/settings/whatsapp',
         allowedRoles: [USER_ROLES.COMPANY_ADMIN],
         moduleCode: 'whatsapp',
-      },
-      {
-        title: 'Suscripción y Pagos',
-        url: '/admin/settings/billing',
-        allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
       },
     ],
   },
