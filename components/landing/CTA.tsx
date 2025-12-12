@@ -24,7 +24,7 @@ export function CTA() {
         >
           {/* Background layers */}
           <div className="absolute inset-0 bg-gradient-to-r from-secondary via-accent to-secondary" />
-          <div className="absolute inset-0 bg-[url('/photo-login.png')] bg-cover bg-center opacity-10" />
+          <div className="absolute inset-0 bg-[url('/kimia-kazemi-u93nTfWqR9w-unsplash.jpg')] bg-cover bg-center opacity-10" />
 
           {/* Animated blobs - subtle */}
           <div className="absolute -top-20 -left-20 w-[400px] h-[400px] bg-primary/20 rounded-full blur-[100px] animate-blob" />
@@ -63,7 +63,9 @@ export function CTA() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-lg text-white/80 max-w-2xl mx-auto mb-8"
               >
-                Unete a mas de 500 negocios de belleza que ya optimizaron su gestion con Beluvio. Comienza gratis y ve los resultados desde el primer dia.
+                Unete y optimiza su gestion con Beluvio una herramienta pensada
+                para tu negocio de belleza. Comienza gratis y ve los resultados
+                desde el primer dia.
               </motion.p>
 
               {/* Benefits */}
@@ -75,7 +77,10 @@ export function CTA() {
                 className="flex flex-wrap justify-center gap-4 mb-10"
               >
                 {benefits.map((benefit) => (
-                  <span key={benefit} className="inline-flex items-center gap-2 text-white/90 text-sm">
+                  <span
+                    key={benefit}
+                    className="inline-flex items-center gap-2 text-white/90 text-sm"
+                  >
                     <CheckCircle2 className="h-4 w-4 text-primary" />
                     {benefit}
                   </span>
@@ -90,22 +95,13 @@ export function CTA() {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="flex flex-col sm:flex-row items-center justify-center gap-4"
               >
-                <Link href="/auth/sign-in">
+                <Link href="/auth/sign-up">
                   <Button
                     size="lg"
                     className="gap-2 rounded-full px-8 bg-white text-secondary hover:bg-white/90 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
                   >
                     Empezar gratis
                     <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="#demo">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="gap-2 rounded-full px-8 bg-transparent border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 transition-all duration-300"
-                  >
-                    Agendar demo
                   </Button>
                 </Link>
               </motion.div>

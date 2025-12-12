@@ -56,6 +56,8 @@ const aiCapabilities = [
   'Responde consultas de disponibilidad',
   'Reagenda o cancela citas por chat',
   'Informa sobre servicios y precios',
+  'Contestará llamadas entrantes',
+  'Realizará llamadas automáticas',
   'Entiende lenguaje natural',
   'Aprende las preferencias del negocio',
 ]
@@ -109,7 +111,7 @@ export function Features() {
           <div className="relative rounded-3xl overflow-hidden">
             {/* Background gradient */}
             <div className="absolute inset-0 bg-gradient-to-r from-secondary via-accent to-secondary opacity-90" />
-            <div className="absolute inset-0 bg-[url('/photo-login.png')] bg-cover bg-center opacity-5" />
+            <div className="absolute inset-0 bg-[url('/alexander-mass-5hYOxhwYzKU-unsplash.jpg')] bg-cover bg-center opacity-5" />
 
             {/* Animated blobs - subtle */}
             <div className="absolute -top-20 -right-20 w-[350px] h-[350px] bg-primary/25 rounded-full blur-[80px] animate-blob" />
@@ -126,13 +128,13 @@ export function Features() {
                   </div>
 
                   <h3 className="text-3xl md:text-4xl font-bold text-white">
-                    Asistente IA para gestion de citas
+                    Asistente IA con gestion telefónica
                   </h3>
 
                   <p className="text-white/80 text-lg leading-relaxed">
-                    Tu asistente virtual trabaja 24/7 gestionando citas automaticamente.
-                    Los clientes pueden agendar, reagendar o cancelar citas por WhatsApp o chat web,
-                    mientras el sistema verifica disponibilidad en tiempo real.
+                    Tu asistente virtual trabaja 24/7 gestionando automaticamente tu negocio.
+                    Los clientes pueden agendar, reagendar o cancelar citas por WhatsApp, chat web o telefono,
+                    mientras el sistema verifica disponibilidad en tiempo real y realiza llamadas de confirmación.
                   </p>
 
                   {/* Capabilities grid */}

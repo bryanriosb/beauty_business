@@ -18,15 +18,8 @@ const footerLinks = {
   producto: [
     { name: 'Funcionalidades', href: '#features' },
     { name: 'Precios', href: '#pricing' },
-    { name: 'Integraciones', href: '#' },
-    { name: 'API', href: '#' },
   ],
-  empresa: [
-    { name: 'Sobre nosotros', href: '#about' },
-    { name: 'Blog', href: '#' },
-    { name: 'Casos de exito', href: '#' },
-    { name: 'Contacto', href: '#' },
-  ],
+  empresa: [{ name: 'Sobre nosotros', href: '#about' }],
   recursos: [
     { name: 'Centro de ayuda', href: '#' },
     { name: 'Tutoriales', href: '#' },
@@ -37,7 +30,7 @@ const footerLinks = {
     { name: 'Terminos de uso', href: '#' },
     { name: 'Privacidad', href: '#' },
     { name: 'Cookies', href: '#' },
-    { name: 'Licencias', href: '#' },
+    // { name: 'Licencias', href: '#' },
   ],
 }
 
@@ -63,8 +56,9 @@ export function Footer() {
               <Image src="/logo.png" alt="Beluvio" width={140} height={40} />
             </Link>
             <p className="text-muted-foreground text-sm mb-6 max-w-xs">
-              La plataforma todo-en-uno para esteticas, spas, clinicas y centros
-              de belleza.
+              La plataforma todo-en-uno para empresas el sector de la belleza y
+              salud, spas, clinicas, centros de estetica, salones de belleza,
+              entre otros.
             </p>
 
             {/* Contact info */}
@@ -74,14 +68,14 @@ export function Footer() {
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Mail className="h-4 w-4 text-secondary" />
-                hola@beluvio.com
+                beluvio@borls.com
               </a>
               <a
                 href="tel:+1234567890"
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Phone className="h-4 w-4 text-secondary" />
-                +57 3052978328
+                +57 3217278684
               </a>
               <p className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="h-4 w-4 text-secondary" />
@@ -90,7 +84,7 @@ export function Footer() {
             </div>
 
             {/* Social links */}
-            <div className="flex items-center gap-3 mt-6">
+            {/* <div className="flex items-center gap-3 mt-6">
               {socialLinks.map((social) => (
                 <a
                   key={social.label}
@@ -101,7 +95,7 @@ export function Footer() {
                   <social.icon className="h-5 w-5 text-muted-foreground group-hover:text-secondary transition-colors" />
                 </a>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Link columns */}
@@ -137,7 +131,7 @@ export function Footer() {
             </ul>
           </div>
 
-          <div>
+          {/* <div>
             <h4 className="font-semibold mb-4">Recursos</h4>
             <ul className="space-y-3">
               {footerLinks.recursos.map((link) => (
@@ -151,7 +145,7 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
           <div>
             <h4 className="font-semibold mb-4">Legal</h4>
@@ -171,7 +165,7 @@ export function Footer() {
         </div>
 
         {/* Newsletter */}
-        <div className="py-8 border-t border-border/50">
+        {/* <div className="py-8 border-t border-border/50">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h4 className="font-semibold mb-1">
@@ -193,7 +187,7 @@ export function Footer() {
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Bottom bar */}
         <div className="py-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">

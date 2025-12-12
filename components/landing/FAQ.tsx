@@ -100,9 +100,16 @@ export function FAQ() {
               <p className="font-semibold">¿No encontraste tu respuesta?</p>
               <p className="text-sm text-muted-foreground">Nuestro equipo esta listo para ayudarte</p>
             </div>
-            <Button className="gap-2 rounded-full bg-gradient-to-r from-secondary to-accent text-white border-0">
-              Contactar soporte
-            </Button>
+            <a
+              href="https://wa.me/573217278684?text=Hola%2C%20necesito%20ayuda%20con%20la%20plataforma"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block"
+            >
+              <Button className="gap-2 rounded-full bg-gradient-to-r from-secondary to-accent text-white border-0">
+                Contactar soporte
+              </Button>
+            </a>
           </div>
         </motion.div>
       </div>

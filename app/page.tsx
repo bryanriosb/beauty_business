@@ -3,6 +3,7 @@ import {
   Hero,
   TrustBadges,
   Features,
+  About,
   Testimonials,
   Services,
   Pricing,
@@ -25,6 +26,9 @@ export default function Home() {
 
       {/* Features - Funcionalidades principales */}
       <Features />
+
+      {/* About - Sobre nosotros */}
+      <About />
 
       {/* Testimonials - Prueba social */}
       {/* <Testimonials /> */}

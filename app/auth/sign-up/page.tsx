@@ -46,7 +46,7 @@ export default function SignUpPage() {
       {/* Columna derecha - Imagen */}
       <div className="relative hidden md:block">
         <Image
-          src="/photo-login.png"
+          src="/hayley-kim-studios-sRSRuxkOuzI-unsplash.jpg"
           alt="Beauty salon"
           className="absolute inset-0 h-full w-full object-cover"
           fill

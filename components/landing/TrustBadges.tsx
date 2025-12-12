@@ -38,7 +38,7 @@ export function TrustBadges() {
     <section className="py-16 border-y bg-gradient-to-r from-primary/5 via-background to-secondary/5">
       <div className="max-w-7xl mx-auto px-6">
         {/* Stats row */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -62,8 +62,7 @@ export function TrustBadges() {
           ))}
         </motion.div>
 
-        {/* Divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-12" />
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent mb-12" /> */}
 
         {/* Trust badges */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -81,14 +80,16 @@ export function TrustBadges() {
               </div>
               <div>
                 <p className="font-semibold text-sm">{badge.title}</p>
-                <p className="text-xs text-muted-foreground">{badge.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {badge.description}
+                </p>
               </div>
             </motion.div>
           ))}
         </div>
 
         {/* Logos section */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
@@ -97,7 +98,6 @@ export function TrustBadges() {
         >
           <p className="text-sm text-muted-foreground mb-8">Usado por esteticas, spas, clinicas y centros de belleza en toda Latinoamerica</p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-60">
-            {/* Placeholder logos - in production these would be actual client logos */}
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
@@ -107,7 +107,7 @@ export function TrustBadges() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </motion.div> */}
       </div>
     </section>
   )

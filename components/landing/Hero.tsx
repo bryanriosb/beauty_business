@@ -35,7 +35,7 @@ export function Hero() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
             </span>
-            Plataforma #1 para negocios de belleza
+            Plataforma #1 especializada para negocios de belleza
           </motion.div>
 
           <motion.h1
@@ -49,7 +49,11 @@ export function Hero() {
               <span className="relative z-10 bg-gradient-to-r from-secondary via-accent to-secondary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                 negocio
               </span>
-              <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 200 8" fill="none">
+              <svg
+                className="absolute -bottom-1 left-0 w-full"
+                viewBox="0 0 200 8"
+                fill="none"
+              >
                 <motion.path
                   initial={{ pathLength: 0 }}
                   animate={{ pathLength: 1 }}
@@ -60,14 +64,20 @@ export function Hero() {
                   strokeLinecap="round"
                 />
                 <defs>
-                  <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <linearGradient
+                    id="gradient1"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
                     <stop offset="0%" stopColor="oklch(0.90 0.09 85)" />
                     <stop offset="100%" stopColor="oklch(0.55 0.12 300)" />
                   </linearGradient>
                 </defs>
               </svg>
-            </span>
-            {' '}de belleza como un profesional
+            </span>{' '}
+            de belleza como un profesional
           </motion.h1>
 
           <motion.p
@@ -76,8 +86,12 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg text-muted-foreground max-w-lg leading-relaxed"
           >
-            La plataforma todo-en-uno para esteticas, spas, clinicas y centros de belleza.
-            <span className="text-foreground font-medium"> Automatiza tu operacion y enfocate en lo que amas.</span>
+            La plataforma todo-en-uno para esteticas, spas, clinicas y centros
+            de belleza.
+            <span className="text-foreground font-medium">
+              {' '}
+              Automatiza tu operacion y enfocate en lo que amas.
+            </span>
           </motion.p>
 
           {/* Feature pills */}
@@ -87,7 +101,13 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-wrap gap-2"
           >
-            {['Agenda inteligente', 'Asistente IA 24/7', 'WhatsApp integrado'].map((feature) => (
+            {[
+              'Agenda inteligente',
+              'Asistente IA 24/7',
+              'WhatsApp integrado',
+              'Gestión de comisiones',
+              'Reportes avanzados',
+            ].map((feature) => (
               <span
                 key={feature}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border text-sm"
@@ -104,7 +124,7 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="flex flex-wrap items-center gap-4"
           >
-            <Link href="/auth/sign-in">
+            <Link href="/auth/sign-up">
               <Button
                 size="lg"
                 className="gap-2 rounded-full px-8 bg-gradient-to-r from-secondary to-accent hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-secondary/25 hover:scale-105 text-white border-0"
@@ -113,14 +133,18 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="#demo" className="group">
-              <Button size="lg" variant="outline" className="gap-2 rounded-full px-6 border-2 hover:bg-primary/10 hover:border-primary transition-all duration-300">
+            {/* <Link href="#demo" className="group">
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2 rounded-full px-6 border-2 hover:bg-primary/10 hover:border-primary transition-all duration-300"
+              >
                 <span className="relative flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 group-hover:bg-primary/30 transition-colors">
                   <Play className="h-3.5 w-3.5 ml-0.5 text-secondary" />
                 </span>
                 Ver demo
               </Button>
-            </Link>
+            </Link> */}
           </motion.div>
 
           {/* Social proof */}
@@ -130,7 +154,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="flex flex-col sm:flex-row sm:items-center gap-6 pt-4"
           >
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               <div className="flex -space-x-3">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div
@@ -150,10 +174,11 @@ export function Hero() {
                   <span className="ml-1">4.9</span>
                 </div>
                 <p className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">+500</span> negocios confian en nosotros
+                  <span className="font-semibold text-foreground">+500</span>{' '}
+                  negocios confian en nosotros
                 </p>
               </div>
-            </div>
+            </div> */}
           </motion.div>
         </div>
 
@@ -197,7 +222,11 @@ export function Hero() {
             >
               <motion.div
                 animate={{ y: [0, -15, 0], rotate: [0, 1, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
                 className="glass rounded-2xl p-4 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-default"
               >
                 <div className="flex items-center gap-3">
@@ -206,7 +235,9 @@ export function Hero() {
                   </div>
                   <div>
                     <p className="font-semibold text-sm">Citas de hoy</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">24</p>
+                    <p className="text-2xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
+                      24
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -221,17 +252,34 @@ export function Hero() {
             >
               <motion.div
                 animate={{ y: [0, -12, 0], rotate: [0, -1, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 0.3,
+                }}
                 className="glass rounded-2xl p-4 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-default"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-secondary to-accent flex items-center justify-center">
-                    <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    <svg
+                      className="h-5 w-5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                      />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Ingresos del mes</p>
+                    <p className="text-xs text-muted-foreground">
+                      Ingresos del mes
+                    </p>
                     <p className="text-lg font-bold">+28%</p>
                   </div>
                 </div>
@@ -247,7 +295,12 @@ export function Hero() {
             >
               <motion.div
                 animate={{ y: [0, -10, 0], x: [0, 3, 0] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+                transition={{
+                  duration: 2.2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 0.6,
+                }}
                 className="glass rounded-xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-default max-w-[180px]"
               >
                 <div className="flex items-start gap-2">
@@ -256,7 +309,9 @@ export function Hero() {
                   </div>
                   <div>
                     <p className="text-xs font-medium">Nueva cita confirmada</p>
-                    <p className="text-xs text-muted-foreground">Maria G. - 3:00 PM</p>
+                    <p className="text-xs text-muted-foreground">
+                      Maria G. - 3:00 PM
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -278,8 +333,18 @@ export function Hero() {
           className="flex flex-col items-center gap-2 text-muted-foreground"
         >
           <span className="text-xs">Descubre mas</span>
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
           </svg>
         </motion.div>
       </motion.div>

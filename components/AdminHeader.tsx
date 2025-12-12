@@ -49,7 +49,7 @@ export default function AdminHeader() {
               <p>Notificaciones</p>
             </TooltipContent>
           </Tooltip>
-          <Tooltip>
+          {/* <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 data-slot="chat-trigger"
@@ -73,7 +73,7 @@ export default function AdminHeader() {
             <TooltipContent>
               <p>Chat {unreadCount > 0 ? `(${unreadCount} sin leer)` : ''}</p>
             </TooltipContent>
-          </Tooltip>
+          </Tooltip> */}
         </div>
       </header>
 
