@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import GenericImportService from '@/lib/services/data-templates/generic-import-service'
+import importService from '@/lib/services/data-templates/generic-import-service'
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +13,6 @@ export async function GET(
     }
 
     // Obtener progreso actual
-    const importService = new GenericImportService()
     const progress = importService.getProgress(sessionId)
 
     if (!progress) {

@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { MessageSquare, Send, Loader2 } from 'lucide-react'
 import WhatsAppService from '@/lib/services/whatsapp/whatsapp-service'
-import { ConditionalFeature } from '@/components/plan/feature-gate'
+import { ConditionalFeature } from '@/components/plan/FeatureGate'
 
 interface SendWhatsAppButtonProps {
   businessAccountId: string
@@ -100,11 +100,19 @@ export function SendWhatsAppButton({
               <Button variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleSend} disabled={isSending || !message.trim()}>
+              <Button
+                onClick={handleSend}
+                disabled={isSending || !message.trim()}
+              >
                 {isSending ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
+                    Enviando...
+                  </>
                 ) : (
-                  <><Send className="mr-2 h-4 w-4" /> Enviar</>
+                  <>
+                    <Send className="mr-2 h-4 w-4" /> Enviar
+                  </>
                 )}
               </Button>
             </div>

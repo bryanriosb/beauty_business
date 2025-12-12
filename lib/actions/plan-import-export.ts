@@ -13,7 +13,7 @@ import {
   DEFAULT_PLAN_TEMPLATES,
   type FeaturesMetadataRow,
 } from '@/lib/data-templates/const/plan-import-template'
-import GenericImportService, {
+import importService, {
   type ImportResult as GenericImportResult,
 } from '@/lib/services/data-templates/generic-import-service'
 import type {
@@ -352,13 +352,6 @@ export async function importPlansFromExcelAction(
       }
     }
 
-    // Hojas opcionales (pueden estar vacías si solo se actualizan permisos)
-    const optionalSheets = [
-      'Plan_Modules',
-      'Plan_Permissions',
-      'Features_Metadata',
-    ]
-
     // Leer y validar datos de cada hoja
     const plansData = XLSX.utils.sheet_to_json<PlanRow>(wb.Sheets['Plans'])
     if (plansData.length === 0) {
@@ -467,8 +460,6 @@ async function processPlan(
   const planPermissions = permissionsData.filter(
     (p) => p.plan_code === planRow.code
   )
-
-  console.log('featureRow', featureRow)
 
   const features = Object.fromEntries(
     Object.entries(featureRow).map(([key, value]) => [key, value ?? null]) // asigna null si viene undefined
@@ -706,7 +697,7 @@ export async function importPlansWithProgress(
     }
 
     // Iniciar procesamiento en background (fire and forget)
-    const importService = new GenericImportService()
+    
 
     importService
       .importWithProgress(
@@ -731,12 +722,6 @@ export async function importPlansWithProgress(
         {
           batchSize: 5, // Procesar de 5 en 5 para mejor UX
           continueOnError: false, // Detener en el primer error
-          onProgress: (progress) => {
-            // El progreso se actualiza automáticamente en el servicio
-            console.log(
-              `Import ${sessionId}: ${progress.current}/${progress.total}`
-            )
-          },
         },
         sessionId // Pasar el sessionId proporcionado
       )

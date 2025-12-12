@@ -41,7 +41,7 @@ import PaymentStatusSelector from './PaymentStatusSelector'
 import AddPaymentModal from './AddPaymentModal'
 import PaymentHistorySection from './PaymentHistorySection'
 import type { AppointmentStatus, PaymentStatus } from '@/lib/types/enums'
-import { FeatureGate } from '../plan/feature-gate'
+import { FeatureGate } from '../plan/FeatureGate'
 
 interface AppointmentDetailsModalProps {
   appointmentId: string | null

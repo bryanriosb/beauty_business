@@ -65,21 +65,17 @@ export function PlanSelector({
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
-        {plans.map((plan) => {
-          console.log('plan', plan)
-
-          return (
-            <PlanPricingCard
-              key={plan.id}
-              plan={plan}
-              billingCycle={billingCycle}
-              isCurrentPlan={plan.id === currentPlanId}
-              isPopular={plan.code === 'pro'}
-              onSelect={handleSelectPlan}
-              isLoading={isLoading}
-            />
-          )
-        })}
+        {plans.map((plan) => (
+          <PlanPricingCard
+            key={plan.id}
+            plan={plan}
+            billingCycle={billingCycle}
+            isCurrentPlan={plan.id === currentPlanId}
+            isPopular={plan.code === 'pro'}
+            onSelect={handleSelectPlan}
+            isLoading={isLoading}
+          />
+        ))}
       </div>
     </div>
   )

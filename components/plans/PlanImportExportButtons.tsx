@@ -16,13 +16,15 @@ import {
   Download,
   Upload,
   FileSpreadsheet,
-  AlertCircle,
   CheckCircle,
+  Loader2,
+  Trash2,
 } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
 import { importPlansWithProgress } from '@/lib/actions/plan-import-export'
 import ImportTemplateStorageService from '@/lib/services/data-templates/import-template-storage-service'
-import { ImportProgressComponent } from '@/components/ui/import-progress'
+import ImportProgressComponent from '@/components/ui/import-progress'
 
 interface PlanImportExportButtonsProps {
   onImportComplete?: () => void
@@ -137,7 +139,6 @@ export function PlanImportExportButtons({
   }
 
   const handleImportPlans = async () => {
-    console.log('handleImportPlans called')
     if (!selectedFile) {
       toast.error('Selecciona un archivo primero')
       return
@@ -147,7 +148,6 @@ export function PlanImportExportButtons({
     const sessionId = `import_${Date.now()}_${Math.random()
       .toString(36)
       .substring(2, 11)}`
-    console.log('Setting currentSessionId to:', sessionId)
     setCurrentSessionId(sessionId)
 
     try {
@@ -168,30 +168,14 @@ export function PlanImportExportButtons({
   // Función de polling para obtener progreso
   const pollProgress = useCallback(
     async (sessionId: string) => {
-      console.log(
-        'pollProgress called with sessionId:',
-        sessionId,
-        'isPollingRef:',
-        isPollingRef.current
-      )
       if (!sessionId || !isPollingRef.current) {
-        console.log(
-          'pollProgress early return - sessionId:',
-          sessionId,
-          'isPollingRef:',
-          isPollingRef.current
-        )
         return
       }
 
       try {
-        console.log(`Polling for sessionId: ${sessionId}`)
         const response = await fetch(`/api/import/progress/${sessionId}`)
-        console.log(`Polling response status: ${response.status}`)
         if (response.ok) {
           const progressData = await response.json()
-          console.log('progressData:', progressData)
-
           setImportProgress(progressData)
 
           // Continuar polling si no terminó y aún estamos polling
@@ -200,12 +184,8 @@ export function PlanImportExportButtons({
             progressData.status !== 'error' &&
             isPollingRef.current
           ) {
-            console.log(`Continuing polling for ${sessionId}`)
-            setTimeout(() => pollProgress(sessionId), 1000)
+            setTimeout(() => pollProgress(sessionId), 500)
           } else {
-            console.log(
-              `Stopping polling for ${sessionId}, status: ${progressData.status}`
-            )
             setIsPolling(false)
             isPollingRef.current = false
             // Mostrar resultado final
@@ -225,7 +205,6 @@ export function PlanImportExportButtons({
             }
 
             // Limpiar estado (mantener archivo seleccionado para reintento)
-            console.log(`Clearing currentSessionId for ${sessionId}`)
             setCurrentSessionId(null)
             // No limpiar selectedFile para permitir reintento rápido
             // setSelectedFile(null)
@@ -250,31 +229,29 @@ export function PlanImportExportButtons({
 
   // Efecto para iniciar polling cuando hay sessionId
   useEffect(() => {
-    console.log(
-      'useEffect triggered - currentSessionId:',
-      currentSessionId,
-      'isPolling:',
-      isPolling
-    )
     if (currentSessionId && !isPolling) {
-      console.log('Starting polling for sessionId:', currentSessionId)
       setIsPolling(true)
       isPollingRef.current = true
       pollProgress(currentSessionId)
     }
   }, [currentSessionId, isPolling, pollProgress])
 
-  const handleCloseDialog = () => {
-    setImportDialogOpen(false)
+  const clearFileInput = () => {
     setSelectedFile(null)
     setCurrentSessionId(null)
     setImportProgress(null)
     setIsPolling(false)
+    isPollingRef.current = false
     // Reset file input
     const fileInput = document.getElementById(
       'template-file'
     ) as HTMLInputElement
     if (fileInput) fileInput.value = ''
+  }
+
+  const handleCloseDialog = () => {
+    setImportDialogOpen(false)
+    clearFileInput()
   }
 
   return (
@@ -299,8 +276,17 @@ export function PlanImportExportButtons({
         </Button>
       </div>
 
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog
+        open={importDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDialog()
+          } else {
+            setImportDialogOpen(true)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5" />
@@ -312,61 +298,108 @@ export function PlanImportExportButtons({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 p-1">
             <div>
-              <Label htmlFor="template-file">Archivo Excel</Label>
+              <Label
+                htmlFor="template-file"
+                className="flex items-center justify-center w-full h-32 px-4 py-2 text-center border-2 border-dashed rounded-md cursor-pointer text-muted-foreground hover:border-primary hover:text-primary"
+              >
+                {selectedFile ? (
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span>
+                      Archivo: {selectedFile.name} (
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="h-8 w-8" />
+                    <span className="font-bold">Seleccionar archivo</span>
+                    <span className="text-xs">
+                      O arrástralo y suéltalo aquí
+                    </span>
+                  </div>
+                )}
+              </Label>
               <Input
                 id="template-file"
                 type="file"
+                className="hidden"
                 accept=".xlsx,.xls"
                 onChange={handleFileSelect}
-                className="mt-1"
-                disabled={!!currentSessionId} // Deshabilitar durante importación
+                disabled={!!currentSessionId}
               />
-              {selectedFile && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Archivo seleccionado: {selectedFile.name} (
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
-              )}
             </div>
 
-            {/* Barra de progreso */}
+            {currentSessionId && !importProgress && (
+              <div className="space-y-2 pt-4">
+                <h3 className="font-medium">Progreso de Importación</h3>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>
+                    Iniciando importación... Esto puede tardar unos segundos.
+                  </span>
+                </div>
+                <Progress value={2} className="h-2 w-full" />
+              </div>
+            )}
+
             {importProgress && (
-              <ImportProgressComponent
-                progress={importProgress}
-                showCancelButton={true}
-                onCancel={() => {
-                  setIsPolling(false)
-                  setCurrentSessionId(null)
-                  setImportProgress(null)
-                  toast.info('Importación cancelada')
-                }}
-              />
+              <div className="space-y-2 pt-4">
+                <h3 className="font-medium">Progreso de Importación</h3>
+                <ImportProgressComponent
+                  progress={importProgress}
+                  showCancelButton={true}
+                  onCancel={() => {
+                    setIsPolling(false)
+                    isPollingRef.current = false
+                    setCurrentSessionId(null)
+                    setImportProgress(null)
+                    toast.info('Importación cancelada por el usuario.')
+                  }}
+                />
+              </div>
             )}
           </div>
 
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleUploadTemplate}
-              disabled={
-                !selectedFile || uploadingTemplate || !!currentSessionId
-              }
-            >
-              {uploadingTemplate ? 'Subiendo...' : 'Guardar como Plantilla'}
-            </Button>
+          <DialogFooter>
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={clearFileInput}
+                disabled={!selectedFile || !!currentSessionId}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Limpiar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleUploadTemplate}
+                disabled={
+                  !selectedFile || uploadingTemplate || !!currentSessionId
+                }
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {uploadingTemplate ? 'Subiendo...' : 'Guardar como Plantilla'}
+              </Button>
 
-            <Button
-              onClick={handleImportPlans}
-              disabled={!selectedFile || !!currentSessionId}
-            >
-              {!!currentSessionId ? 'Importando...' : 'Importar Planes'}
-            </Button>
-
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Cerrar
-            </Button>
+              <Button
+                onClick={handleImportPlans}
+                disabled={
+                  !selectedFile || !!currentSessionId || uploadingTemplate
+                }
+              >
+                {!!currentSessionId ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Importando...
+                  </>
+                ) : (
+                  'Importar Planes'
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/tooltip'
 import type { Service } from '@/lib/models/service/service'
 import type { ServiceStockStatus } from '@/hooks/use-service-stock-check'
-import { FeatureGate } from '../plan/feature-gate'
+import { FeatureGate } from '../plan/FeatureGate'
 
 export interface SelectedService {
   id: string

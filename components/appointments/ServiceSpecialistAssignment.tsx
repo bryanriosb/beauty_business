@@ -30,7 +30,7 @@ import {
   type TimeSlot,
 } from '@/lib/actions/availability'
 import type { SelectedService } from './MultiServiceSelector'
-import { FeatureGate } from '../plan/feature-gate'
+import { FeatureGate } from '../plan/FeatureGate'
 
 export interface ServiceSpecialistAssignment {
   serviceId: string

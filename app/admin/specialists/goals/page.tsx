@@ -28,7 +28,7 @@ import type {
   BusinessGoal,
   BusinessGoalInsert,
 } from '@/lib/models/business/business-goal'
-import { FeatureGate } from '@/components/plan/feature-gate'
+import { FeatureGate } from '@/components/plan/FeatureGate'
 
 export default function SpecialistsGoalsPage() {
   const { role, specialistId: currentUserSpecialistId } = useCurrentUser()

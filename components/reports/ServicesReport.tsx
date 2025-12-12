@@ -21,7 +21,7 @@ import {
   type ExportFormat,
 } from '@/lib/actions/report-export'
 import type { ServiceStats } from '@/lib/actions/reports'
-import { FeatureGate } from '../plan/feature-gate'
+import { FeatureGate } from '../plan/FeatureGate'
 
 interface ServicesReportProps {
   businessId: string

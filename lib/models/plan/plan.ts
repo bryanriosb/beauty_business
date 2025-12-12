@@ -36,7 +36,7 @@ export interface PlanFeatures {
   has_custom_branding: boolean
   has_priority_support: boolean
   has_api_access: boolean
-  [key: string]: boolean | number | null | undefined
+  [key: string]: boolean | number | string | null | undefined
 }
 
 export interface PlanModule {

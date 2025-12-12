@@ -20,7 +20,7 @@ import type {
   DailyDistribution,
 } from '@/lib/actions/reports'
 import { Calendar, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
-import { FeatureGate } from '../plan/feature-gate'
+import { FeatureGate } from '../plan/FeatureGate'
 
 interface AppointmentsReportProps {
   businessId: string

@@ -22,7 +22,7 @@ import {
 } from '@/lib/actions/report-export'
 import type { CustomerStats } from '@/lib/actions/reports'
 import { Users, UserPlus, UserCheck, Crown } from 'lucide-react'
-import { FeatureGate } from '../plan/feature-gate'
+import { FeatureGate } from '../plan/FeatureGate'
 
 interface CustomersReportProps {
   businessId: string

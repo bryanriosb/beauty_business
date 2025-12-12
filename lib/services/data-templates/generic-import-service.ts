@@ -29,7 +29,8 @@ export interface ImportOptions {
 
 // Almacenamiento temporal de progreso (en memoria - para desarrollo)
 // En producción, usar Redis o base de datos
-const progressStore = new Map<string, ImportProgress>()
+const progressStore: Map<string, ImportProgress> =
+  (global as any).progressStore || ((global as any).progressStore = new Map())
 
 export class GenericImportService {
   private generateSessionId(): string {
@@ -47,6 +48,27 @@ export class GenericImportService {
       progressStore.set(sessionId, updated)
 
       // Notificar callback si existe
+      if (onProgress) {
+        onProgress(updated)
+      }
+    }
+  }
+
+  // Nuevo método para actualización atómica del progreso
+  private incrementProgress(
+    sessionId: string,
+    message: string,
+    onProgress?: (progress: ImportProgress) => void
+  ): void {
+    const current = progressStore.get(sessionId)
+    if (current) {
+      const updated = {
+        ...current,
+        current: current.current + 1,
+        message,
+      }
+      progressStore.set(sessionId, updated)
+
       if (onProgress) {
         onProgress(updated)
       }
@@ -108,15 +130,12 @@ export class GenericImportService {
             const result = await processItem(item, globalIndex, actualSessionId)
             results.push(result)
 
-            // Actualizar progreso
-            this.updateProgress(
+            // Actualizar progreso de forma atómica
+            this.incrementProgress(
               actualSessionId,
-              {
-                current: globalIndex + 1,
-                message: `Procesado: ${
-                  item.name || item.code || `Item ${globalIndex + 1}`
-                }`,
-              },
+              `Procesado: ${
+                item.name || item.code || `Item ${globalIndex + 1}`
+              }`,
               options.onProgress
             )
 
@@ -130,27 +149,18 @@ export class GenericImportService {
             this.updateProgress(
               actualSessionId,
               {
-                errors: [...progress.errors, errorMessage],
+                errors: [...(progressStore.get(actualSessionId)?.errors || []), errorMessage],
               },
               options.onProgress
             )
 
             // Llamar callback de error si existe
             options.onError?.(error, item, globalIndex)
-            return null
-
-            // if (continueOnError) {
-            //   errors.push(errorMessage)
-            //   this.updateProgress(actualSessionId, {
-            //     errors: [...progress.errors, errorMessage],
-            //   }, options.onProgress)
-
-            //   // Llamar callback de error si existe
-            //   options.onError?.(error, item, globalIndex)
-            //   return null
-            // } else {
-            //   throw new Error(errorMessage)
-            // }
+            if (continueOnError) {
+              return null
+            } else {
+              throw error
+            }
           }
         })
 
@@ -164,21 +174,27 @@ export class GenericImportService {
       }
 
       // Completar
+      const finalProgress = progressStore.get(actualSessionId)
+      const finalErrors = finalProgress?.errors || errors
+      const success = finalErrors.length === 0
+      
       const endTime = Date.now()
       this.updateProgress(
         actualSessionId,
         {
           status: 'completed',
-          message: `Importación completada: ${results.length} procesados, ${errors.length} errores`,
+          current: results.length,
+          message: `Importación completada: ${results.length} procesados, ${finalErrors.length} errores`,
           endTime,
+          errors: finalErrors
         },
         options.onProgress
       )
 
       return {
-        success: errors.length === 0,
+        success,
         data: results.filter((r) => r !== null),
-        errors,
+        errors: finalErrors,
         processed: results.length,
         total: data.length,
         duration: endTime - progress.startTime,
@@ -190,19 +206,12 @@ export class GenericImportService {
         {
           status: 'error',
           message: `Error fatal: ${error.message}`,
-          errors: [...progress.errors, error.message],
+          errors: [...(progressStore.get(actualSessionId)?.errors || []), error.message],
           endTime: Date.now(),
         },
         options.onProgress
       )
 
-      // Si continueOnError es false, rechazar la promesa para detener inmediatamente
-      if (!continueOnError) {
-        console.log(`GenericImportService throwing error because continueOnError is false`)
-        throw error
-      }
-
-      console.log(`GenericImportService returning result because continueOnError is true`)
       return {
         success: false,
         errors: [...errors, error.message],
@@ -284,4 +293,5 @@ export class GenericImportService {
   }
 }
 
-export default GenericImportService
+const genericImportService = new GenericImportService()
+export default genericImportService

@@ -37,7 +37,7 @@ import {
   type PaymentReceiptData,
 } from '@/lib/utils/payment-receipt'
 import WhatsAppService from '@/lib/services/whatsapp/whatsapp-service'
-import { FeatureGate } from '../plan/feature-gate'
+import { FeatureGate } from '../plan/FeatureGate'
 import Loading from '../ui/loading'
 
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {

@@ -13,7 +13,7 @@ import {
 } from '@/lib/actions/report-export'
 import type { RevenueData, RevenueTrendItem } from '@/lib/actions/reports'
 import { DollarSign, TrendingUp, CreditCard, Percent } from 'lucide-react'
-import { FeatureGate } from '../plan/feature-gate'
+import { FeatureGate } from '../plan/FeatureGate'
 
 interface RevenueReportProps {
   businessId: string

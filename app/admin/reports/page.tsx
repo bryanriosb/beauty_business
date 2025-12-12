@@ -28,7 +28,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import Loading from '@/components/ui/loading'
-import { FeatureGate } from '@/components/plan/feature-gate'
+import { FeatureGate } from '@/components/plan/FeatureGate'
 
 export default function ReportsPage() {
   const { isLoading, role } = useCurrentUser()

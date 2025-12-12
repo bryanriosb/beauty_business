@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react'
 import { ImportProgress } from '@/lib/services/data-templates/generic-import-service'
+import Loading from './loading'
 
 interface ImportProgressProps {
   progress: ImportProgress | null
@@ -15,25 +16,25 @@ interface ImportProgressProps {
 export function ImportProgressComponent({
   progress,
   onCancel,
-  showCancelButton = false
+  showCancelButton = false,
 }: ImportProgressProps) {
-
   if (!progress) {
     return null
   }
 
-  const progressPercentage = progress.total > 0
-    ? Math.round((progress.current / progress.total) * 100)
-    : 0
+  const progressPercentage =
+    progress.total > 0
+      ? Math.round((progress.current / progress.total) * 100)
+      : 0
 
   const getStatusIcon = () => {
     switch (progress.status) {
       case 'idle':
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+        return <Loading />
       case 'processing':
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+        return <Loading />
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-secondary" />
       case 'error':
         return <XCircle className="h-4 w-4 text-red-500" />
       default:
@@ -44,7 +45,7 @@ export function ImportProgressComponent({
   const getStatusColor = () => {
     switch (progress.status) {
       case 'completed':
-        return 'text-green-700'
+        return 'text-secondary'
       case 'error':
         return 'text-red-700'
       case 'processing':
@@ -66,7 +67,7 @@ export function ImportProgressComponent({
   }
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-white">
+    <div className="space-y-4 p-4 border rounded-lg">
       {/* Header con estado */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -98,10 +99,7 @@ export function ImportProgressComponent({
           </span>
         </div>
 
-        <Progress
-          value={progressPercentage}
-          className="h-2"
-        />
+        <Progress value={progressPercentage} className="h-2" />
 
         {/* Información adicional */}
         <div className="flex justify-between text-xs text-gray-500">
@@ -109,7 +107,7 @@ export function ImportProgressComponent({
             Duración: {formatDuration(progress.startTime, progress.endTime)}
           </span>
           {progress.status === 'completed' && (
-            <span className="text-green-600">
+            <span className="text-secondary">
               ✓ {progress.current} elementos procesados
             </span>
           )}
@@ -124,7 +122,9 @@ export function ImportProgressComponent({
             <div className="font-medium mb-1">Errores encontrados:</div>
             <ul className="list-disc list-inside space-y-1">
               {progress.errors.slice(0, 5).map((error, index) => (
-                <li key={index} className="text-sm">{error}</li>
+                <li key={index} className="text-sm">
+                  {error}
+                </li>
               ))}
               {progress.errors.length > 5 && (
                 <li className="text-sm">
@@ -138,9 +138,9 @@ export function ImportProgressComponent({
 
       {/* Mensaje de éxito */}
       {progress.status === 'completed' && progress.errors.length === 0 && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-500" />
-          <AlertDescription className="text-green-700">
+        <Alert className="border-primary bg-primary/10 ">
+          <CheckCircle className="h-4 w-4 text-primary-foreground" />
+          <AlertDescription>
             <div className="font-medium">¡Importación exitosa!</div>
             <div className="text-sm mt-1">
               Se procesaron {progress.current} elementos correctamente en{' '}
@@ -151,52 +151,6 @@ export function ImportProgressComponent({
       )}
     </div>
   )
-}
-
-// Hook personalizado para manejar SSE
-export function useImportProgress(sessionId: string | null) {
-  const [progress, setProgress] = useState<ImportProgress | null>(null)
-  const [eventSource, setEventSource] = useState<EventSource | null>(null)
-
-  useEffect(() => {
-    if (!sessionId) {
-      setProgress(null)
-      return
-    }
-
-    // Crear conexión SSE
-    const es = new EventSource(`/api/import/progress/${sessionId}`)
-
-    es.onmessage = (event) => {
-      try {
-        const progressData = JSON.parse(event.data)
-        setProgress(progressData)
-      } catch (error) {
-        console.error('Error parsing progress data:', error)
-      }
-    }
-
-    es.onerror = (error) => {
-      console.error('SSE connection error:', error)
-      es.close()
-    }
-
-    setEventSource(es)
-
-    // Cleanup
-    return () => {
-      es.close()
-    }
-  }, [sessionId])
-
-  const disconnect = () => {
-    if (eventSource) {
-      eventSource.close()
-      setEventSource(null)
-    }
-  }
-
-  return { progress, disconnect }
 }
 
 export default ImportProgressComponent

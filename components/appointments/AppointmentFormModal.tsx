@@ -72,7 +72,7 @@ import type {
 } from '@/lib/actions/appointment'
 import type { SelectedSupply } from '@/lib/models/product'
 import { validateStockForSuppliesAction } from '@/lib/actions/inventory'
-import { FeatureGate } from '@/components/plan/feature-gate'
+import { FeatureGate } from '@/components/plan/FeatureGate'
 import { useFeaturePermission } from '@/hooks/use-feature-permission'
 
 const appointmentFormSchema = z.object({
@@ -328,7 +328,13 @@ export default function AppointmentFormModal({
     if (open) {
       loadServices()
     }
-  }, [open, currentBusinessId, effectiveBusinessId, hasSupplyManagement, isLoadingPermission])
+  }, [
+    open,
+    currentBusinessId,
+    effectiveBusinessId,
+    hasSupplyManagement,
+    isLoadingPermission,
+  ])
 
   // Reset form when modal closes
   useEffect(() => {

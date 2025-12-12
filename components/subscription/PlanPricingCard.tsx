@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { Plan } from '@/lib/models/plan/plan'
 import type { BillingCycle } from '@/lib/models/subscription/subscription'
+import { FEATURES } from './const/features'
 
 interface PlanPricingCardProps {
   plan: Plan
@@ -50,17 +51,6 @@ export function PlanPricingCard({
       maximumFractionDigits: 0,
     }).format(value)
   }
-
-  const features = [
-    `Hasta ${plan.max_businesses} negocio(s)`,
-    `${plan.max_users_per_business} usuarios por negocio`,
-    `${plan.max_specialists_per_business} especialistas`,
-    plan.features.max_appointments_per_month
-      ? `${plan.features.max_appointments_per_month} citas/mes`
-      : 'Citas ilimitadas',
-    plan.features.has_custom_branding && 'Marca personalizada',
-    plan.features.has_priority_support && 'Soporte prioritario',
-  ].filter(Boolean) as string[]
 
   return (
     <Card
@@ -111,7 +101,7 @@ export function PlanPricingCard({
         </div>
 
         <ul className="space-y-3">
-          {features.map((feature, index) => (
+          {FEATURES(plan).map((feature, index) => (
             <li key={index} className="flex items-start gap-2">
               <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
               <span className="text-sm">{feature}</span>
