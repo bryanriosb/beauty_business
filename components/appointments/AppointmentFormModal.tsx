@@ -73,6 +73,7 @@ import type {
 import type { SelectedSupply } from '@/lib/models/product'
 import { validateStockForSuppliesAction } from '@/lib/actions/inventory'
 import { FeatureGate } from '@/components/plan/feature-gate'
+import { useFeaturePermission } from '@/hooks/use-feature-permission'
 
 const appointmentFormSchema = z.object({
   business_id: z.string().min(1, 'El negocio es requerido'),
@@ -124,6 +125,10 @@ export default function AppointmentFormModal({
   const appointmentService = new AppointmentService()
 
   const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
+
+  // Verificar si el plan permite supply_management
+  const { hasPermission: hasSupplyManagement, isLoading: isLoadingPermission } =
+    useFeaturePermission('services', 'supply_management')
   const effectiveBusinessId = activeBusiness?.id || ''
 
   const availableBusinesses = useMemo(() => {
@@ -301,10 +306,15 @@ export default function AppointmentFormModal({
       const businessIdToUse = currentBusinessId || effectiveBusinessId
       if (!businessIdToUse) return
 
+      // Esperar a que se cargue el permiso antes de cargar servicios
+      if (isLoadingPermission) return
+
       setIsLoadingServices(true)
       try {
         const response = await fetchServicesAction({
           business_id: businessIdToUse,
+          // Si NO tiene permiso de supply_management, excluir servicios con insumos
+          exclude_with_supplies: !hasSupplyManagement,
         })
         setServices(response.data)
       } catch (error) {
@@ -318,7 +328,7 @@ export default function AppointmentFormModal({
     if (open) {
       loadServices()
     }
-  }, [open, currentBusinessId, effectiveBusinessId])
+  }, [open, currentBusinessId, effectiveBusinessId, hasSupplyManagement, isLoadingPermission])
 
   // Reset form when modal closes
   useEffect(() => {

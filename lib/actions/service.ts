@@ -7,6 +7,7 @@ import {
   updateRecord,
   deleteRecord,
   deleteRecords,
+  getSupabaseAdminClient,
 } from '@/lib/actions/supabase'
 import type {
   Service,
@@ -31,6 +32,7 @@ export async function fetchServicesAction(params?: {
   is_featured?: boolean | string | string[]
   service_type?: ServiceType | ServiceType[]
   name?: string
+  exclude_with_supplies?: boolean
 }): Promise<ServiceListResponse> {
   try {
     const services = await getAllRecords<ServiceWithCategory>('services', {
@@ -79,6 +81,27 @@ export async function fetchServicesAction(params?: {
       filteredServices = filteredServices.filter(
         (service) => service.name.toLowerCase().includes(searchTerm)
       )
+    }
+
+    // Filtrar servicios que tienen insumos asociados
+    if (params?.exclude_with_supplies) {
+      const client = await getSupabaseAdminClient()
+      const serviceIds = filteredServices.map((s) => s.id)
+
+      if (serviceIds.length > 0) {
+        const { data: servicesWithSupplies } = await client
+          .from('service_supplies')
+          .select('service_id')
+          .in('service_id', serviceIds)
+
+        const servicesWithSuppliesSet = new Set(
+          servicesWithSupplies?.map((s) => s.service_id) || []
+        )
+
+        filteredServices = filteredServices.filter(
+          (service) => !servicesWithSuppliesSet.has(service.id)
+        )
+      }
     }
 
     const page = params?.page || 1

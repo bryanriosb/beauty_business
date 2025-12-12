@@ -27,7 +27,7 @@ import {
   Syringe,
   Wallet,
 } from 'lucide-react'
-import Loading from '../loading'
+import Loading from '@/components/ui/loading'
 
 export default function ReportsPage() {
   const { isLoading, role } = useCurrentUser()
