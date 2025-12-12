@@ -37,7 +37,9 @@ export default function BillingPage() {
   useEffect(() => {
     const fetchAccountPlan = async () => {
       if (!activeBusiness?.business_account_id) return
-      const account = await getBusinessAccountAction(activeBusiness.business_account_id)
+      const account = await getBusinessAccountAction(
+        activeBusiness.business_account_id
+      )
       if (account) {
         setCurrentPlanId(account.plan_id)
       }
@@ -45,7 +47,10 @@ export default function BillingPage() {
     fetchAccountPlan()
   }, [activeBusiness?.business_account_id])
 
-  const handleSelectPlan = async (planId: string, billingCycle: BillingCycle) => {
+  const handleSelectPlan = async (
+    planId: string,
+    billingCycle: BillingCycle
+  ) => {
     setIsLoading(true)
     const plan = await getPlanByIdAction(planId)
     if (plan) {
@@ -62,7 +67,9 @@ export default function BillingPage() {
 
     // Refresh account data to get updated plan
     if (activeBusiness?.business_account_id) {
-      const account = await getBusinessAccountAction(activeBusiness.business_account_id)
+      const account = await getBusinessAccountAction(
+        activeBusiness.business_account_id
+      )
       if (account?.plan_id) {
         setCurrentPlanId(account.plan_id)
       }
@@ -88,7 +95,7 @@ export default function BillingPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Settings className="h-6 w-6" />
-              Facturación y Suscripción
+              Suscripción
             </h1>
             <p className="text-muted-foreground">
               Administra tu plan y métodos de pago
