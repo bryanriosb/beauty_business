@@ -57,7 +57,7 @@ export function PlanSelector({
             <TabsTrigger value="yearly" className="px-8">
               Anual
               <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                -20%
+                Mejor precio
               </span>
             </TabsTrigger>
           </TabsList>
