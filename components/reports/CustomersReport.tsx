@@ -16,9 +16,13 @@ import { PieChart } from './charts/PieChart'
 import { ExportButton } from './ExportButton'
 import ReportsService from '@/lib/services/reports/reports-service'
 import { formatCurrency } from '@/lib/utils'
-import { exportCustomersReportAction, type ExportFormat } from '@/lib/actions/report-export'
+import {
+  exportCustomersReportAction,
+  type ExportFormat,
+} from '@/lib/actions/report-export'
 import type { CustomerStats } from '@/lib/actions/reports'
 import { Users, UserPlus, UserCheck, Crown } from 'lucide-react'
+import { FeatureGate } from '../plan/feature-gate'
 
 interface CustomersReportProps {
   businessId: string
@@ -26,7 +30,11 @@ interface CustomersReportProps {
   endDate: Date
 }
 
-export function CustomersReport({ businessId, startDate, endDate }: CustomersReportProps) {
+export function CustomersReport({
+  businessId,
+  startDate,
+  endDate,
+}: CustomersReportProps) {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<CustomerStats | null>(null)
 
@@ -62,13 +70,19 @@ export function CustomersReport({ businessId, startDate, endDate }: CustomersRep
       ]
     : []
 
-  const handleExport = useCallback(async (format: ExportFormat) => {
-    return exportCustomersReportAction({
-      business_id: businessId,
-      start_date: startDate.toISOString(),
-      end_date: endDate.toISOString(),
-    }, format)
-  }, [businessId, startDate, endDate])
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      return exportCustomersReportAction(
+        {
+          business_id: businessId,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+        },
+        format
+      )
+    },
+    [businessId, startDate, endDate]
+  )
 
   return (
     <div className="space-y-6">
@@ -107,64 +121,90 @@ export function CustomersReport({ businessId, startDate, endDate }: CustomersRep
       </KPIGrid>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <PieChart
-          data={chartData}
-          loading={loading}
-          title="Distribución de Clientes"
-          formatAsCurrency={false}
-        />
+        <FeatureGate
+          module="reports"
+          feature="view_charts"
+          mode="overlay"
+          fallback={
+            <div className="p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
+              Distribución de Clientes no disponible actualiza tu plan
+            </div>
+          }
+        >
+          <PieChart
+            data={chartData}
+            loading={loading}
+            title="Distribución de Clientes"
+            formatAsCurrency={false}
+          />
+        </FeatureGate>
 
-        <Card className="border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Crown className="h-4 w-4 text-amber-500" />
-              Top 10 Clientes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : stats?.top_customers && stats.top_customers.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="text-right">Visitas</TableHead>
-                    <TableHead className="text-right">Total Gastado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stats.top_customers.map((customer, index) => (
-                    <TableRow key={customer.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground text-xs font-mono">
-                            #{index + 1}
-                          </span>
-                          <span className="font-medium">
-                            {customer.first_name} {customer.last_name}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">{customer.total_visits}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(customer.total_spent_cents / 100)}
-                      </TableCell>
-                    </TableRow>
+        <FeatureGate
+          module="reports"
+          feature="view_charts"
+          mode="overlay"
+          fallback={
+            <div className="p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
+              Top 10 Clientes no disponible actualiza tu plan
+            </div>
+          }
+        >
+          <Card className="border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-500" />
+                Top 10 Clientes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
                   ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                Sin datos disponibles
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ) : stats?.top_customers && stats.top_customers.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead className="text-right">Visitas</TableHead>
+                      <TableHead className="text-right">
+                        Total Gastado
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stats.top_customers.map((customer, index) => (
+                      <TableRow key={customer.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground text-xs font-mono">
+                              #{index + 1}
+                            </span>
+                            <span className="font-medium">
+                              {customer.first_name} {customer.last_name}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {customer.total_visits}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(customer.total_spent_cents / 100)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="py-8 text-center text-muted-foreground">
+                  Sin datos disponibles
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </FeatureGate>
       </div>
     </div>
   )

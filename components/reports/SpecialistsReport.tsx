@@ -8,8 +8,12 @@ import { Progress } from '@/components/ui/progress'
 import { ExportButton } from './ExportButton'
 import ReportsService from '@/lib/services/reports/reports-service'
 import { formatCurrency } from '@/lib/utils'
-import { exportSpecialistsReportAction, type ExportFormat } from '@/lib/actions/report-export'
+import {
+  exportSpecialistsReportAction,
+  type ExportFormat,
+} from '@/lib/actions/report-export'
 import type { SpecialistStats } from '@/lib/actions/reports'
+import { FeatureGate } from '../plan/feature-gate'
 
 interface SpecialistsReportProps {
   businessId: string
@@ -17,9 +21,18 @@ interface SpecialistsReportProps {
   endDate: Date
 }
 
-function SpecialistCard({ specialist, maxRevenue }: { specialist: SpecialistStats; maxRevenue: number }) {
-  const initials = `${specialist.first_name[0]}${specialist.last_name?.[0] || ''}`.toUpperCase()
-  const revenuePercent = maxRevenue > 0 ? (specialist.total_revenue / maxRevenue) * 100 : 0
+function SpecialistCard({
+  specialist,
+  maxRevenue,
+}: {
+  specialist: SpecialistStats
+  maxRevenue: number
+}) {
+  const initials = `${specialist.first_name[0]}${
+    specialist.last_name?.[0] || ''
+  }`.toUpperCase()
+  const revenuePercent =
+    maxRevenue > 0 ? (specialist.total_revenue / maxRevenue) * 100 : 0
 
   return (
     <Card className="border">
@@ -36,23 +49,24 @@ function SpecialistCard({ specialist, maxRevenue }: { specialist: SpecialistStat
               {specialist.first_name} {specialist.last_name}
             </div>
             <div className="text-sm text-muted-foreground">
-              {specialist.total_appointments} citas · {specialist.completed_appointments} completadas
+              {specialist.total_appointments} citas ·{' '}
+              {specialist.completed_appointments} completadas
             </div>
           </div>
           <div className="text-right">
             <div className="font-bold text-primary">
               {formatCurrency(specialist.total_revenue / 100)}
             </div>
-            <div className="text-xs text-muted-foreground">
-              ingresos
-            </div>
+            <div className="text-xs text-muted-foreground">ingresos</div>
           </div>
         </div>
 
         <div className="mt-4 space-y-3">
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-muted-foreground">Participación en ingresos</span>
+              <span className="text-muted-foreground">
+                Participación en ingresos
+              </span>
               <span>{revenuePercent.toFixed(1)}%</span>
             </div>
             <Progress value={revenuePercent} className="h-1.5" />
@@ -60,7 +74,9 @@ function SpecialistCard({ specialist, maxRevenue }: { specialist: SpecialistStat
 
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-muted/50 rounded-md p-2">
-              <div className="text-lg font-semibold">{specialist.total_appointments}</div>
+              <div className="text-lg font-semibold">
+                {specialist.total_appointments}
+              </div>
               <div className="text-xs text-muted-foreground">Total</div>
             </div>
             <div className="bg-green-50 dark:bg-green-950/30 rounded-md p-2">
@@ -107,7 +123,11 @@ function SpecialistCardSkeleton() {
   )
 }
 
-export function SpecialistsReport({ businessId, startDate, endDate }: SpecialistsReportProps) {
+export function SpecialistsReport({
+  businessId,
+  startDate,
+  endDate,
+}: SpecialistsReportProps) {
   const [loading, setLoading] = useState(true)
   const [specialists, setSpecialists] = useState<SpecialistStats[]>([])
 
@@ -134,15 +154,24 @@ export function SpecialistsReport({ businessId, startDate, endDate }: Specialist
 
   const maxRevenue = Math.max(...specialists.map((s) => s.total_revenue), 1)
   const totalRevenue = specialists.reduce((sum, s) => sum + s.total_revenue, 0)
-  const totalAppointments = specialists.reduce((sum, s) => sum + s.total_appointments, 0)
+  const totalAppointments = specialists.reduce(
+    (sum, s) => sum + s.total_appointments,
+    0
+  )
 
-  const handleExport = useCallback(async (format: ExportFormat) => {
-    return exportSpecialistsReportAction({
-      business_id: businessId,
-      start_date: startDate.toISOString(),
-      end_date: endDate.toISOString(),
-    }, format)
-  }, [businessId, startDate, endDate])
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      return exportSpecialistsReportAction(
+        {
+          business_id: businessId,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+        },
+        format
+      )
+    },
+    [businessId, startDate, endDate]
+  )
 
   return (
     <div className="space-y-6">
@@ -152,7 +181,9 @@ export function SpecialistsReport({ businessId, startDate, endDate }: Specialist
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         <Card className="border">
           <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Total Especialistas</div>
+            <div className="text-sm text-muted-foreground">
+              Total Especialistas
+            </div>
             <div className="text-2xl font-bold mt-1">
               {loading ? <Skeleton className="h-8 w-12" /> : specialists.length}
             </div>
@@ -168,7 +199,9 @@ export function SpecialistsReport({ businessId, startDate, endDate }: Specialist
         </Card>
         <Card className="border col-span-2 lg:col-span-1">
           <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Ingresos Totales</div>
+            <div className="text-sm text-muted-foreground">
+              Ingresos Totales
+            </div>
             <div className="text-2xl font-bold mt-1">
               {loading ? (
                 <Skeleton className="h-8 w-28" />
@@ -180,34 +213,47 @@ export function SpecialistsReport({ businessId, startDate, endDate }: Specialist
         </Card>
       </div>
 
-      <Card className="border">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Rendimiento por Especialista</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {[...Array(4)].map((_, i) => (
-                <SpecialistCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : specialists.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {specialists.map((specialist) => (
-                <SpecialistCard
-                  key={specialist.specialist_id}
-                  specialist={specialist}
-                  maxRevenue={maxRevenue}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              Sin datos para el período seleccionado
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <FeatureGate
+        module="reports"
+        feature="view_charts"
+        mode="overlay"
+        fallback={
+          <div className="p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
+            Rendimiento por Especialista no disponible actualiza tu plan
+          </div>
+        }
+      >
+        <Card className="border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              Rendimiento por Especialista
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {[...Array(4)].map((_, i) => (
+                  <SpecialistCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : specialists.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {specialists.map((specialist) => (
+                  <SpecialistCard
+                    key={specialist.specialist_id}
+                    specialist={specialist}
+                    maxRevenue={maxRevenue}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                Sin datos para el período seleccionado
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </FeatureGate>
     </div>
   )
 }

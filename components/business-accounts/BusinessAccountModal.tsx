@@ -35,6 +35,7 @@ import type {
   BusinessAccountInsert,
   BusinessAccountUpdate,
   SubscriptionPlan,
+  AccountStatus,
 } from '@/lib/models/business-account/business-account'
 import { Loader2, Plus, X } from 'lucide-react'
 import { useCurrentUser } from '@/hooks/use-current-user'
@@ -55,8 +56,9 @@ const formSchema = z.object({
     .min(1, 'El email es requerido')
     .email({ message: 'Ingresa un correo electrónico válido' }),
   contact_phone: z.string().optional().or(z.literal('')),
-  subscription_plan: z.enum(['trial', 'free', 'basic', 'pro', 'enterprise']),
-  created_by: z.string(),
+   subscription_plan: z.enum(['trial', 'free', 'basic', 'pro', 'enterprise']),
+   status: z.enum(['active', 'trial', 'suspended', 'cancelled']),
+   created_by: z.string(),
 })
 
 type BusinessAccountFormValues = z.infer<typeof formSchema>
@@ -104,8 +106,9 @@ export function BusinessAccountModal({
       contact_name: '',
       contact_email: '',
       contact_phone: '',
-      subscription_plan: 'trial' as SubscriptionPlan,
-      created_by: '',
+       subscription_plan: 'trial' as SubscriptionPlan,
+       status: 'active' as AccountStatus,
+       created_by: '',
     },
   })
 
@@ -123,8 +126,9 @@ export function BusinessAccountModal({
         contact_name: account.contact_name,
         contact_email: account.contact_email,
         contact_phone: account.contact_phone || '',
-        subscription_plan: account.subscription_plan,
-        created_by: account.created_by,
+         subscription_plan: account.subscription_plan,
+         status: account.status,
+         created_by: account.created_by,
       }
       form.reset(values)
       setInitialValues(values)
@@ -154,8 +158,9 @@ export function BusinessAccountModal({
         contact_name: '',
         contact_email: '',
         contact_phone: '',
-        subscription_plan: 'trial' as SubscriptionPlan,
-        created_by: '',
+         subscription_plan: 'trial' as SubscriptionPlan,
+         status: 'active' as AccountStatus,
+         created_by: '',
       }
       form.reset(emptyValues)
       setInitialValues(null)
@@ -209,8 +214,9 @@ export function BusinessAccountModal({
       formValues.billing_country !== initialValues.billing_country ||
       formValues.contact_name !== initialValues.contact_name ||
       formValues.contact_email !== initialValues.contact_email ||
-      formValues.contact_phone !== initialValues.contact_phone ||
-      formValues.subscription_plan !== initialValues.subscription_plan
+       formValues.contact_phone !== initialValues.contact_phone ||
+       formValues.subscription_plan !== initialValues.subscription_plan ||
+       formValues.status !== initialValues.status
     )
   }, [formValues, initialValues, isBusinessAdmin, isEdit])
 
@@ -524,9 +530,44 @@ export function BusinessAccountModal({
                   </FormItem>
                 )}
               />
-            </div>
+             </div>
 
-            {/* Configuración Personalizada (Settings) - Solo company_admin */}
+             {/* Estado de la Cuenta - Solo company_admin */}
+             {canEditFullAccount && (
+               <div className="space-y-4">
+                 <h3 className="font-bold">Estado de la Cuenta</h3>
+
+                 <FormField
+                   control={form.control}
+                   name="status"
+                   render={({ field }) => (
+                     <FormItem>
+                       <FormLabel>Estado</FormLabel>
+                       <Select
+                         onValueChange={field.onChange}
+                         defaultValue={field.value}
+                         disabled={isSubmitting}
+                       >
+                         <FormControl>
+                           <SelectTrigger className="w-full">
+                             <SelectValue placeholder="Selecciona un estado" />
+                           </SelectTrigger>
+                         </FormControl>
+                         <SelectContent>
+                           <SelectItem value="active">Activa</SelectItem>
+                           <SelectItem value="trial">Prueba</SelectItem>
+                           <SelectItem value="suspended">Suspendida</SelectItem>
+                           <SelectItem value="cancelled">Cancelada</SelectItem>
+                         </SelectContent>
+                       </Select>
+                       <FormMessage />
+                     </FormItem>
+                   )}
+                 />
+               </div>
+             )}
+
+             {/* Configuración Personalizada (Settings) - Solo company_admin */}
             {canEditFullAccount && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

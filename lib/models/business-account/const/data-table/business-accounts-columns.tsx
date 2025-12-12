@@ -76,9 +76,7 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
     cell: ({ row }) => {
       const plan = row.getValue('subscription_plan') as string
       return (
-        <Badge variant="outline">
-          {subscriptionPlanLabels[plan] || plan}
-        </Badge>
+        <Badge variant="outline">{subscriptionPlanLabels[plan] || plan}</Badge>
       )
     },
     filterFn: (row, id, value) => {
@@ -90,11 +88,10 @@ export const BUSINESS_ACCOUNTS_COLUMNS: ColumnDef<BusinessAccount>[] = [
     header: 'Estado',
     cell: ({ row }) => {
       const status = row.getValue('status') as string
+      console.log(statusVariants[status])
+
       return (
-        <Badge
-          className="bg-primary"
-          variant={statusVariants[status] || 'default'}
-        >
+        <Badge className="bg-primary text-primary-foreground w-full">
           {statusLabels[status] || status}
         </Badge>
       )

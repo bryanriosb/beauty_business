@@ -20,8 +20,15 @@ import {
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import { toast } from 'sonner'
 import type { Specialist } from '@/lib/models/specialist/specialist'
-import type { SpecialistGoal, SpecialistGoalInsert } from '@/lib/models/specialist/specialist-goal'
-import type { BusinessGoal, BusinessGoalInsert } from '@/lib/models/business/business-goal'
+import type {
+  SpecialistGoal,
+  SpecialistGoalInsert,
+} from '@/lib/models/specialist/specialist-goal'
+import type {
+  BusinessGoal,
+  BusinessGoalInsert,
+} from '@/lib/models/business/business-goal'
+import { FeatureGate } from '@/components/plan/feature-gate'
 
 export default function SpecialistsGoalsPage() {
   const { role, specialistId: currentUserSpecialistId } = useCurrentUser()
@@ -45,10 +52,15 @@ export default function SpecialistsGoalsPage() {
   const [businessGoalModalOpen, setBusinessGoalModalOpen] = useState(false)
   const [contributionsModalOpen, setContributionsModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [selectedSpecialist, setSelectedSpecialist] = useState<Specialist | null>(null)
+  const [selectedSpecialist, setSelectedSpecialist] =
+    useState<Specialist | null>(null)
   const [selectedGoal, setSelectedGoal] = useState<SpecialistGoal | null>(null)
-  const [selectedBusinessGoal, setSelectedBusinessGoal] = useState<BusinessGoal | null>(null)
-  const [goalToDelete, setGoalToDelete] = useState<{ id: string; type: 'individual' | 'team' } | null>(null)
+  const [selectedBusinessGoal, setSelectedBusinessGoal] =
+    useState<BusinessGoal | null>(null)
+  const [goalToDelete, setGoalToDelete] = useState<{
+    id: string
+    type: 'individual' | 'team'
+  } | null>(null)
   const [isRecalculating, setIsRecalculating] = useState(false)
 
   const loadData = useCallback(async () => {
@@ -61,15 +73,23 @@ export default function SpecialistsGoalsPage() {
         params.business_id = activeBusinessId
       }
 
-      const [specialistsResult, goalsResult, businessGoalResult] = await Promise.all([
-        specialistService.fetchItems(params),
-        activeBusinessId ? goalService.getActiveGoalsForBusiness(activeBusinessId) : Promise.resolve([]),
-        activeBusinessId ? businessGoalService.getActiveGoal(activeBusinessId) : Promise.resolve(null),
-      ])
+      const [specialistsResult, goalsResult, businessGoalResult] =
+        await Promise.all([
+          specialistService.fetchItems(params),
+          activeBusinessId
+            ? goalService.getActiveGoalsForBusiness(activeBusinessId)
+            : Promise.resolve([]),
+          activeBusinessId
+            ? businessGoalService.getActiveGoal(activeBusinessId)
+            : Promise.resolve(null),
+        ])
 
-      const filteredData = isProfessional && currentUserSpecialistId
-        ? specialistsResult.data.filter(s => s.id === currentUserSpecialistId)
-        : specialistsResult.data
+      const filteredData =
+        isProfessional && currentUserSpecialistId
+          ? specialistsResult.data.filter(
+              (s) => s.id === currentUserSpecialistId
+            )
+          : specialistsResult.data
 
       setSpecialists(filteredData)
 
@@ -85,7 +105,15 @@ export default function SpecialistsGoalsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [specialistService, goalService, businessGoalService, isCompanyAdmin, activeBusinessId, isProfessional, currentUserSpecialistId])
+  }, [
+    specialistService,
+    goalService,
+    businessGoalService,
+    isCompanyAdmin,
+    activeBusinessId,
+    isProfessional,
+    currentUserSpecialistId,
+  ])
 
   useEffect(() => {
     loadData()
@@ -190,13 +218,16 @@ export default function SpecialistsGoalsPage() {
   const handleSaveBusinessGoal = async (data: BusinessGoalInsert) => {
     try {
       if (selectedBusinessGoal) {
-        const result = await businessGoalService.update(selectedBusinessGoal.id, {
-          goal_type: data.goal_type,
-          target_value: data.target_value,
-          period_type: data.period_type,
-          period_start: data.period_start,
-          period_end: data.period_end,
-        })
+        const result = await businessGoalService.update(
+          selectedBusinessGoal.id,
+          {
+            goal_type: data.goal_type,
+            target_value: data.target_value,
+            period_type: data.period_type,
+            period_start: data.period_start,
+            period_end: data.period_end,
+          }
+        )
 
         if (!result.success) {
           throw new Error(result.error)
@@ -243,8 +274,12 @@ export default function SpecialistsGoalsPage() {
     }
   }
 
-  const specialistsWithGoals = filteredSpecialists.filter((s) => goals.has(s.id))
-  const specialistsWithoutGoals = filteredSpecialists.filter((s) => !goals.has(s.id))
+  const specialistsWithGoals = filteredSpecialists.filter((s) =>
+    goals.has(s.id)
+  )
+  const specialistsWithoutGoals = filteredSpecialists.filter(
+    (s) => !goals.has(s.id)
+  )
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] overflow-hidden">
@@ -255,122 +290,149 @@ export default function SpecialistsGoalsPage() {
             {isProfessional ? 'Mi Meta' : 'Metas'}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            {isProfessional ? 'Visualiza el progreso de tu meta' : 'Define y da seguimiento a las metas de tu equipo'}
+            {isProfessional
+              ? 'Visualiza el progreso de tu meta'
+              : 'Define y da seguimiento a las metas de tu equipo'}
           </p>
         </div>
       </div>
 
       {!isProfessional && (
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'individual')} className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-1 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <TabsList>
-              <TabsTrigger value="team" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Meta del Equipo
-              </TabsTrigger>
-              <TabsTrigger value="individual" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Metas Individuales
-              </TabsTrigger>
-            </TabsList>
+        <FeatureGate
+          module="specialists"
+          feature="goals_management"
+          mode="compact"
+        >
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as 'team' | 'individual')}
+            className="flex-1 flex flex-col overflow-hidden"
+          >
+            <div className="px-1 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <TabsList>
+                <TabsTrigger value="team" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Meta del Equipo
+                </TabsTrigger>
+                <TabsTrigger
+                  value="individual"
+                  className="flex items-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Metas Individuales
+                </TabsTrigger>
+              </TabsList>
 
-            {activeTab === 'individual' && (
-              <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar especialista..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            )}
-          </div>
-
-          <TabsContent value="team" className="flex-1 overflow-auto mt-0">
-            {isLoading ? (
-              <div className="p-4">
-                <div className="h-[250px] rounded-lg bg-muted animate-pulse max-w-md" />
-              </div>
-            ) : businessGoal ? (
-              <div className="p-4 max-w-md">
-                <BusinessGoalCard
-                  goal={businessGoal}
-                  onEdit={handleEditBusinessGoal}
-                  onDelete={handleDeleteBusinessGoal}
-                  onViewContributions={handleViewContributions}
-                  onRecalculate={handleRecalculateBusinessGoal}
-                  isRecalculating={isRecalculating}
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="rounded-full bg-muted p-6 mb-4">
-                  <Users className="h-12 w-12 text-muted-foreground" />
+              {activeTab === 'individual' && (
+                <div className="relative w-full sm:max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar especialista..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9"
+                  />
                 </div>
-                <p className="text-muted-foreground mb-4">No hay una meta de equipo activa</p>
-                <Button onClick={handleCreateBusinessGoal}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear meta del equipo
-                </Button>
-              </div>
-            )}
-          </TabsContent>
+              )}
+            </div>
 
-          <TabsContent value="individual" className="flex-1 overflow-auto mt-0">
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="h-[180px] rounded-lg bg-muted animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <>
-                {specialistsWithGoals.length > 0 && (
-                  <div className="mb-6">
-                    <h2 className="text-sm font-medium text-muted-foreground px-4 mb-2">
-                      Con metas activas ({specialistsWithGoals.length})
-                    </h2>
-                    <GoalGrid
-                      specialists={specialistsWithGoals}
-                      goals={goals}
-                      onCreateGoal={handleCreateGoal}
-                      onEditGoal={handleEditGoal}
-                      onDeleteGoal={handleDeleteGoal}
-                    />
+            <TabsContent value="team" className="flex-1 overflow-auto mt-0">
+              {isLoading ? (
+                <div className="p-4">
+                  <div className="h-[250px] rounded-lg bg-muted animate-pulse max-w-md" />
+                </div>
+              ) : businessGoal ? (
+                <div className="p-4 max-w-md">
+                  <BusinessGoalCard
+                    goal={businessGoal}
+                    onEdit={handleEditBusinessGoal}
+                    onDelete={handleDeleteBusinessGoal}
+                    onViewContributions={handleViewContributions}
+                    onRecalculate={handleRecalculateBusinessGoal}
+                    isRecalculating={isRecalculating}
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="rounded-full bg-muted p-6 mb-4">
+                    <Users className="h-12 w-12 text-muted-foreground" />
                   </div>
-                )}
+                  <p className="text-muted-foreground mb-4">
+                    No hay una meta de equipo activa
+                  </p>
+                  <Button onClick={handleCreateBusinessGoal}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear meta del equipo
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
 
-                {specialistsWithoutGoals.length > 0 && (
-                  <div>
-                    <h2 className="text-sm font-medium text-muted-foreground px-4 mb-2">
-                      Sin metas ({specialistsWithoutGoals.length})
-                    </h2>
-                    <GoalGrid
-                      specialists={specialistsWithoutGoals}
-                      goals={goals}
-                      onCreateGoal={handleCreateGoal}
-                      onEditGoal={handleEditGoal}
-                      onDeleteGoal={handleDeleteGoal}
+            <TabsContent
+              value="individual"
+              className="flex-1 overflow-auto mt-0"
+            >
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-[180px] rounded-lg bg-muted animate-pulse"
                     />
-                  </div>
-                )}
-
-                {filteredSpecialists.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="rounded-full bg-muted p-6 mb-4">
-                      <Target className="h-12 w-12 text-muted-foreground" />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  {specialistsWithGoals.length > 0 && (
+                    <div className="mb-6">
+                      <h2 className="text-sm font-medium text-muted-foreground px-4 mb-2">
+                        Con metas activas ({specialistsWithGoals.length})
+                      </h2>
+                      <GoalGrid
+                        specialists={specialistsWithGoals}
+                        goals={goals}
+                        onCreateGoal={handleCreateGoal}
+                        onEditGoal={handleEditGoal}
+                        onDeleteGoal={handleDeleteGoal}
+                      />
                     </div>
-                    <p className="text-muted-foreground">No se encontraron especialistas</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {search ? 'Intenta con otro término de búsqueda' : 'Agrega especialistas a tu equipo primero'}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
+                  )}
+
+                  {specialistsWithoutGoals.length > 0 && (
+                    <div>
+                      <h2 className="text-sm font-medium text-muted-foreground px-4 mb-2">
+                        Sin metas ({specialistsWithoutGoals.length})
+                      </h2>
+                      <GoalGrid
+                        specialists={specialistsWithoutGoals}
+                        goals={goals}
+                        onCreateGoal={handleCreateGoal}
+                        onEditGoal={handleEditGoal}
+                        onDeleteGoal={handleDeleteGoal}
+                      />
+                    </div>
+                  )}
+
+                  {filteredSpecialists.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="rounded-full bg-muted p-6 mb-4">
+                        <Target className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground">
+                        No se encontraron especialistas
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {search
+                          ? 'Intenta con otro término de búsqueda'
+                          : 'Agrega especialistas a tu equipo primero'}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
+        </FeatureGate>
       )}
 
       {isProfessional && (
@@ -378,7 +440,10 @@ export default function SpecialistsGoalsPage() {
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-[180px] rounded-lg bg-muted animate-pulse" />
+                <div
+                  key={i}
+                  className="h-[180px] rounded-lg bg-muted animate-pulse"
+                />
               ))}
             </div>
           ) : (
@@ -396,7 +461,9 @@ export default function SpecialistsGoalsPage() {
                   <div className="rounded-full bg-muted p-6 mb-4">
                     <Target className="h-12 w-12 text-muted-foreground" />
                   </div>
-                  <p className="text-muted-foreground">No tienes una meta asignada</p>
+                  <p className="text-muted-foreground">
+                    No tienes una meta asignada
+                  </p>
                 </div>
               )}
             </>

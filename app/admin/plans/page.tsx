@@ -1,6 +1,11 @@
 'use client'
 
-import { DataTable, DataTableRef, SearchConfig, FilterConfig } from '@/components/DataTable'
+import {
+  DataTable,
+  DataTableRef,
+  SearchConfig,
+  FilterConfig,
+} from '@/components/DataTable'
 import { Button } from '@/components/ui/button'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
@@ -26,6 +31,7 @@ import { PLANS_COLUMNS } from '@/lib/models/plan/const/data-table/plans-columns'
 import { PlanModal } from '@/components/plans/PlanModal'
 import { PlanModulesModal } from '@/components/plans/PlanModulesModal'
 import { PlanDetailModal } from '@/components/plans/PlanDetailModal'
+import { PlanImportExportButtons } from '@/components/plans/PlanImportExportButtons'
 import { useRef, useMemo, useState, useCallback } from 'react'
 import type { Plan, PlanInsert, PlanUpdate } from '@/lib/models/plan/plan'
 import { useCurrentUser } from '@/hooks/use-current-user'
@@ -194,7 +200,9 @@ export default function PlansPage() {
                     <Pencil className="mr-2 h-4 w-4" />
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleConfigureModules(plan)}>
+                  <DropdownMenuItem
+                    onClick={() => handleConfigureModules(plan)}
+                  >
                     <Settings2 className="mr-2 h-4 w-4" />
                     Configurar módulos
                   </DropdownMenuItem>
@@ -220,15 +228,26 @@ export default function PlansPage() {
     <div className="flex flex-col gap-6 w-full overflow-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Planes</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Planes
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Gestiona los planes de suscripción
           </p>
         </div>
-        <Button onClick={handleCreatePlan} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          Crear Plan
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button
+            onClick={handleCreatePlan}
+            className="w-full sm:w-auto"
+            size="sm"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Plan
+          </Button>
+          <PlanImportExportButtons
+            onImportComplete={() => dataTableRef.current?.refreshData()}
+          />
+        </div>
       </div>
 
       <DataTable

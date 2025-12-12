@@ -28,6 +28,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import Loading from '@/components/ui/loading'
+import { FeatureGate } from '@/components/plan/feature-gate'
 
 export default function ReportsPage() {
   const { isLoading, role } = useCurrentUser()
@@ -137,14 +138,18 @@ export default function ReportsPage() {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Clientes</span>
           </TabsTrigger>
-          <TabsTrigger value="supplies" className="gap-1.5">
-            <Syringe className="h-4 w-4" />
-            <span className="hidden sm:inline">Insumos</span>
-          </TabsTrigger>
-          <TabsTrigger value="receivables" className="gap-1.5">
-            <Wallet className="h-4 w-4" />
-            <span className="hidden sm:inline">Cartera</span>
-          </TabsTrigger>
+          <FeatureGate module="reports" feature="view_supplies" mode="compact">
+            <TabsTrigger value="supplies" className="gap-1.5">
+              <Syringe className="h-4 w-4" />
+              <span className="hidden sm:inline">Insumos</span>
+            </TabsTrigger>
+          </FeatureGate>
+          <FeatureGate module="reports" feature="view_portfolio" mode="compact">
+            <TabsTrigger value="receivables" className="gap-1.5">
+              <Wallet className="h-4 w-4" />
+              <span className="hidden sm:inline">Cartera</span>
+            </TabsTrigger>
+          </FeatureGate>
         </TabsList>
 
         <TabsContent value="revenue">
