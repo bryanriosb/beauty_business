@@ -57,7 +57,7 @@ import {
 } from '@/lib/actions/business-gallery-image'
 import BusinessAccountService from '@/lib/services/business-account/business-account-service'
 import { BusinessAccount } from '@/lib/models/business-account/business-account'
-import { BUSINESS_TYPES_OPTIONS } from '@/lib/constants/business-type-labels'
+import { BUSINESS_TYPES_OPTIONS } from '@/lib/services/business/const/business-type-labels'
 import Loading from '../ui/loading'
 
 const formSchema = z.object({

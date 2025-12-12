@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,11 +12,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react'
-import { toast } from 'sonner'
 import {
-  importPlansWithProgress,
-} from '@/lib/actions/plan-import-export'
+  Download,
+  Upload,
+  FileSpreadsheet,
+  AlertCircle,
+  CheckCircle,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { importPlansWithProgress } from '@/lib/actions/plan-import-export'
 import ImportTemplateStorageService from '@/lib/services/data-templates/import-template-storage-service'
 import { ImportProgressComponent } from '@/components/ui/import-progress'
 
@@ -24,7 +28,9 @@ interface PlanImportExportButtonsProps {
   onImportComplete?: () => void
 }
 
-export function PlanImportExportButtons({ onImportComplete }: PlanImportExportButtonsProps) {
+export function PlanImportExportButtons({
+  onImportComplete,
+}: PlanImportExportButtonsProps) {
   const templateStorageService = new ImportTemplateStorageService()
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [uploadingTemplate, setUploadingTemplate] = useState(false)
@@ -32,6 +38,7 @@ export function PlanImportExportButtons({ onImportComplete }: PlanImportExportBu
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [importProgress, setImportProgress] = useState<any>(null)
   const [isPolling, setIsPolling] = useState(false)
+  const isPollingRef = useRef(false)
 
   const handleDownloadTemplate = async () => {
     try {
@@ -106,13 +113,17 @@ export function PlanImportExportButtons({ onImportComplete }: PlanImportExportBu
 
     setUploadingTemplate(true)
     try {
-      const result = await templateStorageService.uploadPlansTemplate(selectedFile)
+      const result = await templateStorageService.uploadPlansTemplate(
+        selectedFile
+      )
 
       if (result.success) {
         toast.success('Plantilla subida correctamente')
         setSelectedFile(null)
         // Reset file input
-        const fileInput = document.getElementById('template-file') as HTMLInputElement
+        const fileInput = document.getElementById(
+          'template-file'
+        ) as HTMLInputElement
         if (fileInput) fileInput.value = ''
       } else {
         toast.error(result.error || 'Error al subir la plantilla')
@@ -126,13 +137,17 @@ export function PlanImportExportButtons({ onImportComplete }: PlanImportExportBu
   }
 
   const handleImportPlans = async () => {
+    console.log('handleImportPlans called')
     if (!selectedFile) {
       toast.error('Selecciona un archivo primero')
       return
     }
 
     // Generar session ID único
-    const sessionId = `import_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+    const sessionId = `import_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 11)}`
+    console.log('Setting currentSessionId to:', sessionId)
     setCurrentSessionId(sessionId)
 
     try {
@@ -151,56 +166,100 @@ export function PlanImportExportButtons({ onImportComplete }: PlanImportExportBu
   }
 
   // Función de polling para obtener progreso
-  const pollProgress = useCallback(async (sessionId: string) => {
-    if (!sessionId || !isPolling) return
+  const pollProgress = useCallback(
+    async (sessionId: string) => {
+      console.log(
+        'pollProgress called with sessionId:',
+        sessionId,
+        'isPollingRef:',
+        isPollingRef.current
+      )
+      if (!sessionId || !isPollingRef.current) {
+        console.log(
+          'pollProgress early return - sessionId:',
+          sessionId,
+          'isPollingRef:',
+          isPollingRef.current
+        )
+        return
+      }
 
-    try {
-      const response = await fetch(`/api/import/progress/${sessionId}`)
-      if (response.ok) {
-        const progressData = await response.json()
-        setImportProgress(progressData)
+      try {
+        console.log(`Polling for sessionId: ${sessionId}`)
+        const response = await fetch(`/api/import/progress/${sessionId}`)
+        console.log(`Polling response status: ${response.status}`)
+        if (response.ok) {
+          const progressData = await response.json()
+          console.log('progressData:', progressData)
 
-        // Continuar polling si no terminó
-        if (progressData.status !== 'completed' && progressData.status !== 'error') {
-          setTimeout(() => pollProgress(sessionId), 1000)
-        } else {
-          setIsPolling(false)
-          // Mostrar resultado final
-          if (progressData.status === 'completed') {
-            if (progressData.errors.length === 0) {
-              toast.success(`Importación completada: ${progressData.current} elementos procesados`)
-            } else {
-              toast.warning(`Importación completada con ${progressData.errors.length} errores`)
+          setImportProgress(progressData)
+
+          // Continuar polling si no terminó y aún estamos polling
+          if (
+            progressData.status !== 'completed' &&
+            progressData.status !== 'error' &&
+            isPollingRef.current
+          ) {
+            console.log(`Continuing polling for ${sessionId}`)
+            setTimeout(() => pollProgress(sessionId), 1000)
+          } else {
+            console.log(
+              `Stopping polling for ${sessionId}, status: ${progressData.status}`
+            )
+            setIsPolling(false)
+            isPollingRef.current = false
+            // Mostrar resultado final
+            if (progressData.status === 'completed') {
+              if (progressData.errors.length === 0) {
+                toast.success(
+                  `Importación completada: ${progressData.current} elementos procesados`
+                )
+              } else {
+                toast.warning(
+                  `Importación completada con ${progressData.errors.length} errores`
+                )
+              }
+              onImportComplete?.()
+            } else if (progressData.status === 'error') {
+              toast.error('Error fatal en la importación')
             }
-            onImportComplete?.()
-          } else if (progressData.status === 'error') {
-            toast.error('Error fatal en la importación')
-          }
 
-          // Limpiar estado
-          setCurrentSessionId(null)
-          setSelectedFile(null)
-          const fileInput = document.getElementById('template-file') as HTMLInputElement
-          if (fileInput) fileInput.value = ''
+            // Limpiar estado (mantener archivo seleccionado para reintento)
+            console.log(`Clearing currentSessionId for ${sessionId}`)
+            setCurrentSessionId(null)
+            // No limpiar selectedFile para permitir reintento rápido
+            // setSelectedFile(null)
+            // const fileInput = document.getElementById('template-file') as HTMLInputElement
+            // if (fileInput) fileInput.value = ''
+          }
+        } else if (response.status === 404) {
+          // Sesión no encontrada, reintentar en 2 segundos
+          setTimeout(() => pollProgress(sessionId), 2000)
+        } else {
+          // Otro error, reintentar en 3 segundos
+          setTimeout(() => pollProgress(sessionId), 3000)
         }
-      } else if (response.status === 404) {
-        // Sesión no encontrada, reintentar en 2 segundos
-        setTimeout(() => pollProgress(sessionId), 2000)
-      } else {
-        // Otro error, reintentar en 3 segundos
+      } catch (error) {
+        console.error('Polling error:', error)
+        // Reintentar en caso de error de red
         setTimeout(() => pollProgress(sessionId), 3000)
       }
-    } catch (error) {
-      console.error('Polling error:', error)
-      // Reintentar en caso de error de red
-      setTimeout(() => pollProgress(sessionId), 3000)
-    }
-  }, [isPolling, onImportComplete])
+    },
+    [onImportComplete]
+  )
 
   // Efecto para iniciar polling cuando hay sessionId
   useEffect(() => {
+    console.log(
+      'useEffect triggered - currentSessionId:',
+      currentSessionId,
+      'isPolling:',
+      isPolling
+    )
     if (currentSessionId && !isPolling) {
+      console.log('Starting polling for sessionId:', currentSessionId)
       setIsPolling(true)
+      isPollingRef.current = true
       pollProgress(currentSessionId)
     }
   }, [currentSessionId, isPolling, pollProgress])
@@ -212,7 +271,9 @@ export function PlanImportExportButtons({ onImportComplete }: PlanImportExportBu
     setImportProgress(null)
     setIsPolling(false)
     // Reset file input
-    const fileInput = document.getElementById('template-file') as HTMLInputElement
+    const fileInput = document.getElementById(
+      'template-file'
+    ) as HTMLInputElement
     if (fileInput) fileInput.value = ''
   }
 
@@ -246,7 +307,8 @@ export function PlanImportExportButtons({ onImportComplete }: PlanImportExportBu
               Importar Plantillas de Planes
             </DialogTitle>
             <DialogDescription>
-              Sube una plantilla Excel para actualizar o crear planes con su configuración de módulos y permisos.
+              Sube una plantilla Excel para actualizar o crear planes con su
+              configuración de módulos y permisos.
             </DialogDescription>
           </DialogHeader>
 
@@ -263,7 +325,8 @@ export function PlanImportExportButtons({ onImportComplete }: PlanImportExportBu
               />
               {selectedFile && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Archivo seleccionado: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  Archivo seleccionado: {selectedFile.name} (
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
                 </p>
               )}
             </div>
@@ -287,7 +350,9 @@ export function PlanImportExportButtons({ onImportComplete }: PlanImportExportBu
             <Button
               variant="outline"
               onClick={handleUploadTemplate}
-              disabled={!selectedFile || uploadingTemplate || !!currentSessionId}
+              disabled={
+                !selectedFile || uploadingTemplate || !!currentSessionId
+              }
             >
               {uploadingTemplate ? 'Subiendo...' : 'Guardar como Plantilla'}
             </Button>

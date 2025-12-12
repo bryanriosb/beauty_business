@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Building2 } from 'lucide-react'
-import { getBusinessTypeLabel } from '@/lib/constants/business-type-labels'
+import { getBusinessTypeLabel } from '@/lib/services/business/const/business-type-labels'
 import { BusinessType } from '@/lib/types/enums'
 
 export const BUSINESSES_COLUMNS: ColumnDef<BusinessWithAccount>[] = [

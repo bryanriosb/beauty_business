@@ -1,3 +1,5 @@
+import { rejects } from 'assert'
+
 export interface ImportProgress {
   sessionId: string
   current: number
@@ -34,7 +36,11 @@ export class GenericImportService {
     return `import_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
   }
 
-  private updateProgress(sessionId: string, updates: Partial<ImportProgress>, onProgress?: (progress: ImportProgress) => void): void {
+  private updateProgress(
+    sessionId: string,
+    updates: Partial<ImportProgress>,
+    onProgress?: (progress: ImportProgress) => void
+  ): void {
     const current = progressStore.get(sessionId)
     if (current) {
       const updated = { ...current, ...updates }
@@ -47,7 +53,10 @@ export class GenericImportService {
     }
   }
 
-  private createInitialProgress(sessionId: string, total: number): ImportProgress {
+  private createInitialProgress(
+    sessionId: string,
+    total: number
+  ): ImportProgress {
     const progress: ImportProgress = {
       sessionId,
       current: 0,
@@ -79,10 +88,14 @@ export class GenericImportService {
 
     try {
       // Iniciar procesamiento
-      this.updateProgress(actualSessionId, {
-        status: 'processing',
-        message: 'Iniciando procesamiento...',
-      }, options.onProgress)
+      this.updateProgress(
+        actualSessionId,
+        {
+          status: 'processing',
+          message: 'Iniciando procesamiento...',
+        },
+        options.onProgress
+      )
 
       // Procesar en lotes
       for (let i = 0; i < data.length; i += batchSize) {
@@ -96,27 +109,48 @@ export class GenericImportService {
             results.push(result)
 
             // Actualizar progreso
-            this.updateProgress(actualSessionId, {
-              current: globalIndex + 1,
-              message: `Procesado: ${item.name || item.code || `Item ${globalIndex + 1}`}`,
-            }, options.onProgress)
+            this.updateProgress(
+              actualSessionId,
+              {
+                current: globalIndex + 1,
+                message: `Procesado: ${
+                  item.name || item.code || `Item ${globalIndex + 1}`
+                }`,
+              },
+              options.onProgress
+            )
 
             return result
           } catch (error: any) {
-            const errorMessage = `Error en item ${globalIndex + 1}: ${error.message}`
+            const errorMessage = `Error en item ${globalIndex + 1}: ${
+              error.message
+            }`
 
-            if (continueOnError) {
-              errors.push(errorMessage)
-              this.updateProgress(actualSessionId, {
+            errors.push(errorMessage)
+            this.updateProgress(
+              actualSessionId,
+              {
                 errors: [...progress.errors, errorMessage],
-              }, options.onProgress)
+              },
+              options.onProgress
+            )
 
-              // Llamar callback de error si existe
-              options.onError?.(error, item, globalIndex)
-              return null
-            } else {
-              throw new Error(errorMessage)
-            }
+            // Llamar callback de error si existe
+            options.onError?.(error, item, globalIndex)
+            return null
+
+            // if (continueOnError) {
+            //   errors.push(errorMessage)
+            //   this.updateProgress(actualSessionId, {
+            //     errors: [...progress.errors, errorMessage],
+            //   }, options.onProgress)
+
+            //   // Llamar callback de error si existe
+            //   options.onError?.(error, item, globalIndex)
+            //   return null
+            // } else {
+            //   throw new Error(errorMessage)
+            // }
           }
         })
 
@@ -125,35 +159,50 @@ export class GenericImportService {
 
         // Pequeña pausa entre lotes para no sobrecargar
         if (i + batchSize < data.length) {
-          await new Promise(resolve => setTimeout(resolve, 10))
+          await new Promise((resolve) => setTimeout(resolve, 10))
         }
       }
 
       // Completar
       const endTime = Date.now()
-      this.updateProgress(actualSessionId, {
-        status: 'completed',
-        message: `Importación completada: ${results.length} procesados, ${errors.length} errores`,
-        endTime,
-      }, options.onProgress)
+      this.updateProgress(
+        actualSessionId,
+        {
+          status: 'completed',
+          message: `Importación completada: ${results.length} procesados, ${errors.length} errores`,
+          endTime,
+        },
+        options.onProgress
+      )
 
       return {
         success: errors.length === 0,
-        data: results.filter(r => r !== null),
+        data: results.filter((r) => r !== null),
         errors,
         processed: results.length,
         total: data.length,
         duration: endTime - progress.startTime,
       }
-
     } catch (error: any) {
-      this.updateProgress(actualSessionId, {
-        status: 'error',
-        message: `Error fatal: ${error.message}`,
-        errors: [...progress.errors, error.message],
-        endTime: Date.now(),
-      }, options.onProgress)
+      console.log(`GenericImportService catch executed, continueOnError: ${continueOnError}, error:`, error.message)
+      this.updateProgress(
+        actualSessionId,
+        {
+          status: 'error',
+          message: `Error fatal: ${error.message}`,
+          errors: [...progress.errors, error.message],
+          endTime: Date.now(),
+        },
+        options.onProgress
+      )
 
+      // Si continueOnError es false, rechazar la promesa para detener inmediatamente
+      if (!continueOnError) {
+        console.log(`GenericImportService throwing error because continueOnError is false`)
+        throw error
+      }
+
+      console.log(`GenericImportService returning result because continueOnError is true`)
       return {
         success: false,
         errors: [...errors, error.message],
@@ -169,7 +218,8 @@ export class GenericImportService {
   }
 
   // Limpiar progreso antiguo (útil para cleanup)
-  cleanupOldProgress(maxAge: number = 3600000): void { // 1 hora por defecto
+  cleanupOldProgress(maxAge: number = 3600000): void {
+    // 1 hora por defecto
     const now = Date.now()
     for (const [sessionId, progress] of progressStore.entries()) {
       if (now - progress.startTime > maxAge) {
@@ -186,7 +236,7 @@ export class GenericImportService {
 
     // Arrays
     if (Array.isArray(obj)) {
-      return obj.map(item => this.deepSanitize(item))
+      return obj.map((item) => this.deepSanitize(item))
     }
 
     // Objetos: crear nuevo objeto sin prototipo
@@ -212,7 +262,7 @@ export class GenericImportService {
         total: progress.total,
         message: progress.message,
         status: progress.status,
-        errors: progress.errors.map(error =>
+        errors: progress.errors.map((error) =>
           typeof error === 'string' ? error : String(error)
         ),
         startTime: progress.startTime,

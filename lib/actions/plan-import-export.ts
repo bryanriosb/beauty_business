@@ -9,8 +9,13 @@ import {
   setPlanModuleAccessAction,
 } from '@/lib/actions/plan'
 import { getSupabaseAdminClient } from '@/lib/actions/supabase'
-import { DEFAULT_PLAN_TEMPLATES, type FeaturesMetadataRow } from '@/lib/data-templates/const/plan-import-template'
-import GenericImportService, { type ImportResult as GenericImportResult } from '@/lib/services/data-templates/generic-import-service'
+import {
+  DEFAULT_PLAN_TEMPLATES,
+  type FeaturesMetadataRow,
+} from '@/lib/data-templates/const/plan-import-template'
+import GenericImportService, {
+  type ImportResult as GenericImportResult,
+} from '@/lib/services/data-templates/generic-import-service'
 import type {
   Plan,
   PlanInsert,
@@ -19,52 +24,91 @@ import type {
   BillingPeriod,
   PlanStatus,
   FeatureMetadata,
+  PlanFeatures,
 } from '@/lib/models/plan/plan'
 import type { ModuleFeaturePermissions } from '@/lib/models/plan/feature-permissions'
 
 // Función helper para convertir strings booleanos de Excel a booleanos reales
 function normalizeBoolean(value: any): boolean {
   if (typeof value === 'boolean') return value
+  if (typeof value === 'number') {
+    if (value === 1) return true
+    if (value === 0) return false
+  }
   if (typeof value === 'string') {
     const upperValue = value.toUpperCase()
-    if (upperValue === 'TRUE') return true
-    if (upperValue === 'FALSE') return false
+    if (upperValue === 'TRUE' || upperValue === '1') return true
+    if (upperValue === 'FALSE' || upperValue === '0') return false
   }
-  throw new Error(`Valor '${value}' no es un booleano válido. Debe ser true/false o TRUE/FALSE`)
+  throw new Error(
+    `Valor '${value}' no es un booleano válido. Debe ser true/false, TRUE/FALSE, 1/0`
+  )
 }
 
 // Función para inferir module_code y feature_key desde el nombre del feature
-function inferModuleAndFeature(featureName: string): { moduleCode: string; featureKey: string } {
+function inferModuleAndFeature(featureName: string): {
+  moduleCode: string
+  featureKey: string
+} {
   // Mapear nombres conocidos a module_code y feature_key
-  const featureMap: Record<string, { moduleCode: string; featureKey: string }> = {
-    'Notificaciones de WhatsApp': { moduleCode: 'appointments', featureKey: 'whatsapp_notifications' },
-    'Asignación por servicio': { moduleCode: 'appointments', featureKey: 'specialist_assignment' },
-    'Edición de precios': { moduleCode: 'appointments', featureKey: 'price_editing' },
-    'Abonos': { moduleCode: 'appointments', featureKey: 'credit' },
-    'Gestión de insumos': { moduleCode: 'services', featureKey: 'supply_management' },
-    'Edición de precios en citas': { moduleCode: 'services', featureKey: 'price_editing_in_appointment' },
-    'Gestión de metas': { moduleCode: 'specialists', featureKey: 'goals_management' },
-    'Visualización de gráficos': { moduleCode: 'reports', featureKey: 'view_charts' },
-    'Ver ingresos': { moduleCode: 'reports', featureKey: 'view_revenue' },
-    'Ver citas': { moduleCode: 'reports', featureKey: 'view_appointments' },
-    'Ver servicios': { moduleCode: 'reports', featureKey: 'view_services' },
-    'Ver especialistas': { moduleCode: 'reports', featureKey: 'view_specialists' },
-    'Ver clientes': { moduleCode: 'reports', featureKey: 'view_customers' },
-    'Ver insumos': { moduleCode: 'reports', featureKey: 'view_supplies' },
-    'Ver cartera': { moduleCode: 'reports', featureKey: 'view_portfolio' },
-    'Exportar datos': { moduleCode: 'reports', featureKey: 'export_data' },
-  }
+  const featureMap: Record<string, { moduleCode: string; featureKey: string }> =
+    {
+      'Notificaciones de WhatsApp': {
+        moduleCode: 'appointments',
+        featureKey: 'whatsapp_notifications',
+      },
+      'Asignación por servicio': {
+        moduleCode: 'appointments',
+        featureKey: 'specialist_assignment',
+      },
+      'Edición de precios': {
+        moduleCode: 'appointments',
+        featureKey: 'price_editing',
+      },
+      Abonos: { moduleCode: 'appointments', featureKey: 'credit' },
+      'Gestión de insumos': {
+        moduleCode: 'services',
+        featureKey: 'supply_management',
+      },
+      'Edición de precios en citas': {
+        moduleCode: 'services',
+        featureKey: 'price_editing_in_appointment',
+      },
+      'Gestión de metas': {
+        moduleCode: 'specialists',
+        featureKey: 'goals_management',
+      },
+      'Visualización de gráficos': {
+        moduleCode: 'reports',
+        featureKey: 'view_charts',
+      },
+      'Ver ingresos': { moduleCode: 'reports', featureKey: 'view_revenue' },
+      'Ver citas': { moduleCode: 'reports', featureKey: 'view_appointments' },
+      'Ver servicios': { moduleCode: 'reports', featureKey: 'view_services' },
+      'Ver especialistas': {
+        moduleCode: 'reports',
+        featureKey: 'view_specialists',
+      },
+      'Ver clientes': { moduleCode: 'reports', featureKey: 'view_customers' },
+      'Ver insumos': { moduleCode: 'reports', featureKey: 'view_supplies' },
+      'Ver cartera': { moduleCode: 'reports', featureKey: 'view_portfolio' },
+      'Exportar datos': { moduleCode: 'reports', featureKey: 'export_data' },
+    }
 
   const mapping = featureMap[featureName]
   if (!mapping) {
-    throw new Error(`No se pudo mapear el feature "${featureName}". Verifique que el nombre sea correcto.`)
+    throw new Error(
+      `No se pudo mapear el feature "${featureName}". Verifique que el nombre sea correcto.`
+    )
   }
 
   return mapping
 }
 
 // Función para procesar features metadata del Excel
-function processFeaturesMetadata(featuresMetadataData: FeaturesMetadataRow[]): Map<string, Record<string, FeatureMetadata>> {
+function processFeaturesMetadata(
+  featuresMetadataData: FeaturesMetadataRow[]
+): Map<string, Record<string, FeatureMetadata>> {
   const metadataMap = new Map<string, Record<string, any>>()
 
   for (const row of featuresMetadataData) {
@@ -82,7 +126,9 @@ function processFeaturesMetadata(featuresMetadataData: FeaturesMetadataRow[]): M
         moduleCode = inferred.moduleCode
         featureKey = inferred.featureKey
       } catch (error: any) {
-        throw new Error(`Error procesando feature "${row.name}": ${error.message}`)
+        throw new Error(
+          `Error procesando feature "${row.name}": ${error.message}`
+        )
       }
     }
 
@@ -96,7 +142,7 @@ function processFeaturesMetadata(featuresMetadataData: FeaturesMetadataRow[]): M
     moduleMetadata[featureKey] = {
       name: row.name,
       description: row.description,
-      requiredPlan: row.required_plans.split(',').map(p => p.trim()),
+      requiredPlan: row.required_plans.split(',').map((p) => p.trim()),
     }
   }
 
@@ -184,7 +230,7 @@ export async function exportPlansToExcelAction(): Promise<{
     const wb = XLSX.utils.book_new()
 
     // Hoja 1: Plans
-    const plansData: PlanRow[] = plansWithModules.map(plan => ({
+    const plansData: PlanRow[] = plansWithModules.map((plan) => ({
       code: plan.code,
       name: plan.name,
       description: plan.description || '',
@@ -204,9 +250,10 @@ export async function exportPlansToExcelAction(): Promise<{
     XLSX.utils.book_append_sheet(wb, wsPlans, 'Plans')
 
     // Hoja 2: Plan_Features
-    const featuresData: PlanFeatureRow[] = plansWithModules.map(plan => ({
+    const featuresData: PlanFeatureRow[] = plansWithModules.map((plan) => ({
       plan_code: plan.code,
-      max_appointments_per_month: plan.features.max_appointments_per_month || undefined,
+      max_appointments_per_month:
+        plan.features.max_appointments_per_month || undefined,
       max_products: plan.features.max_products || undefined,
       max_services: plan.features.max_services || undefined,
       max_customers: plan.features.max_customers || undefined,
@@ -242,7 +289,9 @@ export async function exportPlansToExcelAction(): Promise<{
       for (const moduleAccess of plan.modules) {
         // Agregar permisos custom si existen
         if (moduleAccess.custom_permissions) {
-          for (const [key, enabled] of Object.entries(moduleAccess.custom_permissions)) {
+          for (const [key, enabled] of Object.entries(
+            moduleAccess.custom_permissions
+          )) {
             permissionsData.push({
               plan_code: plan.code,
               module_code: moduleAccess.module.code,
@@ -296,13 +345,19 @@ export async function importPlansFromExcelAction(
     const requiredSheets = ['Plans', 'Plan_Features']
     for (const sheetName of requiredSheets) {
       if (!wb.Sheets[sheetName]) {
-        result.errors.push(`Hoja '${sheetName}' es obligatoria y no se encontró en el archivo Excel`)
+        result.errors.push(
+          `Hoja '${sheetName}' es obligatoria y no se encontró en el archivo Excel`
+        )
         return result
       }
     }
 
     // Hojas opcionales (pueden estar vacías si solo se actualizan permisos)
-    const optionalSheets = ['Plan_Modules', 'Plan_Permissions', 'Features_Metadata']
+    const optionalSheets = [
+      'Plan_Modules',
+      'Plan_Permissions',
+      'Features_Metadata',
+    ]
 
     // Leer y validar datos de cada hoja
     const plansData = XLSX.utils.sheet_to_json<PlanRow>(wb.Sheets['Plans'])
@@ -311,9 +366,13 @@ export async function importPlansFromExcelAction(
       return result
     }
 
-    const featuresData = XLSX.utils.sheet_to_json<PlanFeatureRow>(wb.Sheets['Plan_Features'])
+    const featuresData = XLSX.utils.sheet_to_json<PlanFeatureRow>(
+      wb.Sheets['Plan_Features']
+    )
     if (featuresData.length === 0) {
-      result.errors.push('La hoja "Plan_Features" está vacía o no tiene datos válidos')
+      result.errors.push(
+        'La hoja "Plan_Features" está vacía o no tiene datos válidos'
+      )
       return result
     }
 
@@ -323,28 +382,45 @@ export async function importPlansFromExcelAction(
       : []
 
     const permissionsData = wb.Sheets['Plan_Permissions']
-      ? XLSX.utils.sheet_to_json<PlanPermissionRow>(wb.Sheets['Plan_Permissions'])
+      ? XLSX.utils.sheet_to_json<PlanPermissionRow>(
+          wb.Sheets['Plan_Permissions']
+        )
       : []
 
     const featuresMetadataData = wb.Sheets['Features_Metadata']
-      ? XLSX.utils.sheet_to_json<FeaturesMetadataRow>(wb.Sheets['Features_Metadata'])
+      ? XLSX.utils.sheet_to_json<FeaturesMetadataRow>(
+          wb.Sheets['Features_Metadata']
+        )
       : []
 
     // Validar códigos de plan únicos
-    const planCodes = plansData.map(p => p.code)
+    const planCodes = plansData.map((p) => p.code)
     const uniquePlanCodes = new Set(planCodes)
     if (planCodes.length !== uniquePlanCodes.size) {
-      const duplicates = planCodes.filter((code, index) => planCodes.indexOf(code) !== index)
-      result.errors.push(`Códigos de plan duplicados: ${[...new Set(duplicates)].join(', ')}`)
+      const duplicates = planCodes.filter(
+        (code, index) => planCodes.indexOf(code) !== index
+      )
+      result.errors.push(
+        `Códigos de plan duplicados: ${[...new Set(duplicates)].join(', ')}`
+      )
       return result
     }
 
     // Procesar cada plan
     for (const planRow of plansData) {
       try {
-        await processPlan(planRow, featuresData, modulesData, permissionsData, featuresMetadataData, result)
+        await processPlan(
+          planRow,
+          featuresData,
+          modulesData,
+          permissionsData,
+          featuresMetadataData,
+          result
+        )
       } catch (error: any) {
-        result.errors.push(`Error procesando plan ${planRow.code}: ${error.message}`)
+        result.errors.push(
+          `Error procesando plan ${planRow.code}: ${error.message}`
+        )
       }
     }
 
@@ -367,7 +443,9 @@ async function processPlan(
 ): Promise<void> {
   // Validaciones básicas
   if (!planRow.code || !planRow.name) {
-    throw new Error(`Plan con código '${planRow.code}' requiere nombre y código válidos`)
+    throw new Error(
+      `Plan con código '${planRow.code}' requiere nombre y código válidos`
+    )
   }
 
   if (!['monthly', 'yearly', 'lifetime'].includes(planRow.billing_period)) {
@@ -379,14 +457,22 @@ async function processPlan(
   }
 
   // Buscar features para este plan
-  const featureRow = featuresData.find(f => f.plan_code === planRow.code)
+  const featureRow = featuresData.find((f) => f.plan_code === planRow.code)
   if (!featureRow) {
     throw new Error(`No se encontraron features para el plan '${planRow.code}'`)
   }
 
   // Buscar módulos para este plan
-  const planModules = modulesData.filter(m => m.plan_code === planRow.code)
-  const planPermissions = permissionsData.filter(p => p.plan_code === planRow.code)
+  const planModules = modulesData.filter((m) => m.plan_code === planRow.code)
+  const planPermissions = permissionsData.filter(
+    (p) => p.plan_code === planRow.code
+  )
+
+  console.log('featureRow', featureRow)
+
+  const features = Object.fromEntries(
+    Object.entries(featureRow).map(([key, value]) => [key, value ?? null]) // asigna null si viene undefined
+  ) as PlanFeatures
 
   // Crear objeto PlanInsert
   const planData: PlanInsert = {
@@ -399,16 +485,7 @@ async function processPlan(
     max_businesses: planRow.max_businesses,
     max_users_per_business: planRow.max_users_per_business,
     max_specialists_per_business: planRow.max_specialists_per_business,
-    features: {
-      max_appointments_per_month: featureRow.max_appointments_per_month || null,
-      max_products: featureRow.max_products || null,
-      max_services: featureRow.max_services || null,
-      max_customers: featureRow.max_customers || null,
-      max_storage_mb: featureRow.max_storage_mb || null,
-      has_custom_branding: featureRow.has_custom_branding,
-      has_priority_support: featureRow.has_priority_support,
-      has_api_access: featureRow.has_api_access,
-    },
+    features,
     sort_order: planRow.sort_order,
     monthly_price_cents: planRow.monthly_price_cents,
     yearly_price_cents: planRow.yearly_price_cents,
@@ -444,7 +521,12 @@ async function processPlan(
   }
 
   // Procesar módulos y permisos
-  await processPlanModules(planId, planModules, planPermissions, featuresMetadataData)
+  await processPlanModules(
+    planId,
+    planModules,
+    planPermissions,
+    featuresMetadataData
+  )
 }
 
 async function processPlanModules(
@@ -465,20 +547,26 @@ async function processPlanModules(
     throw new Error('No se pudieron obtener los módulos disponibles')
   }
 
-  const moduleMap = new Map(availableModules.map(m => [m.code, m.id]))
+  const moduleMap = new Map(availableModules.map((m) => [m.code, m.id]))
 
   // Validar módulos únicos por plan
-  const moduleCodes = modules.map(m => m.module_code)
+  const moduleCodes = modules.map((m) => m.module_code)
   const uniqueModuleCodes = new Set(moduleCodes)
   if (moduleCodes.length !== uniqueModuleCodes.size) {
-    const duplicates = moduleCodes.filter((code, index) => moduleCodes.indexOf(code) !== index)
-    throw new Error(`Módulos duplicados en el plan: ${[...new Set(duplicates)].join(', ')}`)
+    const duplicates = moduleCodes.filter(
+      (code, index) => moduleCodes.indexOf(code) !== index
+    )
+    throw new Error(
+      `Módulos duplicados en el plan: ${[...new Set(duplicates)].join(', ')}`
+    )
   }
 
   for (const moduleRow of modules) {
     const moduleId = moduleMap.get(moduleRow.module_code)
     if (!moduleId) {
-      throw new Error(`Módulo '${moduleRow.module_code}' no existe en el sistema`)
+      throw new Error(
+        `Módulo '${moduleRow.module_code}' no existe en el sistema`
+      )
     }
 
     // Validar y convertir permisos booleanos
@@ -491,7 +579,9 @@ async function processPlanModules(
     }
 
     // Buscar permisos para este módulo
-    const modulePermissions = permissions.filter(p => p.module_code === moduleRow.module_code)
+    const modulePermissions = permissions.filter(
+      (p) => p.module_code === moduleRow.module_code
+    )
     const customPermissions: Record<string, boolean> = {}
 
     for (const perm of modulePermissions) {
@@ -499,7 +589,9 @@ async function processPlanModules(
         perm.enabled = normalizeBoolean(perm.enabled)
         customPermissions[perm.permission_key] = perm.enabled
       } catch (error: any) {
-        throw new Error(`Permiso '${perm.permission_key}' en módulo '${perm.module_code}': ${error.message}`)
+        throw new Error(
+          `Permiso '${perm.permission_key}' en módulo '${perm.module_code}': ${error.message}`
+        )
       }
     }
 
@@ -508,7 +600,10 @@ async function processPlanModules(
       can_read: moduleRow.can_read,
       can_write: moduleRow.can_write,
       can_delete: moduleRow.can_delete,
-      custom_permissions: Object.keys(customPermissions).length > 0 ? customPermissions : undefined,
+      custom_permissions:
+        Object.keys(customPermissions).length > 0
+          ? customPermissions
+          : undefined,
       features_metadata: null,
     })
   }
@@ -518,15 +613,21 @@ async function processPlanModules(
 
   // Agregar features_metadata a cada módulo que tenga metadata
   for (const moduleAccess of moduleAccessData) {
-    const moduleCode = availableModules.find(m => m.id === moduleAccess.module_id)?.code
+    const moduleCode = availableModules.find(
+      (m) => m.id === moduleAccess.module_id
+    )?.code
     if (moduleCode && featuresMetadataMap.has(moduleCode)) {
-      moduleAccess.features_metadata = featuresMetadataMap.get(moduleCode) || null
+      moduleAccess.features_metadata =
+        featuresMetadataMap.get(moduleCode) || null
     }
   }
 
   // Actualizar acceso a módulos (solo si hay módulos definidos) DESPUÉS de procesar metadata
   if (moduleAccessData.length > 0) {
-    const result = await setPlanModuleAccessAction(planId, moduleAccessData as PlanModuleAccessInsert[])
+    const result = await setPlanModuleAccessAction(
+      planId,
+      moduleAccessData as PlanModuleAccessInsert[]
+    )
     if (!result.success) {
       throw new Error(result.error || 'Error configurando acceso a módulos')
     }
@@ -554,7 +655,9 @@ export async function importPlansWithProgress(
     const requiredSheets = ['Plans', 'Plan_Features']
     for (const sheetName of requiredSheets) {
       if (!wb.Sheets[sheetName]) {
-        throw new Error(`Hoja '${sheetName}' es obligatoria y no se encontró en el archivo Excel`)
+        throw new Error(
+          `Hoja '${sheetName}' es obligatoria y no se encontró en el archivo Excel`
+        )
       }
     }
 
@@ -564,9 +667,13 @@ export async function importPlansWithProgress(
       throw new Error('La hoja "Plans" está vacía o no tiene datos válidos')
     }
 
-    const featuresData = XLSX.utils.sheet_to_json<PlanFeatureRow>(wb.Sheets['Plan_Features'])
+    const featuresData = XLSX.utils.sheet_to_json<PlanFeatureRow>(
+      wb.Sheets['Plan_Features']
+    )
     if (featuresData.length === 0) {
-      throw new Error('La hoja "Plan_Features" está vacía o no tiene datos válidos')
+      throw new Error(
+        'La hoja "Plan_Features" está vacía o no tiene datos válidos'
+      )
     }
 
     // Hojas opcionales
@@ -575,50 +682,78 @@ export async function importPlansWithProgress(
       : []
 
     const permissionsData = wb.Sheets['Plan_Permissions']
-      ? XLSX.utils.sheet_to_json<PlanPermissionRow>(wb.Sheets['Plan_Permissions'])
+      ? XLSX.utils.sheet_to_json<PlanPermissionRow>(
+          wb.Sheets['Plan_Permissions']
+        )
       : []
 
     const featuresMetadataData = wb.Sheets['Features_Metadata']
-      ? XLSX.utils.sheet_to_json<FeaturesMetadataRow>(wb.Sheets['Features_Metadata'])
+      ? XLSX.utils.sheet_to_json<FeaturesMetadataRow>(
+          wb.Sheets['Features_Metadata']
+        )
       : []
 
     // Validar códigos de plan únicos
-    const planCodes = plansData.map(p => p.code)
+    const planCodes = plansData.map((p) => p.code)
     const uniquePlanCodes = new Set(planCodes)
     if (planCodes.length !== uniquePlanCodes.size) {
-      const duplicates = planCodes.filter((code, index) => planCodes.indexOf(code) !== index)
-      throw new Error(`Códigos de plan duplicados: ${[...new Set(duplicates)].join(', ')}`)
+      const duplicates = planCodes.filter(
+        (code, index) => planCodes.indexOf(code) !== index
+      )
+      throw new Error(
+        `Códigos de plan duplicados: ${[...new Set(duplicates)].join(', ')}`
+      )
     }
 
     // Iniciar procesamiento en background (fire and forget)
     const importService = new GenericImportService()
 
-    importService.importWithProgress(
-      plansData,
-      async (planRow, index, sessionId) => {
-        // Procesar cada plan individualmente
-        await processPlan(planRow, featuresData, modulesData, permissionsData, featuresMetadataData, {
-          success: true,
-          created: 0,
-          updated: 0,
-          errors: []
-        })
-        return planRow
-      },
-      {
-        batchSize: 5, // Procesar de 5 en 5 para mejor UX
-        continueOnError: false, // Detener en el primer error
-        onProgress: (progress) => {
-          // El progreso se actualiza automáticamente en el servicio
-          console.log(`Import ${sessionId}: ${progress.current}/${progress.total}`)
+    importService
+      .importWithProgress(
+        plansData,
+        async (planRow, index, sessionId) => {
+          // Procesar cada plan individualmente
+          await processPlan(
+            planRow,
+            featuresData,
+            modulesData,
+            permissionsData,
+            featuresMetadataData,
+            {
+              success: true,
+              created: 0,
+              updated: 0,
+              errors: [],
+            }
+          )
+          return planRow
+        },
+        {
+          batchSize: 5, // Procesar de 5 en 5 para mejor UX
+          continueOnError: false, // Detener en el primer error
+          onProgress: (progress) => {
+            // El progreso se actualiza automáticamente en el servicio
+            console.log(
+              `Import ${sessionId}: ${progress.current}/${progress.total}`
+            )
+          },
+        },
+        sessionId // Pasar el sessionId proporcionado
+      )
+      .then((result) => {
+        if (result.success) {
+          console.log(`Import ${sessionId} completed successfully:`, result)
+        } else {
+          console.log(`Import ${sessionId} completed with errors:`, result)
         }
-      },
-      sessionId // Pasar el sessionId proporcionado
-    ).then((result) => {
-      console.log(`Import ${sessionId} completed successfully:`, result)
-    }).catch((error) => {
-      console.error(`Import ${sessionId} failed:`, error)
-    })
+      })
+      .catch((error) => {
+        console.error(
+          `Import ${sessionId} .catch() executed with error:`,
+          error
+        )
+        // El progreso ya se marcó como 'error' en el GenericImportService
+      })
 
     // Devolver inmediatamente con sessionId
     return { sessionId, status: 'started' }
@@ -657,13 +792,15 @@ export async function createDefaultPlansTemplateAction(): Promise<{
     XLSX.utils.book_append_sheet(wb, wsModules, 'Plan_Modules')
 
     // Hoja 4: Plan_Permissions - Permisos granulares (ejemplos)
-    const permissionsExample: PlanPermissionRow[] = DEFAULT_PLAN_TEMPLATES.permissions
+    const permissionsExample: PlanPermissionRow[] =
+      DEFAULT_PLAN_TEMPLATES.permissions
 
     const wsPermissions = XLSX.utils.json_to_sheet(permissionsExample)
     XLSX.utils.book_append_sheet(wb, wsPermissions, 'Plan_Permissions')
 
     // Hoja 5: Features_Metadata - Definición de features disponibles
-    const featuresMetadataExample: FeaturesMetadataRow[] = DEFAULT_PLAN_TEMPLATES.featuresMetadata
+    const featuresMetadataExample: FeaturesMetadataRow[] =
+      DEFAULT_PLAN_TEMPLATES.featuresMetadata
     const wsFeaturesMetadata = XLSX.utils.json_to_sheet(featuresMetadataExample)
     XLSX.utils.book_append_sheet(wb, wsFeaturesMetadata, 'Features_Metadata')
 
@@ -676,7 +813,7 @@ export async function createDefaultPlansTemplateAction(): Promise<{
         Title: 'Plantilla de Planes',
         Subject: 'Configuración de planes y permisos',
         Author: 'Sistema de Gestión',
-      }
+      },
     })
 
     const timestamp = new Date().toISOString().split('T')[0]
@@ -695,6 +832,3 @@ export async function createDefaultPlansTemplateAction(): Promise<{
     }
   }
 }
-
-
-

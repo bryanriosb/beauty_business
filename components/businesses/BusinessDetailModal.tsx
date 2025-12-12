@@ -23,7 +23,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { getBusinessTypeLabel } from '@/lib/constants/business-type-labels'
+import { getBusinessTypeLabel } from '@/lib/services/business/const/business-type-labels'
 
 interface BusinessDetailModalProps {
   open: boolean
@@ -31,10 +31,20 @@ interface BusinessDetailModalProps {
   business: BusinessWithAccount | null
 }
 
-function InfoRow({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon?: any }) {
+function InfoRow({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string
+  value: React.ReactNode
+  icon?: any
+}) {
   return (
     <div className="flex items-start gap-3 py-2">
-      {Icon && <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />}
+      {Icon && (
+        <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+      )}
       <div className="flex-1">
         <span className="text-muted-foreground text-sm block">{label}</span>
         <span className="font-medium text-sm">{value || '-'}</span>
@@ -93,7 +103,9 @@ export function BusinessDetailModal({
               <>
                 <div>
                   <h4 className="font-medium mb-2">Descripción</h4>
-                  <p className="text-sm text-muted-foreground">{business.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {business.description}
+                  </p>
                 </div>
                 <Separator />
               </>
@@ -108,20 +120,31 @@ export function BusinessDetailModal({
               <div className="rounded-lg border p-4 space-y-1">
                 <InfoRow
                   label="NIT / Identificación"
-                  value={business.nit ? (
-                    <code className="bg-muted px-2 py-0.5 rounded text-xs">
-                      {business.nit}
-                    </code>
-                  ) : '-'}
+                  value={
+                    business.nit ? (
+                      <code className="bg-muted px-2 py-0.5 rounded text-xs">
+                        {business.nit}
+                      </code>
+                    ) : (
+                      '-'
+                    )
+                  }
                   icon={FileText}
                 />
                 <InfoRow
                   label="Teléfono"
-                  value={business.phone_number ? (
-                    <a href={`tel:${business.phone_number}`} className="text-primary hover:underline">
-                      {business.phone_number}
-                    </a>
-                  ) : '-'}
+                  value={
+                    business.phone_number ? (
+                      <a
+                        href={`tel:${business.phone_number}`}
+                        className="text-primary hover:underline"
+                      >
+                        {business.phone_number}
+                      </a>
+                    ) : (
+                      '-'
+                    )
+                  }
                   icon={Phone}
                 />
               </div>
@@ -146,7 +169,9 @@ export function BusinessDetailModal({
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Sin dirección registrada</p>
+                  <p className="text-sm text-muted-foreground">
+                    Sin dirección registrada
+                  </p>
                 )}
               </div>
             </div>
@@ -166,7 +191,9 @@ export function BusinessDetailModal({
                       <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
                       {business.avg_rating.toFixed(1)}
                     </div>
-                    <div className="text-xs text-muted-foreground">Calificación promedio</div>
+                    <div className="text-xs text-muted-foreground">
+                      Calificación promedio
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-2xl font-bold">
@@ -209,15 +236,27 @@ export function BusinessDetailModal({
               </h4>
               <div className="rounded-lg border p-4 grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-muted-foreground text-sm block">Creación</span>
+                  <span className="text-muted-foreground text-sm block">
+                    Creación
+                  </span>
                   <span className="font-medium text-sm">
-                    {format(new Date(business.created_at), "dd 'de' MMMM, yyyy", { locale: es })}
+                    {format(
+                      new Date(business.created_at),
+                      "dd 'de' MMMM, yyyy",
+                      { locale: es }
+                    )}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground text-sm block">Última actualización</span>
+                  <span className="text-muted-foreground text-sm block">
+                    Última actualización
+                  </span>
                   <span className="font-medium text-sm">
-                    {format(new Date(business.updated_at), "dd 'de' MMMM, yyyy", { locale: es })}
+                    {format(
+                      new Date(business.updated_at),
+                      "dd 'de' MMMM, yyyy",
+                      { locale: es }
+                    )}
                   </span>
                 </div>
               </div>
