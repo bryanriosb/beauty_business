@@ -807,16 +807,15 @@ export default function AppointmentFormModal({
                         onOpenChange={setCalendarOpen}
                       >
                         <PopoverTrigger asChild>
-                          <Button
+              <Button
                             type="button"
                             variant="outline"
                             className={cn(
                               'w-full justify-start text-left font-normal',
                               !field.value && 'text-muted-foreground'
                             )}
-                            disabled={
-                              isSubmitting || selectedServices.length === 0
-                            }
+                            disabled={isSubmitting}
+                            data-tutorial="appointment-date-time"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {field.value ? (
@@ -862,6 +861,7 @@ export default function AppointmentFormModal({
                       onTimesCalculated={handleTimesCalculated}
                       disabled={isSubmitting}
                       excludeAppointmentId={appointment?.id}
+                      data-tutorial="appointment-specialist-select"
                     />
                   </FormItem>
                 )}
@@ -1005,6 +1005,7 @@ export default function AppointmentFormModal({
                     (!appointment && hasInsufficientStock(supplies)) ||
                     (!appointment && !allServicesHaveSpecialistAndTime)
                   }
+                  data-tutorial="save-appointment-button"
                 >
                   {isSubmitting
                     ? 'Guardando...'
