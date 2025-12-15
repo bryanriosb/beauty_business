@@ -12,12 +12,19 @@ export function useBusinessAccount() {
   const [membership, setMembership] = useState<BusinessAccountMember | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastFetchedId, setLastFetchedId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!businessAccountId || !user) {
       setAccount(null)
       setMembership(null)
       setIsLoading(false)
+      setLastFetchedId(null) // Resetear
+      return
+    }
+
+    // Evitar múltiples fetches para el mismo ID
+    if (lastFetchedId === businessAccountId) {
       return
     }
 
@@ -27,7 +34,14 @@ export function useBusinessAccount() {
         const service = new BusinessAccountService()
 
         const accountData = await service.getAccountById(businessAccountId)
+        console.log('📊 BusinessAccount data:', { 
+          id: accountData?.id, 
+          tutorial_started: accountData?.tutorial_started,
+          subscription_plan: accountData?.subscription_plan,
+          status: accountData?.status
+        })
         setAccount(accountData)
+        setLastFetchedId(businessAccountId) // Marcar como fetched DESPUÉS del fetch
 
         if (user.user_profile_id) {
           const members = await service.getAccountMembers(businessAccountId)
@@ -47,11 +61,18 @@ export function useBusinessAccount() {
     }
 
     fetchAccountData()
-  }, [businessAccountId, user])
+  }, [businessAccountId, user?.id]) // Dependencias más simples
 
   const isOwner = membership?.role === 'owner'
   const isAdmin = membership?.role === 'owner' || membership?.role === 'admin'
   const isActive = membership?.status === 'active'
+
+  const tutorialStartedValue = Boolean(account?.tutorial_started) // Convertir undefined/null a false
+  console.log('🎓 useBusinessAccount return:', { 
+    tutorialStarted: tutorialStartedValue,
+    rawValue: account?.tutorial_started,
+    accountId: account?.id
+  })
 
   return {
     account,
@@ -61,6 +82,7 @@ export function useBusinessAccount() {
     isOwner,
     isAdmin,
     isActive,
+    tutorialStarted: tutorialStartedValue,
     canManageMembers: isAdmin && isActive,
     canManageSettings: isOwner && isActive,
   }

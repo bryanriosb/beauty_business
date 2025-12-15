@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTutorialStore } from '@/lib/store/tutorial-store'
 import { useCurrentUser } from './use-current-user'
 import { useTrialCheck } from './use-trial-check'
+import { useBusinessAccount } from './use-business-account'
+import { updateTutorialStartedAction } from '@/lib/actions/business-account'
 import { getClientCookie, setClientCookie } from '@/lib/utils/cookies'
 import { TUTORIALS, Tutorial } from '@/const/tutorials'
 
@@ -13,6 +15,7 @@ const AUTO_START_TUTORIAL_COOKIE = 'auto_start_tutorial_shown'
 export function useTutorial() {
   const { businessAccountId, isAuthenticated, isLoading: authLoading } = useCurrentUser()
   const { isOnTrial, isChecking: trialLoading } = useTrialCheck()
+  const { tutorialStarted, isLoading: businessAccountLoading } = useBusinessAccount()
   
   const {
     isActive,
@@ -62,9 +65,14 @@ export function useTutorial() {
       return false
     }
 
+    // Marcar tutorial como iniciado en la BD (async, no bloquear)
+    updateTutorialStartedAction(businessAccountId!, true).catch(error => {
+      console.error('Error updating tutorial_started:', error)
+    })
+
     storeStartTutorial(tutorialId, startIndex)
     return true
-  }, [storeStartTutorial, isTutorialCompleted])
+  }, [storeStartTutorial, isTutorialCompleted, businessAccountId])
 
   // Restart tutorial
   const restartTutorial = useCallback((tutorialId: string) => {
@@ -76,12 +84,18 @@ export function useTutorial() {
   // Get available tutorials (not completed)
   const getAvailableTutorials = useCallback((): Tutorial[] => {
     return Object.values(TUTORIALS).filter(tutorial => {
+      // Aplicar condición específica para appointment-start (solo trial)
+      if (tutorial.id === 'appointment-start') {
+        // Solo mostrar si está en trial
+        if (!isOnTrial) return false
+      }
+      
       if (tutorial.runCondition && !tutorial.runCondition()) {
         return false
       }
       return !isTutorialCompleted(tutorial.id)
     })
-  }, [isTutorialCompleted])
+  }, [isTutorialCompleted, isOnTrial])
 
   // Get Joyride steps (mantener compatibilidad con componentes existentes)
   const getJoyrideSteps = useCallback(() => {
@@ -110,9 +124,9 @@ export function useTutorial() {
     return steps
   }, [currentTutorial])
 
-  // Auto-start logic for trial users
+  // Auto-start logic for trial users - ahora muestra modal de bienvenida primero
   useEffect(() => {
-    if (authLoading || trialLoading) {
+    if (authLoading || trialLoading || businessAccountLoading) {
       setIsLoading(true)
       return
     }
@@ -124,35 +138,53 @@ export function useTutorial() {
       return
     }
 
-    // Check if auto-start was already shown
-    const autoStartShown = getClientCookie(AUTO_START_TUTORIAL_COOKIE) === 'true'
-
-    // Auto-start tutorial for trial users on first login
-    if (isOnTrial && !autoStartShown && !isActive) {
+    // Auto-start tutorial for trial users que no han empezado el tutorial
+    if (isOnTrial && !tutorialStarted && !isActive) {
       const appointmentTutorial = TUTORIALS['appointment-start']
       
       if (appointmentTutorial && !isTutorialCompleted('appointment-start')) {
-        // Mark auto-start as shown
-        setClientCookie(AUTO_START_TUTORIAL_COOKIE, 'true', {
-          maxAge: 365 * 24 * 60 * 60, // 1 year
-        })
-
-        // Small delay to ensure page is loaded
-        setTimeout(() => {
-          startTutorial('appointment-start')
-        }, 2000)
+        // El modal de bienvenida se encargará de iniciar el tutorial
+        // Esto permite que el usuario decida si quiere tomarlo o no
       }
     }
   }, [
     authLoading,
     trialLoading,
+    businessAccountLoading,
     isAuthenticated,
     businessAccountId,
     isOnTrial,
+    tutorialStarted,
     isTutorialCompleted,
     startTutorial,
     isActive,
   ])
+
+  // Función para iniciar tutorial después del modal
+  const startTutorialAfterWelcome = useCallback(() => {
+    console.log('🎯 startTutorialAfterWelcome called')
+    const appointmentTutorial = TUTORIALS['appointment-start']
+    
+    if (appointmentTutorial && !isTutorialCompleted('appointment-start')) {
+      console.log('📋 Tutorial available and not completed, starting...')
+      // Marcar auto-start como shown
+      setClientCookie(AUTO_START_TUTORIAL_COOKIE, 'true', {
+        maxAge: 365 * 24 * 60 * 60, // 1 year
+      })
+
+      // Small delay para asegurar transición suave
+      setTimeout(() => {
+        console.log('🚀 Actually calling startTutorial...')
+        const result = startTutorial('appointment-start')
+        console.log('🎯 startTutorial result:', result)
+      }, 500)
+    } else {
+      console.log('❌ Tutorial not available or already completed:', {
+        tutorialExists: !!appointmentTutorial,
+        isCompleted: isTutorialCompleted('appointment-start')
+      })
+    }
+  }, [startTutorial, isTutorialCompleted])
 
   return {
     // Estado del tutorial (compatible con código existente)
@@ -178,5 +210,6 @@ export function useTutorial() {
     getAvailableTutorials,
     getJoyrideSteps,
     getCurrentStep,
+    startTutorialAfterWelcome,
   }
 }

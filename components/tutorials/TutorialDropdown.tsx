@@ -28,10 +28,13 @@ export function TutorialDropdown({ className }: TutorialDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   const handleStartTutorial = (tutorialId: string) => {
+    console.log('🎓 Starting tutorial:', tutorialId)
     const wasCompleted = isTutorialCompleted(tutorialId)
     if (wasCompleted) {
+      console.log('🔄 Restarting completed tutorial:', tutorialId)
       restartTutorial(tutorialId)
     } else {
+      console.log('▶️ Starting new tutorial:', tutorialId)
       startTutorial(tutorialId)
     }
     setIsOpen(false)
