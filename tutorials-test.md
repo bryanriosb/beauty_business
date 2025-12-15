@@ -86,14 +86,41 @@ Pasos para probar los tutoriales con el NUEVO flujo de bienvenida (ACTUALIZADO):
    - "🎯 startTutorial result:" - Resultado del startTutorial
    - "📞 startTutorialAfterWelcome result:" - Resultado final
 
-13. ⚠️ Si el tutorial AÚN NO inicia:
-   - Revisar logs de "🎯 Step check" para ver si encuentra elementos
+13. 🐛 **BUG CRITICO CORREGIDO**:
+   ❌ **Problema**: `isTutorialCompleted` siempre devolvía `true` para usuarios trial
+   ✅ **Solución**: Para usuarios trial con `tutorial_started: false`, ignora cookies
+   
+   **Nuevo Log Esperado**:
+   ```
+   🎯 startTutorialAfterWelcome called
+   📋 Tutorial available and not completed, starting...
+   📊 State: { isOnTrial: true, tutorialStarted: false, isCompleted: false, cookieStatus: "false" }
+   🚀 Actually calling startTutorial...
+   🎯 startTutorial result: true
+   ```
+
+14. ✅ **BUG FINAL CORREGIDO**:
+   ❌ **Problema**: `startTutorial` devolvía `false` por verificación de cookies
+   ✅ **Solución**: Para usuarios trial, ignora cookies de completado
+
+   **Nuevo Log Esperado**:
+   ```
+   🎯 startTutorialAfterWelcome called
+   📋 Tutorial available and not completed, starting...
+   📊 State: { isOnTrial: true, tutorialStarted: false, isCompleted: false, cookieStatus: "true" }
+   🚀 Actually calling startTutorial...
+   ✅ Starting tutorial: appointment-start
+   🎯 startTutorial result: true
+   🎮 Tutorial state: { isActive: true, isPaused: false, isReady: true, tutorialId: "appointment-start" }
+   ✅ Starting Joyride with tutorial: "appointment-start"
+   ```
+
+15. ⚠️ Si el tutorial AÚN NO inicia:
    - Revisar logs de "🎮 Tutorial state" y "✅ Starting Joyride"
    - Posibles causas:
      - `isReady: false` (elementos no encontrados)
      - `isActive: false` (tutorial no inició)
      - `isPaused: true` (tutorial en pausa)
-     - `startTutorial` devuelve `false`
 
 ¿Quién debe ver el tutorial?
 - ROL: business_admin (dueño del negocio) - NO company_admin
