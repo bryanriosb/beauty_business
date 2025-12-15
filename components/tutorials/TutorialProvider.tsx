@@ -247,16 +247,16 @@ export function TutorialProvider() {
     }
 
     // Si es un input, desactivar temporalmente el spotlight para permitir interacción normal
-    if (
-      element &&
-      (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
-    ) {
-      console.log('📝 Target is input, adjusting Joyride for input interaction')
+    // if (
+    //   element &&
+    //   (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
+    // ) {
+    //   console.log('📝 Target is input, adjusting Joyride for input interaction')
 
-      // Solo marcar como listo, Joyride se encargará del resto
-      setIsReady(true)
-      return
-    }
+    //   // Solo marcar como listo, Joyride se encargará del resto
+    //   setIsReady(true)
+    //   return
+    // }
 
     console.log('✅ Element found, setting isReady = true')
     setIsReady(true)
@@ -319,10 +319,10 @@ export function TutorialProvider() {
     const isInput =
       element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
 
-    if (isInput) {
-      console.log('📝 Current step targets an input, adjusting overlay')
+    if (isInput && element) {
+      const inputElement = element as HTMLInputElement | HTMLTextAreaElement
 
-      // Crear un estilo dinámico para permitir la interacción
+      // Crear un estilo dinámico para permitir la interacción con inputs
       const styleId = 'joyride-input-fix'
       let styleElement = document.getElementById(styleId)
 
@@ -332,20 +332,103 @@ export function TutorialProvider() {
         document.head.appendChild(styleElement)
       }
 
-      // Permitir clicks en el input específico y en los botones de Joyride
+      // Estilos CSS para permitir interacción con inputs durante el tutorial
       styleElement.textContent = `
         .react-joyride__tooltip button {
           pointer-events: auto !important;
         }
+        .react-joyride__overlay {
+          pointer-events: none !important;
+        }
+        .react-joyride__beacon {
+          pointer-events: none !important;
+        }
       `
+
+      // Agregar clase específica al input para asegurar interacción
+      inputElement.classList.add('joyride-interactive-input')
+
+      // Función para prevenir selección de texto no deseada
+      const preventTextSelection = (e: Event) => {
+        const target = e.target as HTMLInputElement | HTMLTextAreaElement
+        if (target && target.value) {
+          // Colocar el cursor al final del texto para evitar la selección
+          target.setSelectionRange(target.value.length, target.value.length)
+        }
+      }
+
+      // Función para manejar el input del teclado
+      const handleInput = (e: Event) => {
+        const target = e.target as HTMLInputElement | HTMLTextAreaElement
+        if (target) {
+          // Asegurar que el cursor se mantenga en la posición correcta después de escribir
+          setTimeout(() => {
+            target.setSelectionRange(target.value.length, target.value.length)
+          }, 0)
+        }
+      }
+
+      // Agregar event listeners para manejar interacción del usuario
+      inputElement.addEventListener('focus', preventTextSelection)
+      inputElement.addEventListener('input', handleInput)
+
       return () => {
         const style = document.getElementById(styleId)
         if (style) {
           style.remove()
         }
+        inputElement.classList.remove('joyride-interactive-input')
+        inputElement.removeEventListener('focus', preventTextSelection)
+        inputElement.removeEventListener('input', handleInput)
       }
     }
   }, [isActive, isReady, shouldRun, getCurrentStep])
+
+  // Efecto para prevenir selección automática de texto en inputs durante tutoriales
+  useEffect(() => {
+    if (!isActive) return
+
+    const currentStep = getCurrentStep()
+    if (!currentStep) return
+
+    // Solo procesar si el paso actual es un input
+    const selector = currentStep.target.startsWith('[')
+      ? currentStep.target
+      : `[data-tutorial="${currentStep.target}"]`
+    const element = document.querySelector(selector)
+
+    if (
+      element &&
+      (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
+    ) {
+      const inputElement = element as HTMLInputElement | HTMLTextAreaElement
+
+      // Solución directa: prevenir selección automática inmediatamente
+      const preventSelection = () => {
+        if (
+          inputElement.selectionStart !== inputElement.selectionEnd &&
+          inputElement.value
+        ) {
+          const length = inputElement.value.length
+          inputElement.setSelectionRange(length, length)
+          console.log(
+            '🔍 Prevented automatic text selection in input during tutorial'
+          )
+        }
+      }
+
+      // Ejecutar inmediatamente y después de un pequeño delay
+      preventSelection()
+      const timeout1 = setTimeout(preventSelection, 10)
+      const timeout2 = setTimeout(preventSelection, 50)
+
+      // Limpiar timeouts al finalizar el efecto
+      return () => {
+        clearTimeout(timeout1)
+        clearTimeout(timeout2)
+      }
+    }
+  }, [isActive, stepIndex, getCurrentStep])
 
   // Efecto para iniciar/parar Joyride
   useEffect(() => {
@@ -387,6 +470,22 @@ export function TutorialProvider() {
     setShowModal(false)
   }
 
+  // Determinar si el paso actual es un input para ajustar configuración
+  const getIsCurrentStepInput = () => {
+    const currentStep = getCurrentStep()
+    if (!currentStep) return false
+
+    const selector = currentStep.target.startsWith('[')
+      ? currentStep.target
+      : `[data-tutorial="${currentStep.target}"]`
+    const element = document.querySelector(selector)
+    return (
+      element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
+    )
+  }
+
+  const isCurrentStepInput = getIsCurrentStepInput()
+
   // Renderizar Joyride solo si hay tutorial activo
   const tutorialComponent =
     isActive && tutorialId ? (
@@ -399,10 +498,10 @@ export function TutorialProvider() {
         showProgress={true}
         showSkipButton={true}
         scrollToFirstStep={true}
-        disableOverlayClose={true}
-        debug={false}
+        disableOverlay={isCurrentStepInput ? true : false} // Desactivar overlay solo para inputs
+        disableScrolling={false}
+        debug={true}
         spotlightPadding={0}
-        disableOverlay={true} // DESACTIVAR: Overlay que causa problemas con inputs
         styles={{
           options: {
             arrowColor: '#fff',
@@ -410,6 +509,11 @@ export function TutorialProvider() {
             primaryColor: '#0ea5e9',
             textColor: '#333',
             zIndex: 10000,
+            overlayColor: 'rgba(0, 0, 0, 0.1)',
+            // Permitir interacción con elementos debajo del overlay
+            ...(isCurrentStepInput && {
+              overlayColor: 'rgba(0, 0, 0, 0)',
+            }),
           },
           tooltip: {
             borderRadius: '8px',
@@ -427,8 +531,12 @@ export function TutorialProvider() {
             color: '#6b7280',
           },
           overlay: {
-            // Overlay transparente para no bloquear interacción
+            // Overlay transparente para no bloquear interacción cuando está habilitado
             backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            ...(isCurrentStepInput && {
+              backgroundColor: 'rgba(0, 0, 0, 0)',
+              pointerEvents: 'none',
+            }),
           },
         }}
         locale={{

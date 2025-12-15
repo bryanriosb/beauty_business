@@ -306,56 +306,22 @@ export function ServiceModal({
             <FormField
               control={form.control}
               name="name"
-              render={({ field }) => {
-                // DEBUG: Monitorear eventos para detectar problema de reemplazo
-                // SIMPLIFICADO: Sin manejo especial que cause problemas
-                const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                  field.onChange(e)
-                }
-                
-                return (
-                  <FormItem>
-                    <FormLabel>
-                      Nombre <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Corte de cabello"
-                        disabled={isSubmitting}
-                        data-tutorial="service-name-input"
-                  value={field.value}
-                  onChange={handleChange}
-                  onBlur={field.onBlur}
-                  // REMOVIDO: Handlers que causan ciclo infinito de focus/selection
-                  // onSelect={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  //   console.log('🔍 SELECT EVENT:', {
-                  //     value: e.target.value,
-                  //     selectionStart: e.target.selectionStart,
-                  //     selectionEnd: e.target.selectionEnd,
-                  //   })
-                  // }}
-                  // onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                  //   console.log('🔍 FOCUS EVENT:', {
-                  //     value: e.target.value,
-                  //     selectionStart: e.target.selectionStart,
-                  //     selectionEnd: e.target.selectionEnd,
-                  //   })
-                  //   // DES-SELECCIONAR texto al recibir foco para evitar sobreescritura
-                  //   setTimeout(() => {
-                  //     const input = e.target as HTMLInputElement
-                  //     if (input.selectionStart !== input.selectionEnd) {
-                  //       input.setSelectionRange(input.value.length, input.value.length)
-                  //       console.log('🔍 DESELECTED TEXT - moved cursor to end')
-                  //     }
-                  //   }, 0)
-                  // }}
-                  ref={field.ref}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )
-              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Nombre <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Corte de cabello"
+                      disabled={isSubmitting}
+                      data-tutorial="service-name-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <FormField
