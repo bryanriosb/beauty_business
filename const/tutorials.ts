@@ -49,15 +49,6 @@ export const TUTORIALS: Record<string, Tutorial> = {
     id: 'appointment-start',
     name: 'Guía de Inicio: Tu Primera Cita',
     description: 'Aprende a crear tu primer servicio, especialista y cita',
-    runCondition: () => {
-      // Importamos dinámicamente para evitar ciclos
-      const { useTrialCheck } = require('@/hooks/use-trial-check')
-      const { useCurrentUser } = require('@/hooks/use-current-user')
-
-      // Esta condición se evaluará en el hook useTutorial
-      // Aquí solo definimos la estructura
-      return true
-    },
     steps: [
       {
         target: 'services-menu',
@@ -96,7 +87,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
-        // No requerir interacción, solo mostrar
+        spotlightClicks: true,
       },
       {
         target: 'service-description-input',
@@ -108,7 +99,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
-        // No requerir interacción, solo mostrar
+        spotlightClicks: true,
       },
       {
         target: 'service-category-select',
