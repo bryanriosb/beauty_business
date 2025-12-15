@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import Joyride, { CallBackProps, STATUS } from 'react-joyride'
+import { useTutorialStore } from '@/lib/store/tutorial-store'
 import { useCurrentUser } from './use-current-user'
 import { useTrialCheck } from './use-trial-check'
 import { getClientCookie, setClientCookie } from '@/lib/utils/cookies'
@@ -13,9 +13,22 @@ const AUTO_START_TUTORIAL_COOKIE = 'auto_start_tutorial_shown'
 export function useTutorial() {
   const { businessAccountId, isAuthenticated, isLoading: authLoading } = useCurrentUser()
   const { isOnTrial, isChecking: trialLoading } = useTrialCheck()
-  const [runTutorial, setRunTutorial] = useState(false)
-  const [tutorialId, setTutorialId] = useState<string | null>(null)
-  const [tutorialIndex, setTutorialIndex] = useState(0)
+  
+  const {
+    isActive,
+    tutorialId,
+    stepIndex,
+    isPaused,
+    startTutorial: storeStartTutorial,
+    stopTutorial,
+    pauseTutorial,
+    resumeTutorial,
+    nextStep,
+    previousStep,
+    setStepIndex,
+    getCurrentStep,
+  } = useTutorialStore()
+
   const [isLoading, setIsLoading] = useState(true)
 
   const currentTutorial = tutorialId ? TUTORIALS[tutorialId] : null
@@ -35,25 +48,23 @@ export function useTutorial() {
   // Start a specific tutorial
   const startTutorial = useCallback((tutorialId: string, startIndex = 0) => {
     const tutorial = TUTORIALS[tutorialId]
-    if (!tutorial) return false
+    if (!tutorial) {
+      return false
+    }
 
     // Check if tutorial should run (condition function)
     if (tutorial.runCondition && !tutorial.runCondition()) {
       return false
     }
 
-    setTutorialId(tutorialId)
-    setTutorialIndex(startIndex)
-    setRunTutorial(true)
-    return true
-  }, [])
+    // Check if already completed
+    if (isTutorialCompleted(tutorialId)) {
+      return false
+    }
 
-  // Stop current tutorial
-  const stopTutorial = useCallback(() => {
-    setRunTutorial(false)
-    setTutorialId(null)
-    setTutorialIndex(0)
-  }, [])
+    storeStartTutorial(tutorialId, startIndex)
+    return true
+  }, [storeStartTutorial, isTutorialCompleted])
 
   // Restart tutorial
   const restartTutorial = useCallback((tutorialId: string) => {
@@ -72,25 +83,32 @@ export function useTutorial() {
     })
   }, [isTutorialCompleted])
 
-  // Handle tutorial callback
-  const handleTutorialCallback = useCallback((data: CallBackProps) => {
-    const { status, index, type } = data
+  // Get Joyride steps (mantener compatibilidad con componentes existentes)
+  const getJoyrideSteps = useCallback(() => {
+    if (!currentTutorial) return []
 
-    // Handle finished tutorial
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
-      if (tutorialId) {
-        markTutorialCompleted(tutorialId)
-        currentTutorial?.onComplete?.()
+    const steps = currentTutorial.steps.map((step) => {
+      // Try direct selector first, then data-tutorial selector
+      let targetSelector = step.target
+      if (step.target && !step.target.startsWith('[') && !step.target.startsWith('#') && !step.target.startsWith('.')) {
+        targetSelector = `[data-tutorial="${step.target}"]`
       }
-      stopTutorial()
-      return
-    }
+      
+      // Check if element exists, fallback to body
+      const element = document.querySelector(targetSelector)
+      const finalTarget = element ? targetSelector : 'body'
 
-    // Update index
-    if (type === 'step:before') {
-      setTutorialIndex(index)
-    }
-  }, [tutorialId, currentTutorial, markTutorialCompleted, stopTutorial])
+      return {
+        ...step,
+        target: finalTarget,
+        content: step.content,
+        // Disable beacon for modal elements until they are visible
+        disableBeacon: step.disableBeacon || !element,
+      }
+    })
+
+    return steps
+  }, [currentTutorial])
 
   // Auto-start logic for trial users
   useEffect(() => {
@@ -110,7 +128,7 @@ export function useTutorial() {
     const autoStartShown = getClientCookie(AUTO_START_TUTORIAL_COOKIE) === 'true'
 
     // Auto-start tutorial for trial users on first login
-    if (isOnTrial && !autoStartShown) {
+    if (isOnTrial && !autoStartShown && !isActive) {
       const appointmentTutorial = TUTORIALS['appointment-start']
       
       if (appointmentTutorial && !isTutorialCompleted('appointment-start')) {
@@ -133,79 +151,32 @@ export function useTutorial() {
     isOnTrial,
     isTutorialCompleted,
     startTutorial,
+    isActive,
   ])
 
-  // Get Joyride steps
-  const getJoyrideSteps = useCallback(() => {
-    if (!currentTutorial) return []
-
-    return currentTutorial.steps.map((step, stepIndex) => ({
-      ...step,
-      // Ensure target exists or fallback
-      target: () => {
-        const element = document.querySelector(step.target)
-        return element || 'body'
-      },
-      // Add step number to content
-      content: step.content,
-    }))
-  }, [currentTutorial])
-
   return {
-    // State
-    runTutorial,
+    // Estado del tutorial (compatible con código existente)
+    runTutorial: isActive && !isPaused,
     tutorialId,
-    tutorialIndex,
+    tutorialIndex: stepIndex,
     currentTutorial,
     isLoading: isLoading || authLoading || trialLoading,
     
-    // Actions
+    // Acciones básicas
     startTutorial,
     stopTutorial,
     restartTutorial,
+    pauseTutorial,
+    resumeTutorial,
+    nextStep,
+    previousStep,
+    setStepIndex,
+    
+    // Utilidades
     isTutorialCompleted,
     markTutorialCompleted,
     getAvailableTutorials,
     getJoyrideSteps,
-    handleTutorialCallback,
-    
-    // Tutorial component props
-    joyrideProps: {
-      steps: getJoyrideSteps(),
-      run: runTutorial,
-      callback: handleTutorialCallback,
-      continuous: true,
-      showProgress: true,
-      showSkipButton: true,
-      styles: {
-        options: {
-          arrowColor: '#fff',
-          backgroundColor: '#fff',
-          primaryColor: '#0ea5e9',
-          textColor: '#333',
-          zIndex: 10000,
-        },
-        tooltip: {
-          borderRadius: '8px',
-          padding: '16px',
-          fontSize: '14px',
-        },
-        button: {
-          borderRadius: '6px',
-          padding: '8px 16px',
-          fontSize: '14px',
-        },
-        buttonNext: {
-          backgroundColor: '#0ea5e9',
-          color: '#fff',
-        },
-        buttonBack: {
-          color: '#6b7280',
-        },
-        buttonSkip: {
-          color: '#6b7280',
-        },
-      },
-    },
+    getCurrentStep,
   }
 }

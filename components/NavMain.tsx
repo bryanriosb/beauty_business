@@ -35,6 +35,7 @@ export interface NavSubItem {
   title: string
   url: string
   allowedRoles?: UserRole[]
+  targetTutorialStep?: string
 }
 
 export interface NavItem {
@@ -44,6 +45,7 @@ export interface NavItem {
   isActive?: boolean
   badge?: React.ReactNode
   items?: NavSubItem[]
+  targetTutorialStep?: string
 }
 
 function CollapsedMenuItem({
@@ -205,12 +207,7 @@ export function NavMain({
                   asChild
                   tooltip={item.title}
                   isActive={isActive}
-                  data-tutorial={
-                    item.url === '/admin/services' ? 'services-menu' :
-                    item.url === '/admin/specialists/goals' || item.url === '/admin/specialists/team' ? 'specialists-menu' :
-                    item.url === '/admin/appointments' ? 'appointments-menu' :
-                    undefined
-                  }
+                  data-tutorial={item.targetTutorialStep}
                 >
                   <Link href={item.url}>
                     {item.icon && <item.icon />}
@@ -272,15 +269,10 @@ export function NavMain({
                           className="!text-muted-foreground"
                         >
                          <SidebarMenuSubButton
-                             asChild
-                             isActive={isSubItemActive}
-                             data-tutorial={
-                               subItem.url === '/admin/services' ? 'services-menu' :
-                               subItem.url === '/admin/specialists/team' ? 'specialists-menu' :
-                               subItem.url === '/admin/appointments' ? 'appointments-menu' :
-                               undefined
-                             }
-                           >
+                              asChild
+                              isActive={isSubItemActive}
+                              data-tutorial={subItem.targetTutorialStep}
+                            >
                              <Link href={subItem.url}>
                                <span>{subItem.title}</span>
                              </Link>

@@ -37,6 +37,7 @@ export interface MenuSubItem {
   url: string
   allowedRoles?: UserRole[]
   moduleCode?: ModuleCode
+  targetTutorialStep?: string
 }
 
 export interface MenuItem {
@@ -47,6 +48,7 @@ export interface MenuItem {
   items?: MenuSubItem[]
   moduleCode?: ModuleCode // Código del módulo para verificar acceso del plan
   skipPlanCheck?: boolean // Para menús del sistema que no requieren verificación de plan
+  targetTutorialStep?: string // Paso del tutorial asociado al ítem del menú
 }
 
 export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
@@ -66,6 +68,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     url: '/admin/appointments',
     icon: Calendar,
     moduleCode: 'appointments',
+    targetTutorialStep: 'appointments-menu',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -77,6 +80,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     url: '/admin/services',
     icon: Scissors,
     moduleCode: 'services',
+    targetTutorialStep: 'services-menu',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,
@@ -119,6 +123,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
       {
         title: 'Equipo',
         url: '/admin/specialists/team',
+        targetTutorialStep: 'specialists-menu',
         allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
       },
       {

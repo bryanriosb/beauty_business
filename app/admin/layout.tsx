@@ -9,6 +9,7 @@ import { SidebarSkeleton } from '@/components/SidebarSkeleton'
 import { getAccessibleModules } from '@/lib/actions/sidebar'
 import { NavigationLoader } from '@/components/NavigationLoader'
 import { PermissionsLoader } from '@/components/PermissionsLoader'
+import { TutorialProvider } from '@/components/tutorials/TutorialProvider'
 
 export default async function AdminLayout({
   children,
@@ -40,6 +41,7 @@ export default async function AdminLayout({
           </Suspense>
         </div>
       </section>
+      <TutorialProvider />
     </SidebarProvider>
   )
 }

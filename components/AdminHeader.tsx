@@ -13,7 +13,6 @@ import { useUnreadMessages } from '@/hooks/use-unread-messages'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { FeedbackDialog } from './feedback/FeedbackDialog'
 import { TutorialDropdown } from './tutorials/TutorialDropdown'
-import { TutorialProvider } from './tutorials/TutorialProvider'
 
 export default function AdminHeader() {
   const [chatOpen, setChatOpen] = useState(false)
@@ -112,7 +111,6 @@ export default function AdminHeader() {
         />
       )}
 
-      <TutorialProvider />
     </>
   )
 }
