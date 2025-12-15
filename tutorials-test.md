@@ -115,12 +115,87 @@ Pasos para probar los tutoriales con el NUEVO flujo de bienvenida (ACTUALIZADO):
    ✅ Starting Joyride with tutorial: "appointment-start"
    ```
 
-15. ⚠️ Si el tutorial AÚN NO inicia:
-   - Revisar logs de "🎮 Tutorial state" y "✅ Starting Joyride"
-   - Posibles causas:
-     - `isReady: false` (elementos no encontrados)
-     - `isActive: false` (tutorial no inició)
-     - `isPaused: true` (tutorial en pausa)
+15. 🎯 **PROBLEMAS CORREGIDOS**:
+
+   **Problema 1: Modal no se abre en página correcta**
+   ✅ **Solución**: Agregado `/admin/services` a páginas válidas para modal
+   ✅ **Logs Esperados**:
+   ```
+   🔍 Modal check: { pathname: '/admin/services', tutorialStarted: false, ... }
+   📋 Showing welcome modal
+   ```
+
+   **Problema 2: Joyride no apunta a elementos correctos**
+   ✅ **Solución**: Agregados logs detallados para cada paso
+   ✅ **Logs Esperados**:
+   ```
+   🎯 Processing steps for tutorial: appointment-start
+   🎯 Step 0: { originalTarget: 'services-menu', elementFound: true, finalTarget: '[data-tutorial="services-menu"]' }
+   🎯 Step 1: { originalTarget: 'add-service-button', elementFound: true, finalTarget: '[data-tutorial="add-service-button"]' }
+   ```
+
+   **Problema 3: Modal de formulario interfiere con Joyride**
+   ✅ **Solución**: Joyride espera que no haya modales abiertos
+   ✅ **Logs Esperados**:
+   ```
+   ✅ Starting Joyride with tutorial: appointment-start
+   🔐 Modal detectado, esperando que se cierre...
+   ```
+
+16. 🧪 **PARA PROBAR EL FLUJO COMPLETO**:
+
+   1. **Iniciar tutorial** desde el modal
+   2. **Ir a Servicios** → El primer paso debería estar apuntando
+   3. **Hacer clic en "Crear Servicio"** → Debería avanzar al paso 2
+   4. **Modal debería abrir** → Joyride debería esperar
+   5. **Cerrar modal** → Joyride debería continuar al paso 2
+
+17. 🚀 **SOLUCIONES ACTUALES**:
+
+   **Modal Visibility**: Simplificado para mostrar modal en dashboard/services
+   ```
+   📋 Showing welcome modal (simplified)
+   ```
+
+   **Element Detection**: Joyride ahora busca dentro de modales abiertos
+   ```
+   🔍 Element not found in main document, searching in modals...
+   ✅ Found element in modal: [role="dialog"]
+   ```
+
+18. 🧪 **PARA PROBAR AHORA**:
+
+   **Paso 1**: Ir a `/admin/services`
+   - Debería ver: `📋 Showing welcome modal (simplified)`
+
+   **Paso 2**: Iniciar tutorial
+   - Debería ver los tooltips apuntando a elementos correctos
+   - Debería poder avanzar con "Siguiente"
+
+   **Paso 3**: Hacer clic en "Crear Servicio"
+   - Debería abrir el modal del formulario
+   - Joyride debería esperar a que se cierre el modal
+   - Al cerrar, debería continuar con el paso siguiente
+
+19. ⚠️ **Si el modal sigue sin aparecer**:
+   - Revisar logs de "🔍 Modal visibility check"
+   - Verificar que sea `shouldShow: true`
+   - Posible causa: `modalShownThisSession` ya está en `true`
+
+20. ⚠️ **Si Joyride no apunta a los elementos del formulario**:
+   - Revisar logs de "🔍 Element not found in main document, searching in modals..."
+   - Debería ver: "✅ Found element in modal"
+   - Si no, el problema puede ser z-index o visibilidad
+
+21. 📊 **Logs Clave a Observar**:
+   ```
+   🔍 Modal visibility check: { shouldShow: true }
+   🎯 Processing steps for tutorial: appointment-start
+   🎯 Step 2: { elementFound: true }
+   🔍 Element not found in main document, searching in modals...
+   ✅ Found element in modal: [role="dialog"]
+   ✅ Starting Joyride with tutorial: appointment-start
+   ```
 
 ¿Quién debe ver el tutorial?
 - ROL: business_admin (dueño del negocio) - NO company_admin

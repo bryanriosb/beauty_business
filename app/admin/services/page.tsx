@@ -1,6 +1,11 @@
 'use client'
 
-import { DataTable, DataTableRef, SearchConfig, FilterConfig } from '@/components/DataTable'
+import {
+  DataTable,
+  DataTableRef,
+  SearchConfig,
+  FilterConfig,
+} from '@/components/DataTable'
 import { Button } from '@/components/ui/button'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
@@ -111,7 +116,9 @@ export default function ServicesPage() {
   )
 
   const handleCategoryCreated = useCallback((category: ServiceCategory) => {
-    setCategories((prev) => [...prev, category].sort((a, b) => a.name.localeCompare(b.name)))
+    setCategories((prev) =>
+      [...prev, category].sort((a, b) => a.name.localeCompare(b.name))
+    )
   }, [])
 
   const handleCreateService = () => {
@@ -262,7 +269,11 @@ export default function ServicesPage() {
           </p>
         </div>
         {canCreateService && (
-          <Button onClick={handleCreateService} className="w-full sm:w-auto" data-tutorial="add-service-button">
+          <Button
+            onClick={handleCreateService}
+            className="w-full sm:w-auto"
+            data-tutorial="add-service-button"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Crear Servicio
           </Button>

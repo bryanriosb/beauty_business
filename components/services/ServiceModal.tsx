@@ -252,7 +252,11 @@ export function ServiceModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-lg max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEdit ? 'Editar Servicio' : 'Crear Servicio'}
@@ -362,6 +366,7 @@ export function ServiceModal({
                       placeholder="Descripción del servicio..."
                       rows={2}
                       disabled={isSubmitting}
+                      data-tutorial="service-description-input"
                       {...field}
                     />
                   </FormControl>
@@ -429,7 +434,7 @@ export function ServiceModal({
                       Duración (min) <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                    <Input
+                      <Input
                         type="number"
                         min={10}
                         placeholder="30"
@@ -542,7 +547,11 @@ export function ServiceModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting} data-tutorial="save-service-button">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                data-tutorial="save-service-button"
+              >
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

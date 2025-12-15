@@ -11,6 +11,13 @@ export interface TutorialStep {
   showProgress?: boolean
   showSkipButton?: boolean
   page?: string // La página donde debe aparecer este paso
+  // Acción que se ejecuta automáticamente al llegar a este paso
+  triggerAction?: {
+    type: 'click' | 'open-modal' | 'close-modal'
+    selector?: string // Selector del elemento a clickear (si aplica)
+    delay?: number // Delay antes de ejecutar la acción (ms)
+    waitForModal?: boolean // Esperar a que el modal esté visible antes de continuar
+  }
   navigation?: {
     // Navegación automática al siguiente paso
     to?: string // URL a navegar
@@ -46,7 +53,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
       // Importamos dinámicamente para evitar ciclos
       const { useTrialCheck } = require('@/hooks/use-trial-check')
       const { useCurrentUser } = require('@/hooks/use-current-user')
-      
+
       // Esta condición se evaluará en el hook useTutorial
       // Aquí solo definimos la estructura
       return true
@@ -54,7 +61,8 @@ export const TUTORIALS: Record<string, Tutorial> = {
     steps: [
       {
         target: 'services-menu',
-        content: '¡Bienvenido! Vamos a crear tu primer servicio. Haz clic en "Servicios" en el menú lateral para comenzar.',
+        content:
+          '¡Bienvenido! Vamos a crear tu primer servicio. Haz clic en "Servicios" en el menú lateral para comenzar.',
         title: 'Paso 1: Crear un Servicio',
         placement: 'right',
         disableBeacon: false,
@@ -63,27 +71,61 @@ export const TUTORIALS: Record<string, Tutorial> = {
       },
       {
         target: 'add-service-button',
-        content: 'Aquí puedes agregar nuevos servicios a tu catálogo. Cada servicio es lo que ofreces a tus clientes.',
+        content:
+          'Aquí puedes agregar nuevos servicios a tu catálogo. Cada servicio es lo que ofreces a tus clientes.',
         title: 'Agregar Nuevo Servicio',
         placement: 'bottom',
         disableBeacon: true,
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
+        triggerAction: {
+          type: 'open-modal',
+          selector: '[data-tutorial="add-service-button"]',
+          delay: 500,
+          waitForModal: true,
+        },
       },
       {
         target: 'service-name-input',
-        content: 'Dale un nombre claro a tu servicio. Por ejemplo: "Corte de Cabello Masculino" o "Manicure"',
+        content:
+          'Aquí puedes dar un nombre claro a tu servicio. Por ejemplo: "Corte de Cabello Masculino" o "Manicure"',
         title: 'Nombre del Servicio',
         placement: 'top',
         disableBeacon: true,
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
+        // No requerir interacción, solo mostrar
+      },
+      {
+        target: 'service-description-input',
+        content:
+          'Describe brevemente el servicio que vas a ofrecer. Esto ayudará a tus clientes a entender qué esperar.',
+        title: 'Descripción del Servicio',
+        placement: 'top',
+        disableBeacon: true,
+        showProgress: true,
+        showSkipButton: true,
+        page: '/admin/services',
+        // No requerir interacción, solo mostrar
+      },
+      {
+        target: 'service-category-select',
+        content:
+          'Selecciona la categoría que mejor describe tu servicio. Esto ayudará a tus clientes a encontrarlo y a asociar con el especialista.',
+        title: 'Categoría del Servicio',
+        placement: 'top',
+        disableBeacon: true,
+        showProgress: true,
+        showSkipButton: true,
+        page: '/admin/services',
+        // No requerir interacción, solo mostrar
       },
       {
         target: 'service-price-input',
-        content: 'Define el precio de tu servicio. Recuerda que este es el valor base que tus clientes pagarán.',
+        content:
+          'Define el precio base que tus clientes pagarán por este servicio.',
         title: 'Precio del Servicio',
         placement: 'top',
         disableBeacon: true,
@@ -93,7 +135,8 @@ export const TUTORIALS: Record<string, Tutorial> = {
       },
       {
         target: 'service-duration-input',
-        content: '¿Cuánto tiempo toma este servicio? Esto ayuda a organizar mejor tu agenda.',
+        content:
+          'Especifica la duración en minutos para organizar mejor tu agenda.',
         title: 'Duración del Servicio',
         placement: 'top',
         disableBeacon: true,
@@ -102,142 +145,32 @@ export const TUTORIALS: Record<string, Tutorial> = {
         page: '/admin/services',
       },
       {
-        target: 'service-category-select',
-        content: 'Selecciona una categoría para organizar mejor tus servicios.',
-        title: 'Categoría del Servicio',
-        placement: 'top',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/services',
-      },
-      {
         target: 'save-service-button',
-        content: '¡Perfecto! Ahora guarda tu servicio para continuar.',
+        content:
+          '¡Excelente! Una vez completados los datos, guarda tu servicio para finalizar el tutorial.',
         title: 'Guardar Servicio',
         placement: 'top',
         disableBeacon: true,
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
-        navigation: {
-          to: '/admin/specialists',
-          delay: 1000,
+        triggerAction: {
+          type: 'click',
+          selector: '[data-tutorial="save-service-button"]',
+          delay: 500,
+          waitForModal: false,
         },
       },
       {
-        target: 'specialists-menu',
-        content: 'Excelente! Ahora vamos a crear un especialista que ofrecerá este servicio.',
-        title: 'Paso 2: Crear un Especialista',
-        placement: 'right',
-        disableBeacon: false,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/specialists',
-      },
-      {
-        target: 'add-specialist-button',
-        content: 'Aquí puedes agregar a los especialistas que trabajarán en tu negocio.',
-        title: 'Agregar Nuevo Especialista',
-        placement: 'bottom',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/specialists',
-      },
-      {
-        target: 'specialist-name-input',
-        content: 'Ingresa el nombre completo del especialista.',
-        title: 'Nombre del Especialista',
-        placement: 'top',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/specialists',
-      },
-      {
-        target: 'specialist-specialty-input',
-        content: '¿En qué se especializa? Por ejemplo: "Cortes modernos, tintes, tratamientos"',
-        title: 'Especialidad del Especialista',
-        placement: 'top',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/specialists',
-      },
-      {
-        target: 'save-specialist-button',
-        content: 'Guarda la información del especialista.',
-        title: 'Guardar Especialista',
-        placement: 'top',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/specialists',
-        navigation: {
-          to: '/admin/appointments',
-          delay: 1000,
-        },
-      },
-      {
-        target: 'appointments-menu',
-        content: '¡Genial! Ahora vamos a crear tu primera cita combinando el servicio y especialista que creaste.',
-        title: 'Paso 3: Crear una Cita',
-        placement: 'right',
-        disableBeacon: false,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/appointments',
-      },
-      {
-        target: 'add-appointment-button',
-        content: 'Este es el calendario donde gestionarás todas tus citas.',
-        title: 'Calendario de Citas',
-        placement: 'bottom',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/appointments',
-      },
-      {
-        target: 'appointment-customer-search',
-        content: 'Busca o crea un nuevo cliente para esta cita.',
-        title: 'Seleccionar Cliente',
-        placement: 'top',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/appointments',
-      },
-      {
-        target: 'appointment-service-select',
-        content: 'Aquí puedes ver los servicios premium disponibles. Los usuarios trial tienen acceso limitado.',
-        title: '🌟 Servicios Premium',
-        placement: 'top',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/appointments',
-      },
-      {
-        target: 'appointment-date-time',
-        content: 'Selecciona la fecha y hora para la cita.',
-        title: 'Fecha y Hora',
-        placement: 'top',
-        disableBeacon: true,
-        showProgress: true,
-        showSkipButton: true,
-        page: '/admin/appointments',
-      },
-      {
-        target: 'save-appointment-button',
-        content: '¡Felicidades! Has completado el tutorial básico. Ahora puedes gestionar tu negocio de manera profesional.',
+        target: 'save-service-button',
+        content:
+          '¡Felicidades! Has completado el tutorial básico. Ahora puedes gestionar tu negocio de manera profesional.',
         title: '¡Tutorial Completado!',
         placement: 'top',
         disableBeacon: true,
         showProgress: true,
         showSkipButton: true,
-        page: '/admin/appointments',
+        page: '/admin/services',
       },
     ],
   },
@@ -248,7 +181,8 @@ export const TUTORIALS: Record<string, Tutorial> = {
     steps: [
       {
         target: 'business-switcher',
-        content: 'Si tienes múltiples negocios, puedes cambiar entre ellos aquí.',
+        content:
+          'Si tienes múltiples negocios, puedes cambiar entre ellos aquí.',
         title: 'Selector de Negocio',
         placement: 'bottom',
         disableBeacon: false,
@@ -283,11 +217,13 @@ export const TUTORIALS: Record<string, Tutorial> = {
   'premium-features': {
     id: 'premium-features',
     name: 'Descubre las Funcionalidades Premium',
-    description: 'Explora todas las características avanzadas disponibles en planes premium',
+    description:
+      'Explora todas las características avanzadas disponibles en planes premium',
     steps: [
       {
         target: 'whatsapp-integration',
-        content: 'Envía confirmaciones y recordatorios automáticos por WhatsApp.',
+        content:
+          'Envía confirmaciones y recordatorios automáticos por WhatsApp.',
         title: '📱 Integración con WhatsApp',
         placement: 'right',
         disableBeacon: false,

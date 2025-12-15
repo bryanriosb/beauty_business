@@ -1,6 +1,11 @@
 'use client'
 
-import { DataTable, DataTableRef, SearchConfig, FilterConfig } from '@/components/DataTable'
+import {
+  DataTable,
+  DataTableRef,
+  SearchConfig,
+  FilterConfig,
+} from '@/components/DataTable'
 import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
@@ -12,7 +17,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Pencil, Trash2, Plus, CheckCircle, XCircle } from 'lucide-react'
+import {
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Plus,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react'
 import ProductService from '@/lib/services/product/product-service'
 import BusinessService from '@/lib/services/business/business-service'
 import { PRODUCTS_COLUMNS } from '@/lib/models/product/const/data-table/products-columns'
@@ -293,7 +305,9 @@ export default function ProductsPage() {
       </Tabs>
 
       <DataTable
-        key={`${isCompanyAdmin ? 'all' : activeBusiness?.id || 'no-business'}-${activeTab}`}
+        key={`${
+          isCompanyAdmin ? 'all' : activeBusiness?.id || 'no-business'
+        }-${activeTab}`}
         ref={dataTableRef}
         columns={columnsWithActions}
         service={productService}
