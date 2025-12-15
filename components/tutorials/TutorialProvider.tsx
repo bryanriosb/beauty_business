@@ -343,34 +343,77 @@ export function TutorialProvider() {
         .react-joyride__beacon {
           pointer-events: none !important;
         }
+        /* Override potential form library focus management */
+        [data-tutorial] {
+          caret-color: auto !important;
+        }
       `
 
       // Agregar clase específica al input para asegurar interacción
       inputElement.classList.add('joyride-interactive-input')
 
+      // Variable para rastrear la última posición del cursor
+      let lastCaretPosition = inputElement.value.length
+
       // Función para prevenir selección de texto no deseada
       const preventTextSelection = (e: Event) => {
         const target = e.target as HTMLInputElement | HTMLTextAreaElement
-        if (target && target.value) {
-          // Colocar el cursor al final del texto para evitar la selección
-          target.setSelectionRange(target.value.length, target.value.length)
-        }
+        // Usar requestAnimationFrame para asegurar que la operación se ejecute
+        // después de que React haya terminado su renderizado
+        requestAnimationFrame(() => {
+          if (target && target.value) {
+            // Usar la última posición conocida o el final del texto
+            const pos =
+              lastCaretPosition <= target.value.length
+                ? lastCaretPosition
+                : target.value.length
+            target.setSelectionRange(pos, pos)
+          }
+        })
       }
 
       // Función para manejar el input del teclado
       const handleInput = (e: Event) => {
         const target = e.target as HTMLInputElement | HTMLTextAreaElement
         if (target) {
+          // Actualizar la última posición del cursor
+          lastCaretPosition = target.selectionStart || target.value.length
           // Asegurar que el cursor se mantenga en la posición correcta después de escribir
+          requestAnimationFrame(() => {
+            const pos = target.selectionStart || lastCaretPosition
+            target.setSelectionRange(pos, pos)
+            // Actualizar la última posición después del renderizado
+            lastCaretPosition = pos
+          })
+        }
+      }
+
+      // Función para manejar el keydown y prevenir posibles interferencias
+      const handleKeyDown = (e: KeyboardEvent) => {
+        const target = e.target as HTMLInputElement | HTMLTextAreaElement
+        if (target) {
+          // Actualizar la posición antes de que cambie por la pulsación de tecla
+          lastCaretPosition = target.selectionStart || target.value.length
+        }
+      }
+
+      // Función para manejar el click y mantener el cursor en la posición correcta
+      const handleClick = (e: Event) => {
+        const target = e.target as HTMLInputElement | HTMLTextAreaElement
+        if (target) {
+          // Usar setTimeout para asegurar que la selección se establezca después de que
+          // el navegador maneje el evento de click
           setTimeout(() => {
-            target.setSelectionRange(target.value.length, target.value.length)
-          }, 0)
+            const pos = target.selectionStart || lastCaretPosition
+            target.setSelectionRange(pos, pos)
+          }, 10)
         }
       }
 
       // Agregar event listeners para manejar interacción del usuario
       inputElement.addEventListener('focus', preventTextSelection)
       inputElement.addEventListener('input', handleInput)
+      inputElement.addEventListener('click', handleClick)
 
       return () => {
         const style = document.getElementById(styleId)
@@ -380,6 +423,7 @@ export function TutorialProvider() {
         inputElement.classList.remove('joyride-interactive-input')
         inputElement.removeEventListener('focus', preventTextSelection)
         inputElement.removeEventListener('input', handleInput)
+        inputElement.removeEventListener('click', handleClick)
       }
     }
   }, [isActive, isReady, shouldRun, getCurrentStep])
@@ -405,27 +449,40 @@ export function TutorialProvider() {
 
       // Solución directa: prevenir selección automática inmediatamente
       const preventSelection = () => {
-        if (
-          inputElement.selectionStart !== inputElement.selectionEnd &&
-          inputElement.value
-        ) {
-          const length = inputElement.value.length
-          inputElement.setSelectionRange(length, length)
-          console.log(
-            '🔍 Prevented automatic text selection in input during tutorial'
-          )
-        }
+        requestAnimationFrame(() => {
+          if (
+            inputElement &&
+            inputElement.value &&
+            inputElement.selectionStart !== null &&
+            inputElement.selectionEnd !== null
+          ) {
+            // Verificar si está seleccionado todo el texto y corregir
+            if (
+              inputElement.selectionStart === 0 &&
+              inputElement.selectionEnd === inputElement.value.length
+            ) {
+              // Si está seleccionado todo el texto, mover cursor al final
+              const length = inputElement.value.length
+              inputElement.setSelectionRange(length, length)
+              console.log(
+                '🔍 Prevented automatic text selection in input during tutorial'
+              )
+            }
+          }
+        })
       }
 
       // Ejecutar inmediatamente y después de un pequeño delay
       preventSelection()
       const timeout1 = setTimeout(preventSelection, 10)
       const timeout2 = setTimeout(preventSelection, 50)
+      const timeout3 = setTimeout(preventSelection, 100) // Extra delay para cubrir renderizados de formularios
 
       // Limpiar timeouts al finalizar el efecto
       return () => {
         clearTimeout(timeout1)
         clearTimeout(timeout2)
+        clearTimeout(timeout3)
       }
     }
   }, [isActive, stepIndex, getCurrentStep])
@@ -497,9 +554,9 @@ export function TutorialProvider() {
         continuous={true}
         showProgress={true}
         showSkipButton={true}
-        scrollToFirstStep={true}
+        scrollToFirstStep={false} // Desactivar scroll automático que puede interferir con focus
         disableOverlay={isCurrentStepInput ? true : false} // Desactivar overlay solo para inputs
-        disableScrolling={false}
+        disableScrolling={true} // Evitar scrolling que puede interferir con formularios
         debug={true}
         spotlightPadding={0}
         styles={{
