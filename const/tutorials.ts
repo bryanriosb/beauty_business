@@ -87,7 +87,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
-        spotlightClicks: true,
+        spotlightClicks: false,
       },
       {
         target: 'service-description-input',
@@ -99,7 +99,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
-        spotlightClicks: true,
+        spotlightClicks: false,
       },
       {
         target: 'service-category-select',
@@ -111,7 +111,13 @@ export const TUTORIALS: Record<string, Tutorial> = {
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
-        // No requerir interacción, solo mostrar
+        spotlightClicks: false,
+        styles: {
+          options: {
+            spotlightClicks: false,
+            spotlightPadding: 0,
+          }
+        },
       },
       {
         target: 'service-price-input',

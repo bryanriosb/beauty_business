@@ -402,7 +402,7 @@ export function TutorialProvider() {
         disableOverlayClose={true}
         debug={false}
         spotlightPadding={0}
-        disableOverlay={false} // Mantener overlay activo para permitir clics en botones
+        disableOverlay={true} // DESACTIVAR: Overlay que causa problemas con inputs
         styles={{
           options: {
             arrowColor: '#fff',
