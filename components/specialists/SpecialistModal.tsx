@@ -457,12 +457,6 @@ export function SpecialistModal({
                       data-tutorial="specialist-phone-input"
                       className="phone-input"
                     />
-                    {/* <Input
-                      type="tel"
-                      placeholder="+57 300 123 4567"
-                      disabled={isSubmitting}
-                      {...field}
-                    /> */}
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -600,40 +594,25 @@ export function SpecialistModal({
             )}
 
             {/* Service Categories - Collapsible */}
-            <Collapsible open={servicesOpen} onOpenChange={setServicesOpen}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      Servicios que realiza
-                    </span>
-                    {selectedCategoryIds.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        ({selectedCategoryIds.length} seleccionados)
-                      </span>
-                    )}
-                  </div>
-                  <ChevronDown
-                    className={`h-4 w-4 text-muted-foreground transition-transform ${
-                      servicesOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-2">
-                <ServiceCategorySelector
-                  categories={serviceCategories}
-                  selectedCategoryIds={selectedCategoryIds}
-                  onChange={setSelectedCategoryIds}
-                  disabled={isSubmitting}
-                />
-              </CollapsibleContent>
-            </Collapsible>
+            <div className="grid gap-4">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  Servicios que realiza
+                </span>
+                {selectedCategoryIds.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    ({selectedCategoryIds.length} seleccionados)
+                  </span>
+                )}
+              </div>
+              <ServiceCategorySelector
+                categories={serviceCategories}
+                selectedCategoryIds={selectedCategoryIds}
+                onChange={setSelectedCategoryIds}
+                disabled={isSubmitting}
+              />
+            </div>
 
             <FormField
               control={form.control}
