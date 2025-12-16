@@ -388,7 +388,6 @@ export function ServiceModal({
                       onChange={field.onChange}
                       onCreateNew={handleCreateCategory}
                       placeholder="Seleccionar categoría..."
-                      data-tutorial="service-category-select"
                       searchPlaceholder="Buscar o crear categoría..."
                       emptyText="No hay categorías"
                       createText="Crear categoría"

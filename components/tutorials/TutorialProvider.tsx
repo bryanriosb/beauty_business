@@ -43,8 +43,6 @@ export function TutorialProvider() {
     const tutorial = TUTORIALS[tutorialId]
     if (!tutorial) return []
 
-    console.log('🎯 Processing steps for tutorial:', tutorialId)
-
     return tutorial.steps.map((step, index) => {
       // Intentar selector directo, luego selector data-tutorial
       let targetSelector = step.target
@@ -60,14 +58,6 @@ export function TutorialProvider() {
       // Verificar si el elemento existe, fallback a body
       const element = document.querySelector(targetSelector)
       const finalTarget = element ? targetSelector : 'body'
-
-      // console.log(`🎯 Step ${index}:`, {
-      //   originalTarget: step.target,
-      //   selector: targetSelector,
-      //   elementFound: !!element,
-      //   finalTarget,
-      //   stepContent: step.content.substring(0, 50) + '...'
-      // })
 
       return {
         ...step,
@@ -88,9 +78,6 @@ export function TutorialProvider() {
         delay: actionDelay = 500,
         waitForModal,
       } = triggerAction
-
-      console.log('🚀 Executing trigger action:', { type, selector })
-
       // Pausar momentáneamente el tutorial mientras se ejecuta la acción
       setIsReady(false)
 
@@ -99,7 +86,6 @@ export function TutorialProvider() {
           const element = selector ? document.querySelector(selector) : null
           if (element && 'click' in element) {
             ;(element as HTMLElement).click()
-            console.log('✅ Clicked element:', selector)
           }
         }
 
@@ -108,7 +94,6 @@ export function TutorialProvider() {
           const checkModal = () => {
             const modal = document.querySelector('[role="dialog"]')
             if (modal && (modal as HTMLElement).offsetParent !== null) {
-              console.log('✅ Modal is visible, setting isReady = true')
               setIsReady(true)
             } else {
               // Reintentar después de un breve delay
@@ -198,31 +183,14 @@ export function TutorialProvider() {
 
     let element = document.querySelector(targetSelector)
 
-    console.log('🎯 Step check:', {
-      target: currentStep.target,
-      selector: targetSelector,
-      elementFound: !!element,
-      isInput:
-        element &&
-        (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA'),
-      pathname,
-      stepPage: currentStep.page,
-      hasTriggerAction: !!currentStep.triggerAction,
-    })
-
     // Si el elemento no está visible, buscar dentro de modales
     if (!element) {
-      console.log(
-        '🔍 Element not found in main document, searching in modals...'
-      )
-
       // Buscar en todos los modales abiertos
       const modals = document.querySelectorAll('[role="dialog"]')
       for (const modal of modals) {
         const foundInModal = modal.querySelector(targetSelector)
         if (foundInModal) {
           element = foundInModal
-          console.log('✅ Found element in modal:', modal)
           break
         }
       }
@@ -230,49 +198,15 @@ export function TutorialProvider() {
 
     // Si el elemento aún no está visible pero hay triggerAction, marcar como listo de todos modos
     if (!element && currentStep.triggerAction) {
-      console.log(
-        '⏳ Element not found but has triggerAction, setting isReady = true'
-      )
       setIsReady(true)
       return
     }
 
-    // Si el elemento aún no está visible, esperar un poco más
-    if (!element) {
-      const timer = setTimeout(() => {
-        console.log('⏳ Element still not found, setting isReady = true anyway')
-        setIsReady(true)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-
-    // Si es un input, desactivar temporalmente el spotlight para permitir interacción normal
-    // if (
-    //   element &&
-    //   (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
-    // ) {
-    //   console.log('📝 Target is input, adjusting Joyride for input interaction')
-
-    //   // Solo marcar como listo, Joyride se encargará del resto
-    //   setIsReady(true)
-    //   return
-    // }
-
-    console.log('✅ Element found, setting isReady = true')
     setIsReady(true)
   }, [isActive, isPaused, pathname, getCurrentStep, router, stepIndex])
 
   // Efecto para mostrar modal de bienvenida a usuarios trial nuevos
   useEffect(() => {
-    console.log('🔍 Modal check:', {
-      pathname,
-      tutorialStarted,
-      isActive,
-      showModal,
-      modalShownThisSession,
-      businessAccountId,
-    })
-
     // Permitir mostrar modal en dashboard o services para usuarios trial que no han empezado
     const isOnValidPage =
       pathname === '/admin' ||
@@ -288,10 +222,9 @@ export function TutorialProvider() {
       businessAccountId
     ) {
       const timer = setTimeout(() => {
-        console.log('📋 Showing welcome modal (simplified)')
         setShowModal(true)
         setModalShownThisSession(true)
-      }, 1000) // Reducir delay para debugging
+      }, 500) // Reducir delay para debugging
       return () => clearTimeout(timer)
     }
   }, [
@@ -337,93 +270,16 @@ export function TutorialProvider() {
         .react-joyride__tooltip button {
           pointer-events: auto !important;
         }
-        .react-joyride__overlay {
-          pointer-events: none !important;
-        }
-        .react-joyride__beacon {
-          pointer-events: none !important;
-        }
-        /* Override potential form library focus management */
-        [data-tutorial] {
-          caret-color: auto !important;
-        }
       `
 
       // Agregar clase específica al input para asegurar interacción
       inputElement.classList.add('joyride-interactive-input')
-
-      // Variable para rastrear la última posición del cursor
-      let lastCaretPosition = inputElement.value.length
-
-      // Función para prevenir selección de texto no deseada
-      const preventTextSelection = (e: Event) => {
-        const target = e.target as HTMLInputElement | HTMLTextAreaElement
-        // Usar requestAnimationFrame para asegurar que la operación se ejecute
-        // después de que React haya terminado su renderizado
-        requestAnimationFrame(() => {
-          if (target && target.value) {
-            // Usar la última posición conocida o el final del texto
-            const pos =
-              lastCaretPosition <= target.value.length
-                ? lastCaretPosition
-                : target.value.length
-            target.setSelectionRange(pos, pos)
-          }
-        })
-      }
-
-      // Función para manejar el input del teclado
-      const handleInput = (e: Event) => {
-        const target = e.target as HTMLInputElement | HTMLTextAreaElement
-        if (target) {
-          // Actualizar la última posición del cursor
-          lastCaretPosition = target.selectionStart || target.value.length
-          // Asegurar que el cursor se mantenga en la posición correcta después de escribir
-          requestAnimationFrame(() => {
-            const pos = target.selectionStart || lastCaretPosition
-            target.setSelectionRange(pos, pos)
-            // Actualizar la última posición después del renderizado
-            lastCaretPosition = pos
-          })
-        }
-      }
-
-      // Función para manejar el keydown y prevenir posibles interferencias
-      const handleKeyDown = (e: KeyboardEvent) => {
-        const target = e.target as HTMLInputElement | HTMLTextAreaElement
-        if (target) {
-          // Actualizar la posición antes de que cambie por la pulsación de tecla
-          lastCaretPosition = target.selectionStart || target.value.length
-        }
-      }
-
-      // Función para manejar el click y mantener el cursor en la posición correcta
-      const handleClick = (e: Event) => {
-        const target = e.target as HTMLInputElement | HTMLTextAreaElement
-        if (target) {
-          // Usar setTimeout para asegurar que la selección se establezca después de que
-          // el navegador maneje el evento de click
-          setTimeout(() => {
-            const pos = target.selectionStart || lastCaretPosition
-            target.setSelectionRange(pos, pos)
-          }, 10)
-        }
-      }
-
-      // Agregar event listeners para manejar interacción del usuario
-      inputElement.addEventListener('focus', preventTextSelection)
-      inputElement.addEventListener('input', handleInput)
-      inputElement.addEventListener('click', handleClick)
 
       return () => {
         const style = document.getElementById(styleId)
         if (style) {
           style.remove()
         }
-        inputElement.classList.remove('joyride-interactive-input')
-        inputElement.removeEventListener('focus', preventTextSelection)
-        inputElement.removeEventListener('input', handleInput)
-        inputElement.removeEventListener('click', handleClick)
       }
     }
   }, [isActive, isReady, shouldRun, getCurrentStep])
@@ -434,57 +290,6 @@ export function TutorialProvider() {
 
     const currentStep = getCurrentStep()
     if (!currentStep) return
-
-    // Solo procesar si el paso actual es un input
-    const selector = currentStep.target.startsWith('[')
-      ? currentStep.target
-      : `[data-tutorial="${currentStep.target}"]`
-    const element = document.querySelector(selector)
-
-    if (
-      element &&
-      (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
-    ) {
-      const inputElement = element as HTMLInputElement | HTMLTextAreaElement
-
-      // Solución directa: prevenir selección automática inmediatamente
-      const preventSelection = () => {
-        requestAnimationFrame(() => {
-          if (
-            inputElement &&
-            inputElement.value &&
-            inputElement.selectionStart !== null &&
-            inputElement.selectionEnd !== null
-          ) {
-            // Verificar si está seleccionado todo el texto y corregir
-            if (
-              inputElement.selectionStart === 0 &&
-              inputElement.selectionEnd === inputElement.value.length
-            ) {
-              // Si está seleccionado todo el texto, mover cursor al final
-              const length = inputElement.value.length
-              inputElement.setSelectionRange(length, length)
-              console.log(
-                '🔍 Prevented automatic text selection in input during tutorial'
-              )
-            }
-          }
-        })
-      }
-
-      // Ejecutar inmediatamente y después de un pequeño delay
-      preventSelection()
-      const timeout1 = setTimeout(preventSelection, 10)
-      const timeout2 = setTimeout(preventSelection, 50)
-      const timeout3 = setTimeout(preventSelection, 100) // Extra delay para cubrir renderizados de formularios
-
-      // Limpiar timeouts al finalizar el efecto
-      return () => {
-        clearTimeout(timeout1)
-        clearTimeout(timeout2)
-        clearTimeout(timeout3)
-      }
-    }
   }, [isActive, stepIndex, getCurrentStep])
 
   // Efecto para iniciar/parar Joyride
@@ -498,12 +303,9 @@ export function TutorialProvider() {
     if (isActive && !isPaused && isReady) {
       // Pequeño delay para asegurar que el DOM esté listo
       const timer = setTimeout(() => {
-        console.log('✅ Starting Joyride with tutorial:', tutorialId)
-
         // Antes de iniciar Joyride, verificar si hay un modal abierto y cerrarlo
         const modal = document.querySelector('[role="dialog"]')
         if (modal && modal.getAttribute('aria-expanded') === 'true') {
-          console.log('🔐 Modal detectado, esperando que se cierre...')
           return // No iniciar Joyride mientras haya un modal abierto
         }
 
@@ -516,8 +318,6 @@ export function TutorialProvider() {
   }, [isActive, isPaused, isReady, tutorialId])
 
   const handleStartTutorial = () => {
-    console.log('🚀 Starting tutorial from welcome modal')
-    console.log('📞 Calling startTutorialAfterWelcome...')
     const result = startTutorialAfterWelcome()
     console.log('📞 startTutorialAfterWelcome result:', result)
     setShowModal(false)
@@ -555,22 +355,16 @@ export function TutorialProvider() {
         showProgress={true}
         showSkipButton={true}
         scrollToFirstStep={false} // Desactivar scroll automático que puede interferir con focus
-        disableOverlay={isCurrentStepInput ? true : false} // Desactivar overlay solo para inputs
-        disableScrolling={true} // Evitar scrolling que puede interferir con formularios
+        //disableOverlay={isCurrentStepInput ? true : false} // Desactivar overlay solo para inputs
+        disableScrolling={true} // Evitar scrolling el cual interfiere con FormField focus
         debug={true}
-        spotlightPadding={0}
+        //spotlightPadding={0}
         styles={{
           options: {
             arrowColor: '#fff',
             backgroundColor: '#fff',
             primaryColor: '#0ea5e9',
             textColor: '#333',
-            zIndex: 10000,
-            overlayColor: 'rgba(0, 0, 0, 0.1)',
-            // Permitir interacción con elementos debajo del overlay
-            ...(isCurrentStepInput && {
-              overlayColor: 'rgba(0, 0, 0, 0)',
-            }),
           },
           tooltip: {
             borderRadius: '8px',

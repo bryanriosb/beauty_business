@@ -29,7 +29,9 @@ interface CreatableComboboxProps {
   options: ComboboxOption[]
   value: string | null
   onChange: (value: string | null) => void
-  onCreateNew?: (name: string) => Promise<{ value: string; label: string } | null>
+  onCreateNew?: (
+    name: string
+  ) => Promise<{ value: string; label: string } | null>
   placeholder?: string
   searchPlaceholder?: string
   emptyText?: string
@@ -131,6 +133,7 @@ export function CreatableCombobox({
             !value && 'text-muted-foreground',
             className
           )}
+          data-tutorial="service-category-select"
           disabled={disabled}
         >
           {selectedOption ? selectedOption.label : placeholder}
@@ -145,9 +148,7 @@ export function CreatableCombobox({
             onValueChange={setSearch}
           />
           <CommandList>
-            <CommandEmpty>
-              {showCreateOption ? null : emptyText}
-            </CommandEmpty>
+            <CommandEmpty>{showCreateOption ? null : emptyText}</CommandEmpty>
             {allowClear && value && (
               <>
                 <CommandGroup>

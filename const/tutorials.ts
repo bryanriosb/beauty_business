@@ -111,13 +111,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
         showProgress: true,
         showSkipButton: true,
         page: '/admin/services',
-        spotlightClicks: false,
-        styles: {
-          options: {
-            spotlightClicks: false,
-            spotlightPadding: 0,
-          }
-        },
+        spotlightClicks: true,
       },
       {
         target: 'service-price-input',
