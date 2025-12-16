@@ -20,7 +20,9 @@ import type { CustomerData } from '../graph/state'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-export async function handleGetAvailableSlots(input: GetAvailableSlotsInput): Promise<string> {
+export async function handleGetAvailableSlots(
+  input: GetAvailableSlotsInput
+): Promise<string> {
   try {
     console.log('[AI Agent] handleGetAvailableSlots called with:', {
       businessId: input.businessId,
@@ -65,7 +67,7 @@ export async function handleGetAvailableSlots(input: GetAvailableSlotsInput): Pr
       success: result.success,
       businessOpen: result.businessOpen,
       slotsCount: result.slots?.length,
-      availableCount: result.slots?.filter(s => s.available).length,
+      availableCount: result.slots?.filter((s) => s.available).length,
       error: result.error,
     })
 
@@ -74,13 +76,21 @@ export async function handleGetAvailableSlots(input: GetAvailableSlotsInput): Pr
     }
 
     if (!result.businessOpen) {
-      return `El negocio está cerrado el ${format(new Date(input.date + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })}.`
+      return `El negocio está cerrado el ${format(
+        new Date(input.date + 'T12:00:00'),
+        "EEEE d 'de' MMMM",
+        { locale: es }
+      )}.`
     }
 
     const availableSlots = result.slots.filter((slot) => slot.available)
 
     if (availableSlots.length === 0) {
-      return `No hay horarios disponibles para el ${format(new Date(input.date + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })}. Por favor, intenta con otra fecha.`
+      return `No hay horarios disponibles para el ${format(
+        new Date(input.date + 'T12:00:00'),
+        "EEEE d 'de' MMMM",
+        { locale: es }
+      )}. Por favor, intenta con otra fecha.`
     }
 
     const slotsFormatted = availableSlots.map((slot) => {
@@ -91,7 +101,11 @@ export async function handleGetAvailableSlots(input: GetAvailableSlotsInput): Pr
       return `${hour12}:${minutes} ${ampm}`
     })
 
-    return `Horarios disponibles para el ${format(new Date(input.date + 'T12:00:00'), "EEEE d 'de' MMMM", { locale: es })} (${availableSlots.length} horarios):\n${slotsFormatted.join(', ')}`
+    return `Horarios disponibles para el ${format(
+      new Date(input.date + 'T12:00:00'),
+      "EEEE d 'de' MMMM",
+      { locale: es }
+    )} (${availableSlots.length} horarios):\n${slotsFormatted.join(', ')}`
   } catch (error: unknown) {
     console.error('[AI Agent] handleGetAvailableSlots error:', error)
     const message = error instanceof Error ? error.message : 'Error desconocido'
@@ -99,9 +113,14 @@ export async function handleGetAvailableSlots(input: GetAvailableSlotsInput): Pr
   }
 }
 
-export async function handleGetServices(input: GetServicesInput): Promise<string> {
+export async function handleGetServices(
+  input: GetServicesInput
+): Promise<string> {
   try {
-    console.log('[AI Agent] handleGetServices called with businessId:', input.businessId)
+    console.log(
+      '[AI Agent] handleGetServices called with businessId:',
+      input.businessId
+    )
     const supabase = await getSupabaseAdminClient()
 
     const { data: services, error } = await supabase
@@ -126,14 +145,21 @@ export async function handleGetServices(input: GetServicesInput): Promise<string
       const taxRate = s.tax_rate || 0
       const taxAmount = price * taxRate
       const totalPrice = price + taxAmount
-      const priceStr = price.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-      const totalStr = totalPrice.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+      const priceStr = price.toLocaleString('es-CO', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })
+      const totalStr = totalPrice.toLocaleString('es-CO', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })
 
-      const priceInfo = taxRate > 0
-        ? `$${priceStr} + IVA = $${totalStr}`
-        : `$${priceStr}`
+      const priceInfo =
+        taxRate > 0 ? `$${priceStr} + IVA = $${totalStr}` : `$${priceStr}`
 
-      return `• ${s.name}: ${priceInfo} (${s.duration_minutes} min)${s.description ? `\n  ${s.description}` : ''}\n  [ID: ${s.id}]`
+      return `• ${s.name}: ${priceInfo} (${s.duration_minutes} min)${
+        s.description ? `\n  ${s.description}` : ''
+      }\n  [ID: ${s.id}]`
     })
 
     return `📋 SERVICIOS DISPONIBLES:\n\n${servicesFormatted.join('\n\n')}`
@@ -144,7 +170,9 @@ export async function handleGetServices(input: GetServicesInput): Promise<string
   }
 }
 
-export async function handleGetSpecialists(input: GetSpecialistsInput): Promise<string> {
+export async function handleGetSpecialists(
+  input: GetSpecialistsInput
+): Promise<string> {
   try {
     const supabase = await getSupabaseAdminClient()
 
@@ -161,7 +189,9 @@ export async function handleGetSpecialists(input: GetSpecialistsInput): Promise<
     }
 
     const specialistsFormatted = specialists.map((s) => {
-      return `- ${s.first_name} ${s.last_name || ''}${s.specialty ? ` (${s.specialty})` : ''}`
+      return `- ${s.first_name} ${s.last_name || ''}${
+        s.specialty ? ` (${s.specialty})` : ''
+      }`
     })
 
     return `Especialistas disponibles:\n${specialistsFormatted.join('\n')}`
@@ -171,7 +201,9 @@ export async function handleGetSpecialists(input: GetSpecialistsInput): Promise<
   }
 }
 
-export async function handleGetAppointmentsByPhone(input: GetAppointmentsByPhoneInput): Promise<string> {
+export async function handleGetAppointmentsByPhone(
+  input: GetAppointmentsByPhoneInput
+): Promise<string> {
   try {
     console.log('[AI Agent] handleGetAppointmentsByPhone called with:', {
       phone: input.phone,
@@ -190,19 +222,21 @@ export async function handleGetAppointmentsByPhone(input: GetAppointmentsByPhone
       .single()
 
     if (customerError || !customer) {
-      return `No se encontró un cliente con el teléfono ${input.phone}. ¿Deseas crear una nueva cita?`
+      return `No se encontró un cliente con el teléfono ${input.phone}. ¿Deseas crear una Crear Cita?`
     }
 
     const { data: appointments, error } = await supabase
       .from('appointments')
-      .select(`
+      .select(
+        `
         id, start_time, end_time, status, specialist_id,
         specialists (id, first_name, last_name),
         appointment_services (
           service_id,
           services (id, name)
         )
-      `)
+      `
+      )
       .eq('business_id', input.businessId)
       .eq('users_profile_id', customer.user_profile_id)
       .in('status', ['PENDING', 'CONFIRMED'])
@@ -220,24 +254,34 @@ export async function handleGetAppointmentsByPhone(input: GetAppointmentsByPhone
         appointments: [],
       }
       setCustomerData(input.sessionId, customerData)
-      return `${customer.first_name} no tiene citas programadas. ¿Deseas agendar una nueva cita?`
+      return `${customer.first_name} no tiene citas programadas. ¿Deseas agendar una Crear Cita?`
     }
 
     const customerAppointments = appointments.map((apt) => {
-      const specialist = apt.specialists as unknown as { id: string; first_name: string; last_name: string } | null
-      const appointmentServices = apt.appointment_services as unknown as Array<{ service_id: string; services: { id: string; name: string } | null }> | null
+      const specialist = apt.specialists as unknown as {
+        id: string
+        first_name: string
+        last_name: string
+      } | null
+      const appointmentServices = apt.appointment_services as unknown as Array<{
+        service_id: string
+        services: { id: string; name: string } | null
+      }> | null
       const firstService = appointmentServices?.find((as) => as.services)
-      const servicesNames = appointmentServices
-        ?.filter((as) => as.services)
-        .map((as) => as.services!.name)
-        .join(', ') || 'Sin servicios'
+      const servicesNames =
+        appointmentServices
+          ?.filter((as) => as.services)
+          .map((as) => as.services!.name)
+          .join(', ') || 'Sin servicios'
 
       return {
         appointmentId: apt.id,
         serviceId: firstService?.services?.id || '',
         serviceName: servicesNames,
         specialistId: specialist?.id || apt.specialist_id || '',
-        specialistName: specialist ? `${specialist.first_name} ${specialist.last_name || ''}`.trim() : 'Sin especialista',
+        specialistName: specialist
+          ? `${specialist.first_name} ${specialist.last_name || ''}`.trim()
+          : 'Sin especialista',
         startTime: apt.start_time,
         status: apt.status,
       }
@@ -259,7 +303,11 @@ export async function handleGetAppointmentsByPhone(input: GetAppointmentsByPhone
     })
 
     const appointmentsFormatted = customerAppointments.map((apt, index) => {
-      const date = format(new Date(apt.startTime), "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es })
+      const date = format(
+        new Date(apt.startTime),
+        "EEEE d 'de' MMMM 'a las' h:mm a",
+        { locale: es }
+      )
       return `${index + 1}. ${date}
    Servicio: ${apt.serviceName}
    Especialista: ${apt.specialistName}`
@@ -276,8 +324,13 @@ Los datos de las citas han sido guardados. Puedes reprogramar o cancelar directa
   }
 }
 
-export async function handleCreateAppointment(input: CreateAppointmentInput): Promise<string> {
-  console.log('[AI Agent] handleCreateAppointment called with:', JSON.stringify(input, null, 2))
+export async function handleCreateAppointment(
+  input: CreateAppointmentInput
+): Promise<string> {
+  console.log(
+    '[AI Agent] handleCreateAppointment called with:',
+    JSON.stringify(input, null, 2)
+  )
 
   try {
     const supabase = await getSupabaseAdminClient()
@@ -299,7 +352,9 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
 
       // Usar datos del contexto si no se proporcionan en el input
       if (!customerName) {
-        customerName = `${customerFromContext.firstName} ${customerFromContext.lastName || ''}`.trim()
+        customerName = `${customerFromContext.firstName} ${
+          customerFromContext.lastName || ''
+        }`.trim()
       }
       if (!customerPhone) {
         customerPhone = customerFromContext.phone
@@ -313,7 +368,10 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
 
     let userProfileId: string | null = null
 
-    console.log('[AI Agent] Looking for existing customer with phone:', customerPhone)
+    console.log(
+      '[AI Agent] Looking for existing customer with phone:',
+      customerPhone
+    )
     const { data: existingCustomer, error: customerError } = await supabase
       .from('business_customers')
       .select('id, user_profile_id')
@@ -334,7 +392,8 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
       const firstName = nameParts[0]
       const lastName = nameParts.slice(1).join(' ') || null
 
-      const email = input.customerEmail || `${customerPhone}@guest.ai-agent.local`
+      const email =
+        input.customerEmail || `${customerPhone}@guest.ai-agent.local`
 
       const result = await createFullCustomerAction({
         business_id: input.businessId,
@@ -371,9 +430,15 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
 
     console.log('[AI Agent] Found services:', services.length)
 
-    const totalDuration = services.reduce((acc, s) => acc + s.duration_minutes, 0)
+    const totalDuration = services.reduce(
+      (acc, s) => acc + s.duration_minutes,
+      0
+    )
     const subtotal = services.reduce((acc, s) => acc + s.price_cents, 0)
-    const taxTotal = services.reduce((acc, s) => acc + Math.round(s.price_cents * (s.tax_rate || 0)), 0)
+    const taxTotal = services.reduce(
+      (acc, s) => acc + Math.round(s.price_cents * (s.tax_rate || 0)),
+      0
+    )
 
     const startTime = new Date(input.startTime)
     const endTime = new Date(startTime.getTime() + totalDuration * 60 * 1000)
@@ -433,12 +498,22 @@ export async function handleCreateAppointment(input: CreateAppointmentInput): Pr
       .select('name, price_cents')
       .in('id', input.serviceIds)
 
-    const dateFormatted = format(startTime, "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es })
-    const servicesNames = serviceDetails?.map((s) => s.name).join(', ') || 'Servicios seleccionados'
+    const dateFormatted = format(startTime, "EEEE d 'de' MMMM 'a las' h:mm a", {
+      locale: es,
+    })
+    const servicesNames =
+      serviceDetails?.map((s) => s.name).join(', ') || 'Servicios seleccionados'
 
-    const subtotalFormatted = (subtotal / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })
-    const taxFormatted = (taxTotal / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })
-    const totalFormatted = ((subtotal + taxTotal) / 100).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+    const subtotalFormatted = (subtotal / 100).toLocaleString('es-CO', {
+      minimumFractionDigits: 0,
+    })
+    const taxFormatted = (taxTotal / 100).toLocaleString('es-CO', {
+      minimumFractionDigits: 0,
+    })
+    const totalFormatted = ((subtotal + taxTotal) / 100).toLocaleString(
+      'es-CO',
+      { minimumFractionDigits: 0 }
+    )
 
     return `¡Cita agendada exitosamente! ✅
 
@@ -469,7 +544,9 @@ El pago se realizará en el establecimiento. ¿Hay algo más en lo que pueda ayu
   }
 }
 
-export async function handleCancelAppointment(input: CancelAppointmentInput): Promise<string> {
+export async function handleCancelAppointment(
+  input: CancelAppointmentInput
+): Promise<string> {
   try {
     console.log('[AI Agent] handleCancelAppointment called with:', {
       sessionId: input.sessionId,
@@ -490,10 +567,12 @@ export async function handleCancelAppointment(input: CancelAppointmentInput): Pr
 
     const { data: appointment, error: fetchError } = await supabase
       .from('appointments')
-      .select(`
+      .select(
+        `
         id, start_time, status,
         specialists (first_name, last_name)
-      `)
+      `
+      )
       .eq('id', appointmentId)
       .single()
 
@@ -513,28 +592,41 @@ export async function handleCancelAppointment(input: CancelAppointmentInput): Pr
       .from('appointments')
       .update({
         status: 'CANCELLED',
-        customer_note: input.reason ? `Cancelada: ${input.reason}` : 'Cancelada vía asistente virtual',
+        customer_note: input.reason
+          ? `Cancelada: ${input.reason}`
+          : 'Cancelada vía asistente virtual',
       })
       .eq('id', appointmentId)
 
     if (updateError) throw updateError
 
-    const specialist = appointment.specialists as unknown as { first_name: string; last_name: string } | null
-    const dateFormatted = format(new Date(appointment.start_time), "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es })
-    const specialistName = specialist ? `${specialist.first_name} ${specialist.last_name || ''}`.trim() : 'el especialista'
+    const specialist = appointment.specialists as unknown as {
+      first_name: string
+      last_name: string
+    } | null
+    const dateFormatted = format(
+      new Date(appointment.start_time),
+      "EEEE d 'de' MMMM 'a las' h:mm a",
+      { locale: es }
+    )
+    const specialistName = specialist
+      ? `${specialist.first_name} ${specialist.last_name || ''}`.trim()
+      : 'el especialista'
 
     return `Cita cancelada exitosamente.
 
 La cita del ${dateFormatted} con ${specialistName} ha sido cancelada.
 
-¿Deseas agendar una nueva cita?`
+¿Deseas agendar una Crear Cita?`
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error desconocido'
     return `Error al cancelar la cita: ${message}`
   }
 }
 
-export async function handleRescheduleAppointment(input: RescheduleAppointmentInput): Promise<string> {
+export async function handleRescheduleAppointment(
+  input: RescheduleAppointmentInput
+): Promise<string> {
   try {
     console.log('[AI Agent] handleRescheduleAppointment called with:', {
       sessionId: input.sessionId,
@@ -556,13 +648,15 @@ export async function handleRescheduleAppointment(input: RescheduleAppointmentIn
 
     const { data: appointment, error: fetchError } = await supabase
       .from('appointments')
-      .select(`
+      .select(
+        `
         id, start_time, end_time, status, specialist_id,
         specialists (first_name, last_name),
         appointment_services (
           services (duration_minutes)
         )
-      `)
+      `
+      )
       .eq('id', appointmentId)
       .single()
 
@@ -570,17 +664,28 @@ export async function handleRescheduleAppointment(input: RescheduleAppointmentIn
       return 'No se encontró la cita especificada.'
     }
 
-    if (appointment.status === 'CANCELLED' || appointment.status === 'COMPLETED') {
-      return `No se puede reprogramar una cita ${appointment.status === 'CANCELLED' ? 'cancelada' : 'completada'}.`
+    if (
+      appointment.status === 'CANCELLED' ||
+      appointment.status === 'COMPLETED'
+    ) {
+      return `No se puede reprogramar una cita ${
+        appointment.status === 'CANCELLED' ? 'cancelada' : 'completada'
+      }.`
     }
 
-    const appointmentServices = appointment.appointment_services as unknown as Array<{ services: { duration_minutes: number } | null }> | null
-    const totalDuration = appointmentServices
-      ?.filter((as) => as.services)
-      .reduce((acc, as) => acc + as.services!.duration_minutes, 0) || 30
+    const appointmentServices =
+      appointment.appointment_services as unknown as Array<{
+        services: { duration_minutes: number } | null
+      }> | null
+    const totalDuration =
+      appointmentServices
+        ?.filter((as) => as.services)
+        .reduce((acc, as) => acc + as.services!.duration_minutes, 0) || 30
 
     const newStartTime = new Date(input.newStartTime)
-    const newEndTime = new Date(newStartTime.getTime() + totalDuration * 60 * 1000)
+    const newEndTime = new Date(
+      newStartTime.getTime() + totalDuration * 60 * 1000
+    )
 
     const specialistId = input.newSpecialistId || appointment.specialist_id
 
@@ -596,20 +701,36 @@ export async function handleRescheduleAppointment(input: RescheduleAppointmentIn
     if (updateError) throw updateError
 
     let specialistName = ''
-    if (input.newSpecialistId && input.newSpecialistId !== appointment.specialist_id) {
+    if (
+      input.newSpecialistId &&
+      input.newSpecialistId !== appointment.specialist_id
+    ) {
       const { data: newSpecialist } = await supabase
         .from('specialists')
         .select('first_name, last_name')
         .eq('id', input.newSpecialistId)
         .single()
-      specialistName = `${newSpecialist?.first_name} ${newSpecialist?.last_name || ''}`.trim()
+      specialistName = `${newSpecialist?.first_name} ${
+        newSpecialist?.last_name || ''
+      }`.trim()
     } else {
-      const specialist = appointment.specialists as unknown as { first_name: string; last_name: string } | null
-      specialistName = specialist ? `${specialist.first_name} ${specialist.last_name || ''}`.trim() : 'el especialista'
+      const specialist = appointment.specialists as unknown as {
+        first_name: string
+        last_name: string
+      } | null
+      specialistName = specialist
+        ? `${specialist.first_name} ${specialist.last_name || ''}`.trim()
+        : 'el especialista'
     }
 
-    const oldDate = format(new Date(appointment.start_time), "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es })
-    const newDate = format(newStartTime, "EEEE d 'de' MMMM 'a las' h:mm a", { locale: es })
+    const oldDate = format(
+      new Date(appointment.start_time),
+      "EEEE d 'de' MMMM 'a las' h:mm a",
+      { locale: es }
+    )
+    const newDate = format(newStartTime, "EEEE d 'de' MMMM 'a las' h:mm a", {
+      locale: es,
+    })
 
     return `¡Cita reprogramada exitosamente!
 

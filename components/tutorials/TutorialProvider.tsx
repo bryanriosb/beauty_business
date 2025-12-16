@@ -5,11 +5,9 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import Joyride, { CallBackProps, STATUS, ACTIONS, EVENTS } from 'react-joyride'
 import { TUTORIALS, type TutorialStep } from '@/const/tutorials'
-import { setClientCookie, getClientCookie } from '@/lib/utils/cookies'
 import { WelcomeModal } from './WelcomeModal'
 import { useTutorial } from '@/hooks/use-tutorial'
 import { useActiveBusinessAccount } from '@/hooks/use-active-business-account'
-import { useBusinessAccount } from '@/hooks/use-business-account'
 
 export function TutorialProvider() {
   const pathname = usePathname()
@@ -316,7 +314,7 @@ export function TutorialProvider() {
     ) {
       const timer = setTimeout(() => {
         setShowModal(true)
-      }, 500)
+      }, 500) // Delay para evitar choque con otros modales
       return () => clearTimeout(timer)
     }
   }, [
@@ -412,9 +410,6 @@ export function TutorialProvider() {
 
   const handleCloseModal = () => {
     setShowModal(false)
-
-    // Establecer flag en sessionStorage para prevenir reaparición en esta sesión
-    sessionStorage.setItem('not_show_welcome', 'true')
   }
 
   // Renderizar Joyride solo si hay tutorial activo

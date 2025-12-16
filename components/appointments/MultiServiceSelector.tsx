@@ -202,6 +202,7 @@ export function MultiServiceSelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            data-tutorial="appointment-service-select"
             className={cn(
               'w-full justify-between font-normal',
               selectedServices.length === 0 && 'text-muted-foreground'
@@ -336,6 +337,7 @@ export function MultiServiceSelector({
                           size="sm"
                           variant="ghost"
                           className="h-7 px-2"
+                          data-tutorial="service-special-price-button"
                           onClick={handlePriceSave}
                         >
                           OK

@@ -85,7 +85,7 @@ export function ServiceCategorySelector({
             role="combobox"
             aria-expanded={open}
             className={cn('w-full justify-between font-normal', className)}
-            data-tutorial="service-category-select"
+            data-tutorial="specialist-category-select"
             disabled={disabled}
           >
             {selectedCategories.length > 0

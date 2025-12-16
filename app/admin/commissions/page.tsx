@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { DateRange } from 'react-day-picker'
-import { Percent, DollarSign, Clock, CheckCircle } from 'lucide-react'
+import {
+  Percent,
+  DollarSign,
+  Clock,
+  CheckCircle,
+  Settings2,
+} from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
@@ -20,9 +26,14 @@ import type {
   CommissionSummary,
   CommissionStatus,
 } from '@/lib/models/commission'
+import Link from 'next/link'
 
 export default function CommissionsPage() {
-  const { role, specialistId: currentSpecialistId, isLoading: userLoading } = useCurrentUser()
+  const {
+    role,
+    specialistId: currentSpecialistId,
+    isLoading: userLoading,
+  } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
   const commissionService = useMemo(() => new CommissionService(), [])
 
@@ -37,7 +48,8 @@ export default function CommissionsPage() {
 
   const activeBusinessId = activeBusiness?.id
   const isProfessional = role === USER_ROLES.PROFESSIONAL
-  const isAdmin = role === USER_ROLES.COMPANY_ADMIN || role === USER_ROLES.BUSINESS_ADMIN
+  const isAdmin =
+    role === USER_ROLES.COMPANY_ADMIN || role === USER_ROLES.BUSINESS_ADMIN
 
   const dateParams = useMemo(() => {
     if (!dateRange?.from || !dateRange?.to) {
@@ -69,9 +81,10 @@ export default function CommissionsPage() {
 
       const summaryResult = await commissionService.getSummary(params)
 
-      const filteredSummary = isProfessional && currentSpecialistId
-        ? summaryResult.filter(s => s.specialist_id === currentSpecialistId)
-        : summaryResult
+      const filteredSummary =
+        isProfessional && currentSpecialistId
+          ? summaryResult.filter((s) => s.specialist_id === currentSpecialistId)
+          : summaryResult
 
       setSummary(filteredSummary)
     } catch (error) {
@@ -80,36 +93,48 @@ export default function CommissionsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [commissionService, activeBusinessId, dateParams, isProfessional, currentSpecialistId])
+  }, [
+    commissionService,
+    activeBusinessId,
+    dateParams,
+    isProfessional,
+    currentSpecialistId,
+  ])
 
   useEffect(() => {
     if (activeBusinessId) {
       loadSummary()
-      setTableKey(prev => prev + 1)
+      setTableKey((prev) => prev + 1)
     }
   }, [loadSummary, activeBusinessId])
 
-  const handleStatusChange = useCallback(async (id: string, status: CommissionStatus) => {
-    try {
-      const result = await commissionService.updateCommission(id, { status })
-      if (!result.success) throw new Error(result.error)
-      toast.success('Estado actualizado')
-      loadSummary()
-    } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar')
-    }
-  }, [commissionService, loadSummary])
+  const handleStatusChange = useCallback(
+    async (id: string, status: CommissionStatus) => {
+      try {
+        const result = await commissionService.updateCommission(id, { status })
+        if (!result.success) throw new Error(result.error)
+        toast.success('Estado actualizado')
+        loadSummary()
+      } catch (error: any) {
+        toast.error(error.message || 'Error al actualizar')
+      }
+    },
+    [commissionService, loadSummary]
+  )
 
-  const handleBulkStatusChange = useCallback(async (ids: string[], status: CommissionStatus) => {
-    try {
-      const result = await commissionService.bulkUpdateStatus(ids, status)
-      if (!result.success) throw new Error(result.error)
-      toast.success(`${result.updatedCount} comisiones actualizadas`)
-      loadSummary()
-    } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar')
-    }
-  }, [commissionService, loadSummary])
+  const handleBulkStatusChange = useCallback(
+    async (ids: string[], status: CommissionStatus) => {
+      try {
+        const result = await commissionService.bulkUpdateStatus(ids, status)
+        if (!result.success) throw new Error(result.error)
+        toast.success(`${result.updatedCount} comisiones actualizadas`)
+        loadSummary()
+      } catch (error: any) {
+        toast.error(error.message || 'Error al actualizar')
+      }
+    },
+    [commissionService, loadSummary]
+  )
 
   const totals = useMemo(() => {
     return summary.reduce(
@@ -161,6 +186,13 @@ export default function CommissionsPage() {
         />
       </div>
 
+      <div className="flex justify-end">
+        <Link href="/admin/settings/commissions" className="btn-link">
+          Configurar
+          <Settings2 size={20} />
+        </Link>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
           title="Total Generado"
@@ -188,7 +220,11 @@ export default function CommissionsPage() {
         />
       </div>
 
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
+      <Tabs
+        value={selectedTab}
+        onValueChange={setSelectedTab}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="summary">
             {isProfessional ? 'Mi Resumen' : 'Por Especialista'}
@@ -207,7 +243,9 @@ export default function CommissionsPage() {
           <CommissionTable
             key={tableKey}
             businessId={activeBusinessId}
-            specialistId={isProfessional ? currentSpecialistId ?? undefined : undefined}
+            specialistId={
+              isProfessional ? currentSpecialistId ?? undefined : undefined
+            }
             startDate={dateParams.start_date}
             endDate={dateParams.end_date}
             onStatusChange={isAdmin ? handleStatusChange : undefined}

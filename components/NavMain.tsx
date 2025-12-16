@@ -86,6 +86,7 @@ function CollapsedMenuItem({
                 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
             )}
             data-active={hasActiveSubItem}
+            data-tutorial={item.targetTutorialStep}
           >
             {item.icon && <item.icon />}
             <span>{item.title}</span>
@@ -127,6 +128,7 @@ function CollapsedMenuItem({
                     'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
                 )}
                 data-active={hasActiveSubItem}
+                data-tutorial={item.targetTutorialStep}
               >
                 {item.icon && <item.icon />}
                 <span className="group-data-[collapsible=icon]:hidden">
@@ -253,7 +255,10 @@ export function NavMain({
             >
               <SidebarMenuItem className="text-muted-foreground">
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={item.title}>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    data-tutorial={item.targetTutorialStep}
+                  >
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />

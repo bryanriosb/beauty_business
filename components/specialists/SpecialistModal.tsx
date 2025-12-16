@@ -168,7 +168,6 @@ export function SpecialistModal({
   const [storageService] = useState(() => new BusinessStorageService())
   const [schedule, setSchedule] = useState<WeekSchedule>(DEFAULT_SCHEDULE)
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
-  const [servicesOpen, setServicesOpen] = useState(true)
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(true)
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -361,7 +360,11 @@ export function SpecialistModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-lg max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {specialist ? 'Editar Especialista' : 'Agregar Especialista'}
@@ -431,6 +434,7 @@ export function SpecialistModal({
                       type="email"
                       placeholder="maria@ejemplo.com"
                       disabled={isSubmitting}
+                      data-tutorial="specialist-email-input"
                       {...field}
                     />
                   </FormControl>
@@ -479,6 +483,7 @@ export function SpecialistModal({
                             type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             disabled={isSubmitting}
+                            data-tutorial="specialist-password-input"
                             className="pr-20"
                             {...field}
                           />
@@ -638,13 +643,13 @@ export function SpecialistModal({
               name="bio"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Biografía</FormLabel>
+                  <FormLabel>Descripción</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Especialidad: Cortes modernos, tintes, tratamientos..."
+                      placeholder="Especialista de con alta experiencia en..."
                       rows={2}
                       disabled={isSubmitting}
-                      data-tutorial="specialist-specialty-input"
+                      data-tutorial="specialist-bio"
                       {...field}
                     />
                   </FormControl>

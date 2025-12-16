@@ -308,7 +308,7 @@ export function Hero() {
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium">Nueva cita confirmada</p>
+                    <p className="text-xs font-medium">Crear Cita confirmada</p>
                     <p className="text-xs text-muted-foreground">
                       Maria G. - 3:00 PM
                     </p>

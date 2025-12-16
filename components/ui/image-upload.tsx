@@ -8,7 +8,9 @@ import Image from 'next/image'
 interface ImageUploadProps {
   value?: string | null
   onChange: (url: string | null) => void
-  onUpload: (file: File) => Promise<{ success: boolean; url?: string; error?: string }>
+  onUpload: (
+    file: File
+  ) => Promise<{ success: boolean; url?: string; error?: string }>
   disabled?: boolean
   className?: string
 }
@@ -24,23 +26,26 @@ export function ImageUpload({
   const [dragActive, setDragActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleFile = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      return
-    }
-
-    setIsUploading(true)
-    try {
-      const result = await onUpload(file)
-      if (result.success && result.url) {
-        onChange(result.url)
+  const handleFile = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        return
       }
-    } catch (error) {
-      console.error('Error uploading:', error)
-    } finally {
-      setIsUploading(false)
-    }
-  }, [onUpload, onChange])
+
+      setIsUploading(true)
+      try {
+        const result = await onUpload(file)
+        if (result.success && result.url) {
+          onChange(result.url)
+        }
+      } catch (error) {
+        console.error('Error uploading:', error)
+      } finally {
+        setIsUploading(false)
+      }
+    },
+    [onUpload, onChange]
+  )
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -52,25 +57,31 @@ export function ImageUpload({
     }
   }, [])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragActive(false)
 
-    if (disabled || isUploading) return
+      if (disabled || isUploading) return
 
-    const file = e.dataTransfer.files?.[0]
-    if (file) {
-      handleFile(file)
-    }
-  }, [disabled, isUploading, handleFile])
+      const file = e.dataTransfer.files?.[0]
+      if (file) {
+        handleFile(file)
+      }
+    },
+    [disabled, isUploading, handleFile]
+  )
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handleFile(file)
-    }
-  }, [handleFile])
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) {
+        handleFile(file)
+      }
+    },
+    [handleFile]
+  )
 
   const handleRemove = useCallback(() => {
     onChange(null)
@@ -92,12 +103,7 @@ export function ImageUpload({
 
       {value ? (
         <div className="relative w-full h-32 rounded-lg overflow-hidden border bg-muted">
-          <Image
-            src={value}
-            alt="Preview"
-            fill
-            className="object-cover"
-          />
+          <Image src={value} alt="Preview" fill className="object-cover" />
           {!disabled && (
             <Button
               type="button"
@@ -117,11 +123,16 @@ export function ImageUpload({
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
+          data-tutorial="specialist-photo-upload"
           className={`
             flex flex-col items-center justify-center w-full h-32
             border-2 border-dashed rounded-lg cursor-pointer
             transition-colors
-            ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}
+            ${
+              dragActive
+                ? 'border-primary bg-primary/5'
+                : 'border-muted-foreground/25 hover:border-primary/50'
+            }
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           `}
         >

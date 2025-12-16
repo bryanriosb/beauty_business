@@ -436,7 +436,7 @@ ${formatServicesWithPrices(context.services)}
     context.businessName
   }. ¿En qué puedo ayudarte?"
 - Offer main options when appropriate:
-  • Agendar una nueva cita
+  • Agendar una Crear Cita
   • Consultar servicios y precios
   • Ver disponibilidad de horarios
   • Reprogramar una cita existente

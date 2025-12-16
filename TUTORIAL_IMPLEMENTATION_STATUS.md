@@ -52,7 +52,7 @@
 - `save-specialist-button` - Botón guardar ✅
 
 ### Citas (`/components/Appointments.tsx`)
-- `add-appointment-button` - Botón "Nueva Cita" ✅
+- `add-appointment-button` - Botón "Crear Cita" ✅
 
 ### AppointmentFormModal (`/components/appointments/AppointmentFormModal.tsx`)
 - `appointment-customer-search` - Selector de cliente ✅
@@ -69,7 +69,7 @@
 5. **Botón Agregar Especialista** → `add-specialist-button`
 6. **Formulario Especialista** → 3 inputs (nombre, especialidad, guardar)
 7. **Menú Citas** → `appointments-menu`
-8. **Botón Nueva Cita** → `add-appointment-button`
+8. **Botón Crear Cita** → `add-appointment-button`
 9. **Formulario Cita** → 4 inputs (cliente, servicios, fecha, guardar)
 
 ## 🚀 Para Probar el Sistema

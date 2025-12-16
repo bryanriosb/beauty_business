@@ -17,11 +17,7 @@ interface TutorialDropdownProps {
 }
 
 export function TutorialDropdown({ className }: TutorialDropdownProps) {
-  const {
-    startTutorial,
-    restartTutorial,
-    isLoading,
-  } = useTutorial()
+  const { restartTutorial, isLoading } = useTutorial()
 
   const [isOpen, setIsOpen] = useState(false)
 

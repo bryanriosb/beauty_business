@@ -434,3 +434,7 @@
 .PhoneInputCountrySelect {
   @apply bg-transparent ;
 }
+
+.btn-link {
+  @apply bg-primary p-2 rounded-md text-primary-foreground hover:bg-primary/90 text-sm w-fit h-8 flex font-medium gap-2 items-center justify-center;
+}

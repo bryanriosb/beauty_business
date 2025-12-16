@@ -80,9 +80,10 @@ export default function Appointments() {
   useEffect(() => {
     async function loadSpecialists() {
       if (!activeBusinessId && !isCompanyAdmin) return
-      const params = !isCompanyAdmin && activeBusinessId
-        ? { business_id: activeBusinessId }
-        : undefined
+      const params =
+        !isCompanyAdmin && activeBusinessId
+          ? { business_id: activeBusinessId }
+          : undefined
       const response = await fetchSpecialistsAction(params)
       setSpecialists(response.data)
     }
@@ -334,10 +335,15 @@ export default function Appointments() {
               <span className="hidden sm:inline">Tabla</span>
             </Button>
           </ButtonGroup>
-          <Button size="sm" className="gap-2" onClick={handleCreateAppointment} data-tutorial="add-appointment-button">
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={handleCreateAppointment}
+            data-tutorial="add-appointment-button"
+          >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nueva Cita</span>
-            <span className="sm:hidden">Nueva</span>
+            <span className="hidden sm:inline">Crear Cita</span>
+            <span className="sm:hidden">Crear</span>
           </Button>
         </div>
       </div>

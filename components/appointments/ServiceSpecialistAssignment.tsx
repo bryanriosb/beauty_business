@@ -854,7 +854,10 @@ export default function ServiceSpecialistAssignmentComponent({
             </p>
 
             {/* Specialist Selection */}
-            <div className="grid grid-cols-2 gap-2">
+            <div
+              className="grid grid-cols-2 gap-2"
+              data-tutorial="appointment-specialist-selection"
+            >
               {universalSpecialists.map((specialist) => {
                 const isSelected = unifiedSpecialistId === specialist.id
 
@@ -913,7 +916,10 @@ export default function ServiceSpecialistAssignmentComponent({
 
             {/* Time Slot Selection for Unified Mode */}
             {unifiedSpecialistId && (
-              <div className="space-y-2 pt-2 border-t">
+              <div
+                className="space-y-2 pt-2 border-t"
+                data-tutorial="appointment-specialist-time-slots"
+              >
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Selecciona horario</span>

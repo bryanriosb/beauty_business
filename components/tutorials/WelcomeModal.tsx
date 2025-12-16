@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Clock, 
-  BookOpen, 
-  CheckCircle, 
+import {
+  Clock,
+  BookOpen,
+  CheckCircle,
   ArrowRight,
-  Sparkles
+  Sparkles,
 } from 'lucide-react'
 import { getClientCookie, setClientCookie } from '@/lib/utils/cookies'
 import { updateTutorialStartedAction } from '@/lib/actions/business-account'
@@ -24,7 +24,11 @@ interface WelcomeModalProps {
 
 const WELCOME_MODAL_COOKIE = 'welcome_modal_shown'
 
-export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalProps) {
+export function WelcomeModal({
+  isOpen,
+  onClose,
+  onStartTutorial,
+}: WelcomeModalProps) {
   const { businessAccountId } = useCurrentUser()
   const [dontShowAgain, setDontShowAgain] = useState(false)
 
@@ -46,7 +50,7 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
         return
       }
     }
-    
+
     if (dontShowAgain) {
       setClientCookie(WELCOME_MODAL_COOKIE, 'true', {
         maxAge: 365 * 24 * 60 * 60, // 1 year
@@ -60,26 +64,34 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
     // Marcar tutorial como iniciado (aunque se saltó) en la DB
     if (businessAccountId) {
       const result = await updateTutorialStartedAction(businessAccountId, true)
+      sessionStorage.setItem('not_show_welcome', 'true')
       if (!result.success) {
         console.error('Error al marcar tutorial como iniciado:', result.error)
         return
       }
     }
-    
+
     onClose()
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl overflow-hidden border-0 shadow-2xl">
+      <DialogContent
+        className="max-w-2xl overflow-hidden border-0 shadow-2xl"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         {/* Header con gradiente usando colores de la marca */}
         <div className="relative bg-gradient-to-br from-[var(--primary)] via-[var(--secondary)] to-[var(--accent)] p-8 text-white">
           <div className="absolute top-4 right-4">
-            <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+            <Badge
+              variant="secondary"
+              className="bg-white/20 text-white border-white/30"
+            >
               NUEVO USUARIO
             </Badge>
           </div>
-          
+
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm">
               <Sparkles className="h-8 w-8 text-white" />
@@ -114,7 +126,7 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
                 ¿Qué aprenderás en el tutorial?
               </h4>
             </div>
-            
+
             <div className="grid md:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5">
@@ -129,7 +141,7 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5">
                   <CheckCircle className="h-4 w-4 text-[var(--primary)]" />
@@ -143,7 +155,7 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5">
                   <CheckCircle className="h-4 w-4 text-[var(--primary)]" />
@@ -157,7 +169,7 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5">
                   <Clock className="h-4 w-4 text-[var(--primary)]" />
@@ -183,7 +195,10 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
               onChange={(e) => setDontShowAgain(e.target.checked)}
               className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)]"
             />
-            <label htmlFor="dont-show" className="text-sm text-[var(--muted-foreground)]">
+            <label
+              htmlFor="dont-show"
+              className="text-sm text-[var(--muted-foreground)]"
+            >
               No volver a mostrar este mensaje
             </label>
           </div>

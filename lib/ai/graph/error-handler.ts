@@ -30,16 +30,19 @@ const PERMANENT_ERROR_PATTERNS = [
   /forbidden/i,
 ]
 
-export function classifyError(errorMessage: string, toolName: string): ErrorInfo['errorType'] {
-  if (TEMPORARY_ERROR_PATTERNS.some(pattern => pattern.test(errorMessage))) {
+export function classifyError(
+  errorMessage: string,
+  toolName: string
+): ErrorInfo['errorType'] {
+  if (TEMPORARY_ERROR_PATTERNS.some((pattern) => pattern.test(errorMessage))) {
     return 'temporary'
   }
 
-  if (USER_INPUT_ERROR_PATTERNS.some(pattern => pattern.test(errorMessage))) {
+  if (USER_INPUT_ERROR_PATTERNS.some((pattern) => pattern.test(errorMessage))) {
     return 'user_input'
   }
 
-  if (PERMANENT_ERROR_PATTERNS.some(pattern => pattern.test(errorMessage))) {
+  if (PERMANENT_ERROR_PATTERNS.some((pattern) => pattern.test(errorMessage))) {
     return 'permanent'
   }
 
@@ -98,7 +101,10 @@ export function createErrorInfo(
   return errorInfo
 }
 
-export function shouldRetry(errorInfo: ErrorInfo, currentRetryCount: number): boolean {
+export function shouldRetry(
+  errorInfo: ErrorInfo,
+  currentRetryCount: number
+): boolean {
   const MAX_RETRIES = 2
 
   if (currentRetryCount >= MAX_RETRIES) {
@@ -145,8 +151,11 @@ export function getRecoveryPrompt(errorInfo: ErrorInfo): string {
 function getUserInputRecoveryMessage(errorInfo: ErrorInfo): string {
   const msg = errorInfo.errorMessage.toLowerCase()
 
-  if (msg.includes('no encontr') && errorInfo.toolName === 'get_appointments_by_phone') {
-    return 'No encontré citas con ese número. ¿Deseas agendar una nueva cita?'
+  if (
+    msg.includes('no encontr') &&
+    errorInfo.toolName === 'get_appointments_by_phone'
+  ) {
+    return 'No encontré citas con ese número. ¿Deseas agendar una Crear Cita?'
   }
 
   if (msg.includes('no hay') && msg.includes('disponible')) {

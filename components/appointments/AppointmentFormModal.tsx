@@ -607,7 +607,7 @@ export default function AppointmentFormModal({
       >
         <DialogHeader className="shrink-0">
           <DialogTitle>
-            {appointment ? 'Editar Cita' : 'Nueva Cita'}
+            {appointment ? 'Editar Cita' : 'Crear Cita'}
           </DialogTitle>
         </DialogHeader>
 
@@ -632,7 +632,10 @@ export default function AppointmentFormModal({
                           disabled={isSubmitting}
                         >
                           <FormControl>
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger
+                              data-tutorial="appointment-customer-select"
+                              className="w-full"
+                            >
                               <SelectValue placeholder="Selecciona un negocio" />
                             </SelectTrigger>
                           </FormControl>
@@ -683,7 +686,6 @@ export default function AppointmentFormModal({
                     isLoading={isLoadingServices}
                     stockStatusMap={stockStatusMap}
                     onServiceSelect={checkService}
-                    data-tutorial="appointment-service-select"
                   />
                   {selectedServices.length === 0 && (
                     <p className="text-sm text-destructive">
@@ -807,7 +809,7 @@ export default function AppointmentFormModal({
                         onOpenChange={setCalendarOpen}
                       >
                         <PopoverTrigger asChild>
-              <Button
+                          <Button
                             type="button"
                             variant="outline"
                             className={cn(
@@ -815,7 +817,7 @@ export default function AppointmentFormModal({
                               !field.value && 'text-muted-foreground'
                             )}
                             disabled={isSubmitting}
-                            data-tutorial="appointment-date-time"
+                            data-tutorial="appointment-date-picker"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {field.value ? (
