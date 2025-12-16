@@ -158,6 +158,7 @@ export default function CustomerSelector({
                         No se encontraron clientes
                       </p>
                       <Button
+                        data-tutorial="create-new-customer-button-empty"
                         variant="outline"
                         size="sm"
                         onClick={() => {
@@ -205,6 +206,7 @@ export default function CustomerSelector({
               <CommandSeparator />
               <CommandGroup>
                 <CommandItem
+                  data-tutorial="create-new-customer-button"
                   onSelect={() => {
                     setOpen(false)
                     setCreateDialogOpen(true)

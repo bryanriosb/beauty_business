@@ -580,11 +580,17 @@ export function SpecialistModal({
                       <FormItem>
                         <FormLabel>Nuevo Teléfono (opcional)</FormLabel>
                         <FormControl>
-                          <Input
-                            type="tel"
-                            placeholder="+57 300 123 4567"
+                          <PhoneInput
+                            defaultCountry="CO"
+                            international
+                            countryCallingCodeEditable={false}
+                            placeholder="300 123 4567"
+                            limitMaxLength={true}
+                            value={field.value}
+                            onChange={field.onChange}
+                            data-tutorial="specialist-phone-input"
+                            className="phone-input"
                             disabled={isSubmitting}
-                            {...field}
                           />
                         </FormControl>
                         <FormDescription className="text-xs">

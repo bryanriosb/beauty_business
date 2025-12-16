@@ -2,6 +2,17 @@ import { APPOINTMENTS_TUTORIALS } from './appointments'
 import { SERVICES_TUTORIALS } from './services'
 import { SPECIALIST_TUTORIALS } from './specialists'
 
+export interface TutorialSubStep {
+  target: string
+  content: string
+  title?: string
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'center'
+  disableBeacon?: boolean
+  spotlightClicks?: boolean
+  showProgress?: boolean
+  showSkipButton?: boolean
+}
+
 export interface TutorialStep {
   target: string
   content: string
@@ -27,6 +38,13 @@ export interface TutorialStep {
     to?: string // URL a navegar
     delay?: number // Delay antes de navegar (ms)
     condition?: () => boolean // Condición para navegar
+  }
+  // Sub-pasos para modales anidados (ej: crear cliente dentro de crear cita)
+  subSteps?: {
+    triggerSelector: string // Selector del botón que abre el modal anidado
+    modalSelector?: string // Selector del modal anidado (default: [role="dialog"])
+    steps: TutorialSubStep[] // Pasos dentro del modal anidado
+    onComplete?: 'close-modal' | 'continue' // Qué hacer al completar los sub-pasos
   }
   styles?: {
     options?: Record<string, any>

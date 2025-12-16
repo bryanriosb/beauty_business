@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { TutorialStep } from '@/const/tutorials'
+import { TutorialStep, TutorialSubStep } from '@/const/tutorials'
 
 export interface TutorialNavigationStep extends TutorialStep {
   page?: string // La página donde debe aparecer este paso
@@ -27,6 +27,10 @@ interface TutorialState {
   stepIndex: number
   isPaused: boolean
 
+  // Estado de sub-pasos (modales anidados)
+  isInSubSteps: boolean
+  subStepIndex: number
+
   // Configuración
   navigationStepDelay: number
 
@@ -39,10 +43,19 @@ interface TutorialState {
   previousStep: () => void
   setStepIndex: (index: number) => void
 
+  // Acciones para sub-pasos
+  enterSubSteps: () => void
+  exitSubSteps: () => void
+  nextSubStep: () => void
+  previousSubStep: () => void
+  setSubStepIndex: (index: number) => void
+
   // Utilidades
   getCurrentStep: () => TutorialNavigationStep | null
+  getCurrentSubStep: () => TutorialSubStep | null
   shouldNavigateToPage: (currentPage: string) => boolean
   getPageForStep: (stepIndex: number) => string | null
+  getTotalSubSteps: () => number
 }
 
 // Store SIN persistencia - el estado del tutorial es efímero
@@ -51,6 +64,8 @@ export const useTutorialStore = create<TutorialState>()((set, get) => ({
   tutorialId: null,
   stepIndex: 0,
   isPaused: false,
+  isInSubSteps: false,
+  subStepIndex: 0,
   navigationStepDelay: 800, // 800ms delay por defecto para navegación
 
   startTutorial: (tutorialId, startIndex = 0) => {
@@ -59,6 +74,8 @@ export const useTutorialStore = create<TutorialState>()((set, get) => ({
       tutorialId,
       stepIndex: startIndex,
       isPaused: false,
+      isInSubSteps: false,
+      subStepIndex: 0,
     })
   },
 
@@ -68,6 +85,8 @@ export const useTutorialStore = create<TutorialState>()((set, get) => ({
       tutorialId: null,
       stepIndex: 0,
       isPaused: false,
+      isInSubSteps: false,
+      subStepIndex: 0,
     })
   },
 
@@ -82,17 +101,53 @@ export const useTutorialStore = create<TutorialState>()((set, get) => ({
   nextStep: () => {
     const currentState = get()
     const newIndex = currentState.stepIndex + 1
-    set({ stepIndex: newIndex })
+    set({ stepIndex: newIndex, isInSubSteps: false, subStepIndex: 0 })
   },
 
   previousStep: () => {
     const currentState = get()
     const newIndex = Math.max(0, currentState.stepIndex - 1)
-    set({ stepIndex: newIndex })
+    set({ stepIndex: newIndex, isInSubSteps: false, subStepIndex: 0 })
   },
 
   setStepIndex: (index) => {
-    set({ stepIndex: index })
+    set({ stepIndex: index, isInSubSteps: false, subStepIndex: 0 })
+  },
+
+  // Acciones para sub-pasos
+  enterSubSteps: () => {
+    set({ isInSubSteps: true, subStepIndex: 0 })
+  },
+
+  exitSubSteps: () => {
+    set({ isInSubSteps: false, subStepIndex: 0 })
+  },
+
+  nextSubStep: () => {
+    const { subStepIndex, getCurrentStep } = get()
+    const currentStep = getCurrentStep()
+    const totalSubSteps = currentStep?.subSteps?.steps.length || 0
+
+    if (subStepIndex + 1 >= totalSubSteps) {
+      // Si completamos todos los sub-pasos, salir y avanzar al siguiente paso principal
+      set({ isInSubSteps: false, subStepIndex: 0 })
+    } else {
+      set({ subStepIndex: subStepIndex + 1 })
+    }
+  },
+
+  previousSubStep: () => {
+    const { subStepIndex } = get()
+    if (subStepIndex <= 0) {
+      // Si estamos en el primer sub-paso, salir de los sub-pasos
+      set({ isInSubSteps: false, subStepIndex: 0 })
+    } else {
+      set({ subStepIndex: subStepIndex - 1 })
+    }
+  },
+
+  setSubStepIndex: (index) => {
+    set({ subStepIndex: index })
   },
 
   getCurrentStep: () => {
@@ -108,6 +163,21 @@ export const useTutorialStore = create<TutorialState>()((set, get) => ({
     }
 
     return tutorial.steps[stepIndex] || null
+  },
+
+  getCurrentSubStep: () => {
+    const { isInSubSteps, subStepIndex, getCurrentStep } = get()
+    if (!isInSubSteps) return null
+
+    const currentStep = getCurrentStep()
+    if (!currentStep?.subSteps?.steps) return null
+
+    return currentStep.subSteps.steps[subStepIndex] || null
+  },
+
+  getTotalSubSteps: () => {
+    const currentStep = get().getCurrentStep()
+    return currentStep?.subSteps?.steps.length || 0
   },
 
   shouldNavigateToPage: (currentPage: string) => {

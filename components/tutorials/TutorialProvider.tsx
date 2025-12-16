@@ -4,7 +4,11 @@ import { useTutorialStore } from '@/lib/store/tutorial-store'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import Joyride, { CallBackProps, STATUS, ACTIONS, EVENTS } from 'react-joyride'
-import { TUTORIALS, type TutorialStep } from '@/const/tutorials'
+import {
+  TUTORIALS,
+  type TutorialStep,
+  type TutorialSubStep,
+} from '@/const/tutorials'
 import { WelcomeModal } from './WelcomeModal'
 import { useTutorial } from '@/hooks/use-tutorial'
 import { useActiveBusinessAccount } from '@/hooks/use-active-business-account'
@@ -18,11 +22,19 @@ export function TutorialProvider() {
     tutorialId,
     stepIndex,
     isPaused,
+    isInSubSteps,
+    subStepIndex,
     stopTutorial,
     nextStep,
     previousStep,
     setStepIndex,
     getCurrentStep,
+    getCurrentSubStep,
+    enterSubSteps,
+    exitSubSteps,
+    nextSubStep,
+    previousSubStep,
+    getTotalSubSteps,
   } = useTutorialStore()
 
   const { startTutorialAfterWelcome } = useTutorial()
@@ -33,26 +45,48 @@ export function TutorialProvider() {
   const [isReady, setIsReady] = useState(false)
   const [showModal, setShowModal] = useState(false)
 
-  // Obtener los pasos del tutorial actual
+  // Helper para convertir target a selector
+  const getTargetSelector = (target: string) => {
+    if (
+      target &&
+      !target.startsWith('[') &&
+      !target.startsWith('#') &&
+      !target.startsWith('.')
+    ) {
+      return `[data-tutorial="${target}"]`
+    }
+    return target
+  }
+
+  // Obtener los pasos del tutorial actual (incluyendo sub-pasos si estamos en ellos)
   const getJoyrideSteps = () => {
     if (!tutorialId || !isActive) return []
 
     const tutorial = TUTORIALS[tutorialId]
     if (!tutorial) return []
 
-    return tutorial.steps.map((step, index) => {
-      // Intentar selector directo, luego selector data-tutorial
-      let targetSelector = step.target
-      if (
-        step.target &&
-        !step.target.startsWith('[') &&
-        !step.target.startsWith('#') &&
-        !step.target.startsWith('.')
-      ) {
-        targetSelector = `[data-tutorial="${step.target}"]`
-      }
+    // Si estamos en sub-pasos, retornar solo los sub-pasos del paso actual
+    if (isInSubSteps) {
+      const currentStep = getCurrentStep()
+      if (!currentStep?.subSteps?.steps) return []
 
-      // Verificar si el elemento existe, fallback a body
+      return currentStep.subSteps.steps.map((subStep) => {
+        const targetSelector = getTargetSelector(subStep.target)
+        const element = document.querySelector(targetSelector)
+        const finalTarget = element ? targetSelector : 'body'
+
+        return {
+          ...subStep,
+          target: finalTarget,
+          content: subStep.content,
+          disableBeacon: subStep.disableBeacon || !element,
+        }
+      })
+    }
+
+    // Si no estamos en sub-pasos, retornar los pasos principales
+    return tutorial.steps.map((step) => {
+      const targetSelector = getTargetSelector(step.target)
       const element = document.querySelector(targetSelector)
       const finalTarget = element ? targetSelector : 'body'
 
@@ -60,11 +94,167 @@ export function TutorialProvider() {
         ...step,
         target: finalTarget,
         content: step.content,
-        // Deshabilitar beacon para elementos modales hasta que sean visibles
         disableBeacon: step.disableBeacon || !element,
       }
     })
   }
+
+  // Función genérica para encontrar el elemento trigger
+  const findTriggerElement = useCallback((selector: string): Element | null => {
+    console.log('🎯 findTriggerElement buscando:', selector)
+
+    // Si hay múltiples selectores (separados por coma)
+    const selectors = selector.split(',').map((s) => s.trim())
+
+    // Primero intentar con el selector exacto en todo el documento
+    for (const sel of selectors) {
+      let element = document.querySelector(sel)
+      console.log('🎯 Selector exacto:', sel, 'resultado:', !!element)
+
+      if (element) return element
+    }
+
+    // Buscar específicamente dentro del Popover del CustomerSelector
+    const popoverContent =
+      document.querySelector('[data-radix-popper-content-wrapper]') ||
+      document.querySelector('[role="listbox"]') ||
+      document.querySelector('.PopoverContent')
+
+    if (popoverContent) {
+      console.log('🎯 Buscando dentro del Popover')
+      for (const sel of selectors) {
+        const elementInPopover = popoverContent.querySelector(sel)
+        console.log(
+          '🎯 Selector en Popover:',
+          sel,
+          'resultado:',
+          !!elementInPopover
+        )
+        if (elementInPopover) return elementInPopover
+      }
+
+      // Búsqueda por texto dentro del Popover
+      const elementsInPopover = popoverContent.querySelectorAll('*')
+      for (const el of elementsInPopover) {
+        const textContent = el.textContent?.trim().toLowerCase()
+        if (textContent?.includes('crear nuevo cliente')) {
+          console.log('🎯 Encontrado "Crear nuevo cliente" en Popover:', el)
+          return el
+        }
+      }
+    }
+
+    // Búsqueda más genérica como fallback
+    console.log('🎯 Búsqueda genérica fallback')
+    const allElements = document.querySelectorAll('*')
+    for (const el of allElements) {
+      const textContent = el.textContent?.trim().toLowerCase()
+
+      if (textContent?.includes('crear nuevo cliente')) {
+        const hasDataTutorial = el.hasAttribute('data-tutorial')
+        const isNotMainButton =
+          !hasDataTutorial ||
+          el.getAttribute('data-tutorial')?.includes('customer')
+
+        if (isNotMainButton) {
+          console.log('🎯 Encontrado "Crear nuevo cliente" genérico:', el)
+          return el
+        }
+      }
+    }
+
+    console.log('🎯 No se encontró ningún elemento')
+    return null
+  }, [])
+
+  // Función genérica para verificar si un modal está listo
+  const isModalReady = useCallback(
+    (subSteps: NonNullable<TutorialStep['subSteps']>): boolean => {
+      const modalSelector = subSteps.modalSelector || '[role="dialog"]'
+      const modals = document.querySelectorAll(modalSelector)
+
+      console.log('🎪 isModalReady: modales encontrados:', modals.length)
+
+      // Si no hay modales, no está listo
+      if (modals.length === 0) {
+        console.log('🎪 No hay modales')
+        return false
+      }
+
+      // Buscar el modal de crear cliente específicamente
+      let targetModal: Element | null = null
+
+      for (let i = 0; i < modals.length; i++) {
+        const modal = modals[i]
+
+        // Verificar si este modal contiene elementos del formulario de cliente
+        const hasCustomerForm =
+          modal.querySelector('[data-tutorial="customer-first-name"]') ||
+          modal.querySelector('[id="first_name"]') ||
+          (modal.textContent?.includes('Nombre') &&
+            modal.textContent?.includes('Correo electrónico'))
+
+        console.log(
+          `🎪 Modal ${i}: tiene formulario cliente:`,
+          !!hasCustomerForm
+        )
+
+        if (hasCustomerForm) {
+          targetModal = modal
+          break
+        }
+      }
+
+      // Si no encontramos el modal específico, usar el último
+      if (!targetModal) {
+        targetModal = modals[modals.length - 1]
+        console.log('🎪 Usando último modal como fallback')
+      }
+
+      // Múltiples métodos para verificar visibilidad
+      const htmlModal = targetModal as HTMLElement
+      const isVisible =
+        htmlModal.offsetParent !== null ||
+        htmlModal.style.display !== 'none' ||
+        !htmlModal.classList.contains('hidden') ||
+        getComputedStyle(htmlModal).display !== 'none'
+
+      console.log('🎪 Modal visible (múltiples métodos):', isVisible)
+      console.log('🎪 Modal offsetParent:', htmlModal.offsetParent)
+      console.log('🎪 Modal display style:', htmlModal.style.display)
+      console.log(
+        '🎪 Modal computed display:',
+        getComputedStyle(htmlModal).display
+      )
+
+      if (!isVisible) return false
+
+      // Verificar que el modal contenga al menos uno de los elementos de los sub-pasos
+      const firstSubStep = subSteps.steps[0]
+      if (firstSubStep) {
+        const targetSelector = getTargetSelector(firstSubStep.target)
+        const hasTargetElement = targetModal.querySelector(targetSelector)
+        console.log(
+          '🎪 Buscando elemento:',
+          targetSelector,
+          'encontrado:',
+          !!hasTargetElement
+        )
+
+        if (!hasTargetElement) {
+          // Fallback: buscar por ID si el data-tutorial no funciona
+          const fallbackElement = targetModal.querySelector('[id="first_name"]')
+          console.log('🎪 Fallback por ID "first_name":', !!fallbackElement)
+          return !!fallbackElement
+        }
+
+        return true
+      }
+
+      return true
+    },
+    []
+  )
 
   // Función para ejecutar acciones trigger
   const executeTriggerAction = useCallback(
@@ -80,7 +270,7 @@ export function TutorialProvider() {
 
       setTimeout(() => {
         if (type === 'click' || type === 'open-modal') {
-          const element = selector ? document.querySelector(selector) : null
+          const element = selector ? findTriggerElement(selector) : null
           if (element && 'click' in element) {
             ;(element as HTMLElement).click()
           }
@@ -104,7 +294,7 @@ export function TutorialProvider() {
         }
       }, actionDelay)
     },
-    []
+    [findTriggerElement]
   )
 
   // Función para forzar focus en inputs y selects
@@ -187,6 +377,92 @@ export function TutorialProvider() {
     [tutorialId]
   )
 
+  // Función para abrir modal anidado y entrar en sub-pasos
+  const openNestedModalAndEnterSubSteps = useCallback(
+    (subSteps: NonNullable<TutorialStep['subSteps']>) => {
+      console.log('🎓 openNestedModalAndEnterSubSteps iniciado', subSteps)
+      setIsReady(false)
+      setShouldRun(false)
+
+      // PASO 1: Abrir el CustomerSelector principal
+      const customerSelector = document.querySelector(
+        '[data-tutorial="appointment-customer-select"]'
+      )
+      if (customerSelector && 'click' in customerSelector) {
+        console.log('🎓 Paso 1: Abriendo CustomerSelector')
+        ;(customerSelector as HTMLElement).click()
+      } else {
+        console.error('🎓 No se encontró el CustomerSelector')
+        setIsReady(true)
+        setShouldRun(true)
+        return
+      }
+
+      // PASO 2: Esperar a que aparezca el Popover y buscar el botón "Crear nuevo cliente"
+      const checkPopoverAndClickCreate = () => {
+        console.log('🎓 Paso 2: Verificando Popover abierto')
+
+        const popoverContent = document.querySelector(
+          '[data-radix-popper-content-wrapper]'
+        )
+        const createButton = findTriggerElement(subSteps.triggerSelector)
+
+        if (popoverContent && createButton && 'click' in createButton) {
+          console.log(
+            '🎓 Paso 2: Popover abierto, haciendo clic en Crear nuevo cliente'
+          )
+          ;(createButton as HTMLElement).click()
+
+          // PASO 3: Esperar a que el modal de crear cliente esté listo
+          setTimeout(() => {
+            checkModalReady()
+          }, 300)
+        } else {
+          // Reintentar por un tiempo limitado
+          const retryCount = (checkPopoverAndClickCreate as any).retryCount || 0
+          if (retryCount > 10) {
+            console.error('🎓 Timeout esperando Popover')
+            setIsReady(true)
+            setShouldRun(true)
+            return
+          }
+          ;(checkPopoverAndClickCreate as any).retryCount = retryCount + 1
+          setTimeout(checkPopoverAndClickCreate, 200)
+        }
+      }
+
+      // PASO 3: Verificar que el modal de crear cliente esté listo
+      const checkModalReady = () => {
+        console.log('🎓 Paso 3: Verificando modal de crear cliente')
+        const modalReady = isModalReady(subSteps)
+        console.log('🎓 Modal ready:', modalReady)
+
+        if (modalReady) {
+          console.log('🎓 Entrando en sub-pasos')
+          enterSubSteps()
+          setTimeout(() => {
+            setIsReady(true)
+            setShouldRun(true)
+          }, 500)
+        } else {
+          const retryCount = (checkModalReady as any).retryCount || 0
+          if (retryCount > 20) {
+            console.error('🎓 Timeout esperando modal')
+            setIsReady(true)
+            setShouldRun(true)
+            return
+          }
+          ;(checkModalReady as any).retryCount = retryCount + 1
+          setTimeout(checkModalReady, 100)
+        }
+      }
+
+      // Iniciar la secuencia
+      setTimeout(checkPopoverAndClickCreate, 300) // Dar tiempo para que el Popover se abra
+    },
+    [enterSubSteps, findTriggerElement, isModalReady]
+  )
+
   // Manejar callback de Joyride
   const handleCallback = (data: CallBackProps) => {
     const { status, type, action, index } = data
@@ -200,6 +476,12 @@ export function TutorialProvider() {
 
     // Manejar tutorial finalizado
     if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
+      // Si estamos en sub-pasos, salir de ellos primero
+      if (isInSubSteps) {
+        exitSubSteps()
+        return
+      }
+
       if (tutorialId) {
         const tutorial = TUTORIALS[tutorialId]
         tutorial?.onComplete?.()
@@ -211,8 +493,46 @@ export function TutorialProvider() {
     // Manejar navegación entre pasos
     if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
       if (action === ACTIONS.NEXT) {
-        // Ejecutar triggerAction ANTES de avanzar al siguiente paso
+        // Si estamos en sub-pasos
+        if (isInSubSteps) {
+          const totalSubSteps = getTotalSubSteps()
+          if (subStepIndex + 1 >= totalSubSteps) {
+            // Completamos todos los sub-pasos
+            const currentStep = getCurrentStep()
+            const onComplete = currentStep?.subSteps?.onComplete
+
+            if (onComplete === 'close-modal') {
+              // Cerrar el modal anidado
+              const closeButton = document.querySelector(
+                '[role="dialog"]:last-of-type [data-slot="dialog-close"]'
+              )
+              if (closeButton && 'click' in closeButton) {
+                ;(closeButton as HTMLElement).click()
+              }
+            }
+
+            // Salir de sub-pasos y continuar con el paso principal
+            exitSubSteps()
+            setIsReady(false)
+            setTimeout(() => {
+              setIsReady(true)
+            }, 500)
+          } else {
+            // Avanzar al siguiente sub-paso
+            nextSubStep()
+          }
+          return
+        }
+
+        // Verificar si el paso actual tiene sub-pasos
         const currentStep = getCurrentStep()
+        if (currentStep?.subSteps) {
+          // Abrir modal anidado y entrar en sub-pasos solo cuando el usuario avanza
+          openNestedModalAndEnterSubSteps(currentStep.subSteps)
+          return
+        }
+
+        // Ejecutar triggerAction si existe
         if (currentStep?.triggerAction) {
           executeTriggerAction(currentStep.triggerAction)
         }
@@ -220,18 +540,44 @@ export function TutorialProvider() {
         // Avanzar al siguiente paso
         nextStep()
 
-        // Forzar focus en el input/select del siguiente paso
-        setTimeout(() => forceFocusOnInput(index + 1), 100)
+        // TEMPORALMENTE DESHABILITADO: Forzar focus en el input/select del siguiente paso
+        // setTimeout(() => forceFocusOnInput(index + 1), 100)
       } else if (action === ACTIONS.PREV) {
+        // Si estamos en sub-pasos
+        if (isInSubSteps) {
+          if (subStepIndex <= 0) {
+            // Salir de sub-pasos y volver al paso principal
+            exitSubSteps()
+            // Cerrar el modal anidado
+            const closeButton = document.querySelector(
+              '[role="dialog"]:last-of-type [data-slot="dialog-close"]'
+            )
+            if (closeButton && 'click' in closeButton) {
+              ;(closeButton as HTMLElement).click()
+            }
+            setIsReady(false)
+            setTimeout(() => {
+              setIsReady(true)
+            }, 500)
+          } else {
+            previousSubStep()
+          }
+          return
+        }
+
         previousStep()
 
-        // También forzar focus al ir atrás
-        setTimeout(() => forceFocusOnInput(index - 1), 100)
+        // TEMPORALMENTE DESHABILITADO: También forzar focus al ir atrás
+        // setTimeout(() => forceFocusOnInput(index - 1), 100)
       }
     }
 
     // Actualizar índice si es necesario
     if (type === EVENTS.STEP_BEFORE) {
+      if (isInSubSteps) {
+        // No actualizar stepIndex principal cuando estamos en sub-pasos
+        return
+      }
       setStepIndex(index)
     }
   }
@@ -346,10 +692,14 @@ export function TutorialProvider() {
     // Estilos CSS globales para el tutorial:
     // 1. Habilitar pointer-events en los botones del tooltip de Joyride
     // 2. Asegurar que los dropdowns/popovers estén por encima del overlay de Joyride
+    // 3. Permitir interacción en subpasos
+    const isInSubStepsClass = isInSubSteps ? 'joyride-substeps-active' : ''
     styleElement.textContent = `
       .react-joyride__tooltip button {
-        pointer-events: auto !important;
-      }
+          pointer-events: auto !important;
+          position: relative;
+          z-index: 10002 !important;
+        }
 
       /* Asegurar que dropdowns de combobox estén por encima de Joyride */
       [data-slot="popover-content"] {
@@ -360,6 +710,22 @@ export function TutorialProvider() {
       [data-radix-popper-content-wrapper] {
         z-index: 10000 !important;
       }
+
+      /* Estilos para permitir interacción con inputs */
+      .react-joyride__overlay {
+        pointer-events: none !important;
+        background-color: transparent !important;
+      }
+      
+      .react-joyride__tooltip {
+        pointer-events: none !important;
+      }
+    
+      /* Permitir interacción con todos los elementos dentro de modales cuando estamos en subpasos */
+      [role="dialog"] * {
+        pointer-events: auto !important;
+      }
+        
     `
 
     return () => {
@@ -406,19 +772,24 @@ export function TutorialProvider() {
     setShowModal(false)
   }
 
+  // Calcular el índice actual y total para el progress
+  const currentIndex = isInSubSteps ? subStepIndex : stepIndex
+  const totalSteps = getJoyrideSteps().length
+
   // Renderizar Joyride solo si hay tutorial activo
   const tutorialComponent =
     isActive && tutorialId ? (
       <Joyride
         steps={getJoyrideSteps()}
         run={shouldRun}
-        stepIndex={stepIndex}
+        stepIndex={currentIndex}
         callback={handleCallback}
         continuous={true}
         showProgress={true}
         showSkipButton={true}
-        disableScrolling={true} // Evitar scrolling el cual interfiere con FormField focus
+        disableScrolling={false} // Permitir scrolling en subpasos para llegar a inputs
         disableOverlayClose={true} // Evitar que el tutorial se cierre con clicks fuera
+        disableOverlay={isInSubSteps} // Quitar overlay en subpasos para permitir interacción
         debug={false}
         styles={{
           options: {
@@ -426,6 +797,7 @@ export function TutorialProvider() {
             backgroundColor: '#fff',
             primaryColor: '#0ea5e9',
             textColor: '#333',
+            zIndex: isInSubSteps ? 10001 : 10000, // Mayor z-index en subpasos
           },
           tooltip: {
             borderRadius: '8px',
@@ -444,12 +816,12 @@ export function TutorialProvider() {
           },
         }}
         locale={{
-          back: 'Anterior',
+          back: isInSubSteps && subStepIndex === 0 ? 'Volver' : 'Anterior',
           close: 'Cerrar',
-          last: 'Finalizar',
-          nextLabelWithProgress: `Siguiente ${stepIndex + 1} de ${
-            getJoyrideSteps().length
-          }`,
+          last: isInSubSteps ? 'Continuar' : 'Finalizar',
+          nextLabelWithProgress: `Siguiente ${
+            currentIndex + 1
+          } de ${totalSteps}`,
           open: 'Abrir el tutorial',
           skip: 'Omitir tutorial',
         }}

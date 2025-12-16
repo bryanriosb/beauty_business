@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import BusinessCustomerService from '@/lib/services/customer/business-customer-service'
 import type { BusinessCustomer } from '@/lib/models/customer/business-customer'
 import type { UserGender } from '@/lib/models/user/users-profile'
+import PhoneInput from 'react-phone-number-input'
 
 interface CreateCustomerDialogProps {
   businessId: string
@@ -105,6 +106,7 @@ export default function CreateCustomerDialog({
     field: K,
     value: CustomerFormData[K]
   ) => {
+    console.log(`🔄 Update ${field}:`, value, 'prev:', formData[field])
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -120,16 +122,12 @@ export default function CreateCustomerDialog({
 
     setIsCreating(true)
     try {
-      const phoneNumber = formData.phone.trim()
-        ? `+57${formData.phone.trim().replace(/\s/g, '')}`
-        : undefined
-
       const result = await customerService.createFullCustomer({
         business_id: businessId,
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim() || undefined,
         email: formData.email.trim(),
-        phone: phoneNumber,
+        phone: formData.phone.trim(),
         city: formData.city || 'Cali',
         state: formData.state || 'Valle del Cauca',
         country: formData.country || 'CO',
@@ -172,18 +170,20 @@ export default function CreateCustomerDialog({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name">Nombre *</Label>
+              <Label htmlFor="first_name">Nombres *</Label>
               <Input
                 id="first_name"
+                data-tutorial="customer-first-name"
                 value={formData.first_name}
                 onChange={(e) => updateField('first_name', e.target.value)}
                 placeholder="Nombre"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last_name">Apellido</Label>
+              <Label htmlFor="last_name">Apellidos *</Label>
               <Input
                 id="last_name"
+                data-tutorial="customer-last-name"
                 value={formData.last_name}
                 onChange={(e) => updateField('last_name', e.target.value)}
                 placeholder="Apellido"
@@ -195,6 +195,7 @@ export default function CreateCustomerDialog({
             <Label htmlFor="email">Correo electrónico *</Label>
             <Input
               id="email"
+              data-tutorial="customer-email"
               type="email"
               value={formData.email}
               onChange={(e) => updateField('email', e.target.value)}
@@ -205,16 +206,16 @@ export default function CreateCustomerDialog({
           <div className="space-y-2">
             <Label htmlFor="phone">Teléfono</Label>
             <div className="flex">
-              <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                +57
-              </span>
-              <Input
-                id="phone"
-                type="tel"
+              <PhoneInput
+                defaultCountry="CO"
+                international
+                countryCallingCodeEditable={false}
+                placeholder="300 123 4567"
+                limitMaxLength={true}
                 value={formData.phone}
-                onChange={(e) => updateField('phone', e.target.value)}
-                placeholder="315 218 1292"
-                className="rounded-l-none"
+                onChange={(e) => updateField('phone', e?.toString() ?? '')}
+                data-tutorial="customer-phone"
+                className="phone-input"
               />
             </div>
           </div>
@@ -347,6 +348,7 @@ export default function CreateCustomerDialog({
             Cancelar
           </Button>
           <Button
+            data-tutorial="customer-create-button"
             onClick={handleSubmit}
             disabled={
               isCreating ||
