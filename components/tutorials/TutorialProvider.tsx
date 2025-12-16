@@ -299,6 +299,9 @@ export function TutorialProvider() {
       pathname === '/admin/appointments' ||
       pathname === '/admin/services'
 
+    // Verificar sessionStorage para prevenir reaparición en la misma sesión
+    const notShowWelcome = sessionStorage.getItem('not_show_welcome') === 'true'
+
     // Solo mostrar modal si hay un business activo y tutorial_started es false
     if (
       isOnValidPage &&
@@ -307,6 +310,7 @@ export function TutorialProvider() {
       !tutorialStarted &&
       !isActive &&
       !showModal &&
+      !notShowWelcome &&
       activeBusiness
     ) {
       const timer = setTimeout(() => {

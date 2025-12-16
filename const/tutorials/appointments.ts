@@ -29,8 +29,9 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
   },
   {
     target: 'appointment-customer-select',
-    content: 'Aquí puedes buscar o crea un cliente para la cita.',
-    title: 'Seleccionar Cliente para la Cita',
+    content:
+      'Busca o crea un cliente mediante el botón "Crear nuevo cliente" para la cita.',
+    title: 'DefinirCliente para la Cita',
     placement: 'top',
     disableBeacon: true,
     showProgress: true,

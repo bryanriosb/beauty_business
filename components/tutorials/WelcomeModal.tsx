@@ -70,6 +70,9 @@ export function WelcomeModal({
       }
     }
 
+    // Guardar en sessionStorage para prevenir reaparición en la misma sesión
+    sessionStorage.setItem('not_show_welcome', 'true')
+
     onClose()
   }
 
