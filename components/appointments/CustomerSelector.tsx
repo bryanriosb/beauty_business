@@ -38,32 +38,36 @@ export default function CustomerSelector({
   const [open, setOpen] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [customers, setCustomers] = useState<BusinessCustomer[]>([])
-  const [selectedCustomer, setSelectedCustomer] = useState<BusinessCustomer | null>(null)
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<BusinessCustomer | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const customerService = new BusinessCustomerService()
 
-  const loadCustomers = useCallback(async (query: string = '') => {
-    if (!businessId) return
-    setIsLoading(true)
-    try {
-      if (query) {
-        const results = await customerService.search(businessId, query)
-        setCustomers(results)
-      } else {
-        const response = await customerService.fetchItems({
-          business_id: businessId,
-          page_size: 20,
-        })
-        setCustomers(response.data)
+  const loadCustomers = useCallback(
+    async (query: string = '') => {
+      if (!businessId) return
+      setIsLoading(true)
+      try {
+        if (query) {
+          const results = await customerService.search(businessId, query)
+          setCustomers(results)
+        } else {
+          const response = await customerService.fetchItems({
+            business_id: businessId,
+            page_size: 20,
+          })
+          setCustomers(response.data)
+        }
+      } catch (error) {
+        console.error('Error loading customers:', error)
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error('Error loading customers:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [businessId])
+    },
+    [businessId]
+  )
 
   useEffect(() => {
     if (businessId) {
@@ -91,7 +95,10 @@ export default function CustomerSelector({
     setOpen(false)
   }
 
-  const handleCustomerCreated = (customer: BusinessCustomer, userProfileId: string) => {
+  const handleCustomerCreated = (
+    customer: BusinessCustomer,
+    userProfileId: string
+  ) => {
     setSelectedCustomer(customer)
     onSelect(userProfileId, customer)
     setCustomers((prev) => [customer, ...prev])
@@ -112,16 +119,21 @@ export default function CustomerSelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            data-tutorial="appointment-customer-select"
             className="w-full justify-between"
             disabled={disabled || !businessId}
           >
             {selectedCustomer ? (
               <span className="flex items-center gap-2 truncate">
                 <User className="h-4 w-4 shrink-0" />
-                <span className="truncate">{getCustomerDisplayName(selectedCustomer)}</span>
+                <span className="truncate">
+                  {getCustomerDisplayName(selectedCustomer)}
+                </span>
               </span>
             ) : (
-              <span className="text-muted-foreground">Seleccionar cliente...</span>
+              <span className="text-muted-foreground">
+                Seleccionar cliente...
+              </span>
             )}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -142,7 +154,9 @@ export default function CustomerSelector({
                 <>
                   <CommandEmpty>
                     <div className="flex flex-col items-center gap-2 py-4">
-                      <p className="text-muted-foreground">No se encontraron clientes</p>
+                      <p className="text-muted-foreground">
+                        No se encontraron clientes
+                      </p>
                       <Button
                         variant="outline"
                         size="sm"
@@ -173,7 +187,9 @@ export default function CustomerSelector({
                         />
                         <div className="flex flex-col min-w-0">
                           <span className="truncate">
-                            {`${customer.first_name} ${customer.last_name || ''}`}
+                            {`${customer.first_name} ${
+                              customer.last_name || ''
+                            }`}
                           </span>
                           {(customer.phone || customer.email) && (
                             <span className="text-xs text-muted-foreground truncate">

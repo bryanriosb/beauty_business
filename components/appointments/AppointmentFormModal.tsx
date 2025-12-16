@@ -632,10 +632,7 @@ export default function AppointmentFormModal({
                           disabled={isSubmitting}
                         >
                           <FormControl>
-                            <SelectTrigger
-                              data-tutorial="appointment-customer-select"
-                              className="w-full"
-                            >
+                            <SelectTrigger className="w-full">
                               <SelectValue placeholder="Selecciona un negocio" />
                             </SelectTrigger>
                           </FormControl>
@@ -668,7 +665,6 @@ export default function AppointmentFormModal({
                           isSubmitting ||
                           (!currentBusinessId && !effectiveBusinessId)
                         }
-                        data-tutorial="appointment-customer-search"
                       />
                       <FormMessage />
                     </FormItem>

@@ -54,7 +54,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
     name: 'Guía de Inicio: Tu Primera Cita',
     description: 'Aprende a crear tu primer servicio, especialista y cita',
     steps: [
-      // ...SERVICES_TUTORIALS,
+      ...SERVICES_TUTORIALS,
       // ...SPECIALIST_TUTORIALS,
       ...APPOINTMENTS_TUTORIALS,
     ],

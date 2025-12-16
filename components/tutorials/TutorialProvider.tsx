@@ -296,6 +296,7 @@ export function TutorialProvider() {
     const isOnValidPage =
       pathname === '/admin' ||
       pathname === '/admin/dashboard' ||
+      pathname === '/admin/appointments' ||
       pathname === '/admin/services'
 
     // Verificar sessionStorage para prevenir reaparición en la misma sesión
@@ -363,7 +364,7 @@ export function TutorialProvider() {
 
         /* Asegurar que dropdowns de combobox estén por encima de Joyride */
         [data-slot="popover-content"] {
-          z-index: 10000 !important;
+          z-index: 1000 !important;
         }
       `
 
@@ -396,7 +397,7 @@ export function TutorialProvider() {
         }
 
         setShouldRun(true)
-      }, 500) // Aumentar delay para dar tiempo a que el modal se cierre
+      }, 1500) // Aumentar delay para dar tiempo a que los elementos se carguen
       return () => clearTimeout(timer)
     } else {
       setShouldRun(false)

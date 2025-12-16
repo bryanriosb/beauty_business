@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { TutorialStep } from '@/const/tutorials'
 
 export interface TutorialNavigationStep extends TutorialStep {
@@ -27,10 +26,10 @@ interface TutorialState {
   tutorialId: string | null
   stepIndex: number
   isPaused: boolean
-  
+
   // Configuración
   navigationStepDelay: number
-  
+
   // Acciones
   startTutorial: (tutorialId: string, startIndex?: number) => void
   stopTutorial: () => void
@@ -39,110 +38,99 @@ interface TutorialState {
   nextStep: () => void
   previousStep: () => void
   setStepIndex: (index: number) => void
-  
+
   // Utilidades
   getCurrentStep: () => TutorialNavigationStep | null
   shouldNavigateToPage: (currentPage: string) => boolean
   getPageForStep: (stepIndex: number) => string | null
 }
 
-export const useTutorialStore = create<TutorialState>()(
-  persist(
-    (set, get) => ({
+// Store SIN persistencia - el estado del tutorial es efímero
+export const useTutorialStore = create<TutorialState>()((set, get) => ({
+  isActive: false,
+  tutorialId: null,
+  stepIndex: 0,
+  isPaused: false,
+  navigationStepDelay: 800, // 800ms delay por defecto para navegación
+
+  startTutorial: (tutorialId, startIndex = 0) => {
+    set({
+      isActive: true,
+      tutorialId,
+      stepIndex: startIndex,
+      isPaused: false,
+    })
+  },
+
+  stopTutorial: () => {
+    set({
       isActive: false,
       tutorialId: null,
       stepIndex: 0,
       isPaused: false,
-      navigationStepDelay: 800, // 800ms delay por defecto para navegación
+    })
+  },
 
-      startTutorial: (tutorialId, startIndex = 0) => {
-        set({
-          isActive: true,
-          tutorialId,
-          stepIndex: startIndex,
-          isPaused: false,
-        })
-      },
+  pauseTutorial: () => {
+    set({ isPaused: true })
+  },
 
-      stopTutorial: () => {
-        set({
-          isActive: false,
-          tutorialId: null,
-          stepIndex: 0,
-          isPaused: false,
-        })
-      },
+  resumeTutorial: () => {
+    set({ isPaused: false })
+  },
 
-      pauseTutorial: () => {
-        set({ isPaused: true })
-      },
+  nextStep: () => {
+    const currentState = get()
+    const newIndex = currentState.stepIndex + 1
+    set({ stepIndex: newIndex })
+  },
 
-      resumeTutorial: () => {
-        set({ isPaused: false })
-      },
+  previousStep: () => {
+    const currentState = get()
+    const newIndex = Math.max(0, currentState.stepIndex - 1)
+    set({ stepIndex: newIndex })
+  },
 
-      nextStep: () => {
-        const currentState = get()
-        const newIndex = currentState.stepIndex + 1
-        set({ stepIndex: newIndex })
-      },
+  setStepIndex: (index) => {
+    set({ stepIndex: index })
+  },
 
-      previousStep: () => {
-        const currentState = get()
-        const newIndex = Math.max(0, currentState.stepIndex - 1)
-        set({ stepIndex: newIndex })
-      },
+  getCurrentStep: () => {
+    const { tutorialId, stepIndex } = get()
+    if (!tutorialId) return null
 
-      setStepIndex: (index) => {
-        set({ stepIndex: index })
-      },
+    // Importamos dinámicamente para evitar ciclos
+    const { TUTORIALS } = require('@/const/tutorials')
+    const tutorial = TUTORIALS[tutorialId] as TutorialNavigation
 
-      getCurrentStep: () => {
-        const { tutorialId, stepIndex } = get()
-        if (!tutorialId) return null
-
-        // Importamos dinámicamente para evitar ciclos
-        const { TUTORIALS } = require('@/const/tutorials')
-        const tutorial = TUTORIALS[tutorialId] as TutorialNavigation
-        
-        if (!tutorial || !tutorial.steps || stepIndex >= tutorial.steps.length) {
-          return null
-        }
-
-        return tutorial.steps[stepIndex] || null
-      },
-
-      shouldNavigateToPage: (currentPage: string) => {
-        const currentStep = get().getCurrentStep()
-        if (!currentStep?.page) return false
-        
-        return currentStep.page !== currentPage
-      },
-
-      getPageForStep: (stepIndex: number) => {
-        const { tutorialId } = get()
-        if (!tutorialId) return null
-
-        const { TUTORIALS } = require('@/const/tutorials')
-        const tutorial = TUTORIALS[tutorialId] as TutorialNavigation
-        
-        if (!tutorial || !tutorial.steps || stepIndex >= tutorial.steps.length) {
-          return null
-        }
-
-        return tutorial.steps[stepIndex]?.page ?? null
-      },
-    }),
-    {
-      name: 'tutorial-store',
-      partialize: (state) => ({
-        // Solo persistimos el estado básico, no si está activo
-        tutorialId: state.tutorialId,
-        stepIndex: state.stepIndex,
-      }),
+    if (!tutorial || !tutorial.steps || stepIndex >= tutorial.steps.length) {
+      return null
     }
-  )
-)
+
+    return tutorial.steps[stepIndex] || null
+  },
+
+  shouldNavigateToPage: (currentPage: string) => {
+    const currentStep = get().getCurrentStep()
+    if (!currentStep?.page) return false
+
+    return currentStep.page !== currentPage
+  },
+
+  getPageForStep: (stepIndex: number) => {
+    const { tutorialId } = get()
+    if (!tutorialId) return null
+
+    const { TUTORIALS } = require('@/const/tutorials')
+    const tutorial = TUTORIALS[tutorialId] as TutorialNavigation
+
+    if (!tutorial || !tutorial.steps || stepIndex >= tutorial.steps.length) {
+      return null
+    }
+
+    return tutorial.steps[stepIndex]?.page ?? null
+  },
+}))
 
 // Hook simplificado para tutoriales - la navegación se maneja en el TutorialProvider
 export function useTutorialNavigation() {
