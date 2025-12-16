@@ -5,6 +5,7 @@ export interface TutorialStep {
   placement?: 'top' | 'bottom' | 'left' | 'right' | 'center'
   disableBeacon?: boolean
   spotlightClicks?: boolean
+  disableOverlayClose?: boolean
   hideBackButton?: boolean
   hideCloseButton?: boolean
   hideFooter?: boolean
@@ -88,6 +89,59 @@ export const TUTORIALS: Record<string, Tutorial> = {
         showSkipButton: true,
         page: '/admin/services',
         spotlightClicks: true,
+        disableOverlayClose: true,
+      },
+      {
+        target: 'service-description-input',
+        content:
+          'Describe brevemente el servicio que vas a ofrecer. Esto ayudará a tus clientes a entender qué esperar.',
+        title: 'Descripción del Servicio',
+        placement: 'top',
+        disableBeacon: true,
+        showProgress: true,
+        showSkipButton: true,
+        page: '/admin/services',
+        spotlightClicks: true,
+        disableOverlayClose: true,
+      },
+      {
+        target: 'service-category-select',
+        content:
+          'Selecciona la categoría que mejor describe tu servicio. Esto ayudará a tus clientes a encontrarlo y a asociar con el especialista.',
+        title: 'Categoría del Servicio',
+        placement: 'top',
+        disableBeacon: true,
+        showProgress: true,
+        showSkipButton: true,
+        page: '/admin/services',
+        spotlightClicks: true,
+        disableOverlayClose: true,
+      },
+      {
+        target: 'service-price-input',
+        content:
+          'Define el precio base que tus clientes pagarán por este servicio.',
+        title: 'Precio del Servicio',
+        placement: 'top',
+        disableBeacon: true,
+        showProgress: true,
+        showSkipButton: true,
+        page: '/admin/services',
+        spotlightClicks: true,
+        disableOverlayClose: true,
+      },
+      {
+        target: 'service-duration-input',
+        content:
+          'Especifica la duración en minutos para organizar mejor tu agenda.',
+        title: 'Duración del Servicio',
+        placement: 'top',
+        disableBeacon: true,
+        showProgress: true,
+        showSkipButton: true,
+        page: '/admin/services',
+        spotlightClicks: true,
+        disableOverlayClose: true,
       },
       {
         target: 'service-description-input',
