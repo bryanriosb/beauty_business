@@ -13,6 +13,7 @@ export function useBusinessAccount() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastFetchedId, setLastFetchedId] = useState<string | null>(null)
+  const [forceRefresh, setForceRefresh] = useState(0)
 
   useEffect(() => {
     if (!businessAccountId || !user) {
@@ -23,8 +24,8 @@ export function useBusinessAccount() {
       return
     }
 
-    // Evitar múltiples fetches para el mismo ID
-    if (lastFetchedId === businessAccountId) {
+    // Evitar múltiples fetches para el mismo ID (a menos que sea force refresh)
+    if (lastFetchedId === businessAccountId && forceRefresh === 0) {
       return
     }
 
@@ -34,14 +35,12 @@ export function useBusinessAccount() {
         const service = new BusinessAccountService()
 
         const accountData = await service.getAccountById(businessAccountId)
-        console.log('📊 BusinessAccount data:', { 
-          id: accountData?.id, 
-          tutorial_started: accountData?.tutorial_started,
-          subscription_plan: accountData?.subscription_plan,
-          status: accountData?.status
-        })
         setAccount(accountData)
         setLastFetchedId(businessAccountId) // Marcar como fetched DESPUÉS del fetch
+        console.log('✅ Business account data updated:', {
+          id: accountData?.id,
+          tutorial_started: accountData?.tutorial_started
+        })
 
         if (user.user_profile_id) {
           const members = await service.getAccountMembers(businessAccountId)
@@ -61,18 +60,19 @@ export function useBusinessAccount() {
     }
 
     fetchAccountData()
-  }, [businessAccountId, user?.id]) // Dependencias más simples
+  }, [businessAccountId, user?.id, forceRefresh]) // Incluir forceRefresh para refrescar manual
 
   const isOwner = membership?.role === 'owner'
   const isAdmin = membership?.role === 'owner' || membership?.role === 'admin'
   const isActive = membership?.status === 'active'
 
   const tutorialStartedValue = Boolean(account?.tutorial_started) // Convertir undefined/null a false
-  console.log('🎓 useBusinessAccount return:', { 
-    tutorialStarted: tutorialStartedValue,
-    rawValue: account?.tutorial_started,
-    accountId: account?.id
-  })
+
+  // Función para forzar refresh manual
+  const refetch = () => {
+    setLastFetchedId(null) // Resetear para forzar nuevo fetch
+    setForceRefresh(prev => prev + 1)
+  }
 
   return {
     account,
@@ -85,5 +85,6 @@ export function useBusinessAccount() {
     tutorialStarted: tutorialStartedValue,
     canManageMembers: isAdmin && isActive,
     canManageSettings: isOwner && isActive,
+    refetch,
   }
 }

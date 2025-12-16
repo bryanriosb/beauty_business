@@ -5,11 +5,11 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import Joyride, { CallBackProps, STATUS, ACTIONS, EVENTS } from 'react-joyride'
 import { TUTORIALS, type TutorialStep } from '@/const/tutorials'
-import { setClientCookie } from '@/lib/utils/cookies'
+import { setClientCookie, getClientCookie } from '@/lib/utils/cookies'
 import { WelcomeModal } from './WelcomeModal'
 import { useTutorial } from '@/hooks/use-tutorial'
+import { useActiveBusinessAccount } from '@/hooks/use-active-business-account'
 import { useBusinessAccount } from '@/hooks/use-business-account'
-import { useCurrentUser } from '@/hooks/use-current-user'
 
 export function TutorialProvider() {
   const pathname = usePathname()
@@ -28,13 +28,12 @@ export function TutorialProvider() {
   } = useTutorialStore()
 
   const { startTutorialAfterWelcome } = useTutorial()
-  const { tutorialStarted } = useBusinessAccount()
-  const { businessAccountId } = useCurrentUser()
+  const { tutorialStarted, isLoading, canUseTutorialStatus, activeBusiness } =
+    useActiveBusinessAccount()
 
   const [shouldRun, setShouldRun] = useState(false)
   const [isReady, setIsReady] = useState(false)
   const [showModal, setShowModal] = useState(false)
-  const [modalShownThisSession, setModalShownThisSession] = useState(false)
 
   // Obtener los pasos del tutorial actual
   const getJoyrideSteps = () => {
@@ -157,7 +156,6 @@ export function TutorialProvider() {
             element.getAttribute('role') === 'combobox' // para selects personalizados
 
           if (isFocusableElement) {
-            console.log('🎯 Forcing focus on element:', element)
             ;(element as HTMLElement).focus()
 
             // Para inputs, también colocar cursor al final (solo para tipos que lo soportan)
@@ -165,11 +163,15 @@ export function TutorialProvider() {
               const inputElement = element as
                 | HTMLInputElement
                 | HTMLTextAreaElement
-              
+
               // Verificar si el input soporta setSelectionRange
-              if (element.tagName === 'TEXTAREA' || 
-                  (element.tagName === 'INPUT' && 
-                   ['text', 'search', 'url', 'tel', 'password'].includes((inputElement as HTMLInputElement).type))) {
+              if (
+                element.tagName === 'TEXTAREA' ||
+                (element.tagName === 'INPUT' &&
+                  ['text', 'search', 'url', 'tel', 'password'].includes(
+                    (inputElement as HTMLInputElement).type
+                  ))
+              ) {
                 inputElement.setSelectionRange(
                   inputElement.value.length,
                   inputElement.value.length
@@ -195,18 +197,12 @@ export function TutorialProvider() {
     if (action === ACTIONS.CLOSE) {
       // Solo permitir cierre si viene del botón de skip/close del tooltip
       // Ignorar cierres por clicks en el overlay
-      console.log('🚫 Tutorial close action blocked (overlay click)', { type, status, index })
       return // No ejecutar stopTutorial()
     }
 
     // Manejar tutorial finalizado
     if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
       if (tutorialId) {
-        // Marcar tutorial como completado
-        setClientCookie(`tutorial_completed_${tutorialId}`, 'true', {
-          maxAge: 365 * 24 * 60 * 60, // 1 year
-        })
-
         const tutorial = TUTORIALS[tutorialId]
         tutorial?.onComplete?.()
       }
@@ -222,15 +218,15 @@ export function TutorialProvider() {
         if (currentStep?.triggerAction) {
           executeTriggerAction(currentStep.triggerAction)
         }
-        
+
         // Avanzar al siguiente paso
         nextStep()
-        
+
         // Forzar focus en el input/select del siguiente paso
         setTimeout(() => forceFocusOnInput(index + 1), 100)
       } else if (action === ACTIONS.PREV) {
         previousStep()
-        
+
         // También forzar focus al ir atrás
         setTimeout(() => forceFocusOnInput(index - 1), 100)
       }
@@ -304,27 +300,33 @@ export function TutorialProvider() {
       pathname === '/admin/dashboard' ||
       pathname === '/admin/services'
 
-    // Simplificar temporalmente: si está en página válida y no hay tutorial activo, mostrar modal
+    // Verificar sessionStorage para prevenir reaparición en la misma sesión
+    const notShowWelcome = sessionStorage.getItem('not_show_welcome') === 'true'
+
+    // Solo mostrar modal si hay un business activo y tutorial_started es false Y no hay flag de sessionStorage
     if (
       isOnValidPage &&
+      !isLoading &&
+      canUseTutorialStatus &&
       !tutorialStarted &&
       !isActive &&
       !showModal &&
-      businessAccountId
+      !notShowWelcome &&
+      activeBusiness
     ) {
       const timer = setTimeout(() => {
         setShowModal(true)
-        setModalShownThisSession(true)
-      }, 500) // Reducir delay para debugging
+      }, 500)
       return () => clearTimeout(timer)
     }
   }, [
     pathname,
     tutorialStarted,
+    isLoading,
+    canUseTutorialStatus,
     isActive,
     showModal,
-    modalShownThisSession,
-    businessAccountId,
+    activeBusiness,
   ])
 
   // Efecto para manejar la interacción con inputs durante el tutorial
@@ -344,8 +346,6 @@ export function TutorialProvider() {
       element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
 
     if (isInput && element) {
-      const inputElement = element as HTMLInputElement | HTMLTextAreaElement
-
       // Crear un estilo dinámico para permitir la interacción con inputs
       const styleId = 'joyride-input-fix'
       let styleElement = document.getElementById(styleId)
@@ -388,12 +388,6 @@ export function TutorialProvider() {
 
   // Efecto para iniciar/parar Joyride
   useEffect(() => {
-    console.log('🎮 Tutorial state:', {
-      isActive,
-      isPaused,
-      isReady,
-      tutorialId,
-    })
     if (isActive && !isPaused && isReady) {
       // Pequeño delay para asegurar que el DOM esté listo
       const timer = setTimeout(() => {
@@ -412,13 +406,15 @@ export function TutorialProvider() {
   }, [isActive, isPaused, isReady, tutorialId])
 
   const handleStartTutorial = () => {
-    const result = startTutorialAfterWelcome()
-    console.log('📞 startTutorialAfterWelcome result:', result)
+    startTutorialAfterWelcome()
     setShowModal(false)
   }
 
   const handleCloseModal = () => {
     setShowModal(false)
+
+    // Establecer flag en sessionStorage para prevenir reaparición en esta sesión
+    sessionStorage.setItem('not_show_welcome', 'true')
   }
 
   // Renderizar Joyride solo si hay tutorial activo
@@ -434,7 +430,7 @@ export function TutorialProvider() {
         showSkipButton={true}
         disableScrolling={true} // Evitar scrolling el cual interfiere con FormField focus
         disableOverlayClose={true} // Evitar que el tutorial se cierre con clicks fuera
-        debug={true}
+        debug={false}
         styles={{
           options: {
             arrowColor: '#fff',

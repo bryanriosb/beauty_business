@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { HelpCircle, X } from 'lucide-react'
+import { HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useTutorial } from '@/hooks/use-tutorial'
-import { TUTORIALS } from '@/const/tutorials'
+import { TUTORIALS, Tutorial } from '@/const/tutorials'
 
 interface TutorialDropdownProps {
   className?: string
@@ -20,8 +20,6 @@ export function TutorialDropdown({ className }: TutorialDropdownProps) {
   const {
     startTutorial,
     restartTutorial,
-    isTutorialCompleted,
-    getAvailableTutorials,
     isLoading,
   } = useTutorial()
 
@@ -29,14 +27,8 @@ export function TutorialDropdown({ className }: TutorialDropdownProps) {
 
   const handleStartTutorial = (tutorialId: string) => {
     console.log('🎓 Starting tutorial:', tutorialId)
-    const wasCompleted = isTutorialCompleted(tutorialId)
-    if (wasCompleted) {
-      console.log('🔄 Restarting completed tutorial:', tutorialId)
-      restartTutorial(tutorialId)
-    } else {
-      console.log('▶️ Starting new tutorial:', tutorialId)
-      startTutorial(tutorialId)
-    }
+    // Siempre permitir reiniciar tutoriales
+    restartTutorial(tutorialId)
     setIsOpen(false)
   }
 
@@ -44,7 +36,7 @@ export function TutorialDropdown({ className }: TutorialDropdownProps) {
     return null
   }
 
-  const availableTutorials = getAvailableTutorials()
+  // Mostrar TODOS los tutoriales disponibles sin filtrar
   const allTutorials = Object.values(TUTORIALS)
 
   return (
@@ -65,9 +57,10 @@ export function TutorialDropdown({ className }: TutorialDropdownProps) {
           Tutoriales Disponibles
         </div>
 
-        {availableTutorials.length > 0 ? (
+        {/* Mostrar TODOS los tutoriales disponibles sin separar */}
+        {allTutorials.length > 0 ? (
           <>
-            {availableTutorials.map((tutorial) => (
+            {allTutorials.map((tutorial: Tutorial) => (
               <DropdownMenuItem
                 key={tutorial.id}
                 onClick={() => handleStartTutorial(tutorial.id)}
@@ -81,36 +74,10 @@ export function TutorialDropdown({ className }: TutorialDropdownProps) {
                 </div>
               </DropdownMenuItem>
             ))}
-
-            {availableTutorials.length < allTutorials.length && (
-              <>
-                <div className="px-2 py-1.5 text-xs font-medium text-gray-500 border-t">
-                  Tutoriales completados:
-                </div>
-                {allTutorials
-                  .filter((t) => isTutorialCompleted(t.id))
-                  .map((tutorial) => (
-                    <DropdownMenuItem
-                      key={tutorial.id}
-                      onClick={() => handleStartTutorial(tutorial.id)}
-                      className="cursor-pointer opacity-70"
-                    >
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium text-gray-600">
-                          {tutorial.name}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          Click para repetir
-                        </span>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-              </>
-            )}
           </>
         ) : (
           <div className="px-2 py-4 text-sm text-gray-500 text-center">
-            ¡Has completado todos los tutoriales disponibles!
+            No hay tutoriales disponibles
           </div>
         )}
       </DropdownMenuContent>

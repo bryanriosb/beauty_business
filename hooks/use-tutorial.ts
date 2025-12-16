@@ -9,14 +9,18 @@ import { updateTutorialStartedAction } from '@/lib/actions/business-account'
 import { getClientCookie, setClientCookie } from '@/lib/utils/cookies'
 import { TUTORIALS, Tutorial } from '@/const/tutorials'
 
-const TUTORIAL_COOKIE_PREFIX = 'tutorial_completed_'
-const AUTO_START_TUTORIAL_COOKIE = 'auto_start_tutorial_shown'
+
 
 export function useTutorial() {
-  const { businessAccountId, isAuthenticated, isLoading: authLoading } = useCurrentUser()
+  const {
+    businessAccountId,
+    isAuthenticated,
+    isLoading: authLoading,
+  } = useCurrentUser()
   const { isOnTrial, isChecking: trialLoading } = useTrialCheck()
-  const { tutorialStarted, isLoading: businessAccountLoading } = useBusinessAccount()
-  
+  const { tutorialStarted, isLoading: businessAccountLoading } =
+    useBusinessAccount()
+
   const {
     isActive,
     tutorialId,
@@ -36,87 +40,66 @@ export function useTutorial() {
 
   const currentTutorial = tutorialId ? TUTORIALS[tutorialId] : null
 
-  // Check if tutorial was completed
-  const isTutorialCompleted = useCallback((tutorialId: string): boolean => {
-    return getClientCookie(`${TUTORIAL_COOKIE_PREFIX}${tutorialId}`) === 'true'
-  }, [])
 
-  // Mark tutorial as completed
-  const markTutorialCompleted = useCallback((tutorialId: string) => {
-    setClientCookie(`${TUTORIAL_COOKIE_PREFIX}${tutorialId}`, 'true', {
-      maxAge: 365 * 24 * 60 * 60, // 1 year
-    })
-  }, [])
 
   // Start a specific tutorial
-  const startTutorial = useCallback((tutorialId: string, startIndex = 0) => {
-    const tutorial = TUTORIALS[tutorialId]
-    if (!tutorial) {
-      console.log('❌ Tutorial not found:', tutorialId)
-      return false
-    }
+  const startTutorial = useCallback(
+    (tutorialId: string, startIndex = 0) => {
+      const tutorial = TUTORIALS[tutorialId]
+      if (!tutorial) {
+        console.log('❌ Tutorial not found:', tutorialId)
+        return false
+      }
 
-    // Check if tutorial should run (condition function)
-    if (tutorial.runCondition && !tutorial.runCondition()) {
-      console.log('❌ Tutorial condition failed:', tutorialId)
-      return false
-    }
+      // Check if tutorial should run (condition function)
+      if (tutorial.runCondition && !tutorial.runCondition()) {
+        console.log('❌ Tutorial condition failed:', tutorialId)
+        return false
+      }
 
-    // Para usuarios trial: si están iniciando desde el modal, limpiar cookie de completion
-    const isCookieCompleted = isTutorialCompleted(tutorialId)
-    if (isOnTrial && isCookieCompleted) {
-      console.log('🧹 Clearing completed cookie for trial user:', tutorialId)
-      setClientCookie(`${TUTORIAL_COOKIE_PREFIX}${tutorialId}`, 'false')
-    }
+    console.log('✅ Starting tutorial:', tutorialId, { isOnTrial })
 
-    // Verificar nuevamente si está completado (después de limpiar para usuarios trial)
-    const isNowCompleted = isTutorialCompleted(tutorialId)
-    if (isNowCompleted) {
-      console.log('❌ Tutorial still completed:', tutorialId, { 
-        wasCompleted: isCookieCompleted, 
-        isNowCompleted, 
-        isOnTrial
-      })
-      return false
-    }
-
-    console.log('✅ Starting tutorial:', tutorialId, { 
-      wasCompleted: isCookieCompleted, 
-      isNowCompleted, 
-      isOnTrial 
-    })
-
-    // Marcar tutorial como iniciado en la BD (async, no bloquear)
-    updateTutorialStartedAction(businessAccountId!, true).catch(error => {
-      console.error('Error updating tutorial_started:', error)
-    })
-
-    storeStartTutorial(tutorialId, startIndex)
-    return true
-  }, [storeStartTutorial, isTutorialCompleted, businessAccountId])
+      storeStartTutorial(tutorialId, startIndex)
+      return true
+    },
+    [storeStartTutorial, businessAccountId]
+  )
 
   // Restart tutorial
-  const restartTutorial = useCallback((tutorialId: string) => {
-    // Reset completion cookie
-    setClientCookie(`${TUTORIAL_COOKIE_PREFIX}${tutorialId}`, 'false')
-    startTutorial(tutorialId, 0)
-  }, [startTutorial])
+  const restartTutorial = useCallback(
+    (tutorialId: string) => {
+      startTutorial(tutorialId, 0)
+    },
+    [startTutorial]
+  )
 
   // Get available tutorials (not completed)
   const getAvailableTutorials = useCallback((): Tutorial[] => {
-    return Object.values(TUTORIALS).filter(tutorial => {
+    return Object.values(TUTORIALS).filter((tutorial) => {
       // Aplicar condición específica para appointment-start (solo trial)
       if (tutorial.id === 'appointment-start') {
         // Solo mostrar si está en trial y no ha iniciado el tutorial
         if (!isOnTrial || tutorialStarted) return false
       }
-      
+    })
+  }, [isOnTrial, tutorialStarted])
+
+  // Get all tutorials for dropdown (regardless of completion status)
+  const getAllTutorialsForDropdown = useCallback((): Tutorial[] => {
+    return Object.values(TUTORIALS).filter((tutorial) => {
+      // Para el dropdown, appointment-start siempre debe estar disponible si se cumplen las condiciones básicas
+      if (tutorial.id === 'appointment-start') {
+        // Mostrar si está en trial (independientemente de tutorial_started)
+        if (!isOnTrial) return false
+      }
+
       if (tutorial.runCondition && !tutorial.runCondition()) {
         return false
       }
-      return !isTutorialCompleted(tutorial.id)
+      // No filtrar por completion status - incluir todos
+      return true
     })
-  }, [isTutorialCompleted, isOnTrial, tutorialStarted])
+  }, [isOnTrial])
 
   // Get Joyride steps (mantener compatibilidad con componentes existentes)
   const getJoyrideSteps = useCallback(() => {
@@ -125,10 +108,15 @@ export function useTutorial() {
     const steps = currentTutorial.steps.map((step) => {
       // Try direct selector first, then data-tutorial selector
       let targetSelector = step.target
-      if (step.target && !step.target.startsWith('[') && !step.target.startsWith('#') && !step.target.startsWith('.')) {
+      if (
+        step.target &&
+        !step.target.startsWith('[') &&
+        !step.target.startsWith('#') &&
+        !step.target.startsWith('.')
+      ) {
         targetSelector = `[data-tutorial="${step.target}"]`
       }
-      
+
       // Check if element exists, fallback to body
       const element = document.querySelector(targetSelector)
       const finalTarget = element ? targetSelector : 'body'
@@ -162,11 +150,6 @@ export function useTutorial() {
     // Auto-start tutorial for trial users que no han empezado el tutorial
     if (isOnTrial && !tutorialStarted && !isActive) {
       const appointmentTutorial = TUTORIALS['appointment-start']
-      
-      if (appointmentTutorial && !isTutorialCompleted('appointment-start')) {
-        // El modal de bienvenida se encargará de iniciar el tutorial
-        // Esto permite que el usuario decida si quiere tomarlo o no
-      }
     }
   }, [
     authLoading,
@@ -176,7 +159,6 @@ export function useTutorial() {
     businessAccountId,
     isOnTrial,
     tutorialStarted,
-    isTutorialCompleted,
     startTutorial,
     isActive,
   ])
@@ -185,25 +167,8 @@ export function useTutorial() {
   const startTutorialAfterWelcome = useCallback(() => {
     console.log('🎯 startTutorialAfterWelcome called')
     const appointmentTutorial = TUTORIALS['appointment-start']
-    
-    // Para usuarios trial, permitir iniciar el tutorial si tutorial_started es false, 
-    // sin importar si hay cookies de otros usos
-    const isCompleted = isOnTrial ? false : isTutorialCompleted('appointment-start')
-    
-    if (appointmentTutorial && !isCompleted) {
-      console.log('📋 Tutorial available and not completed, starting...')
-      console.log('📊 State:', { 
-        isOnTrial, 
-        tutorialStarted, 
-        isCompleted,
-        cookieStatus: isTutorialCompleted('appointment-start')
-      })
-      
-      // Marcar auto-start como shown
-      setClientCookie(AUTO_START_TUTORIAL_COOKIE, 'true', {
-        maxAge: 365 * 24 * 60 * 60, // 1 year
-      })
 
+    if (appointmentTutorial) {
       // Small delay para asegurar transición suave
       setTimeout(() => {
         console.log('🚀 Actually calling startTutorial...')
@@ -211,15 +176,13 @@ export function useTutorial() {
         console.log('🎯 startTutorial result:', result)
       }, 500)
     } else {
-      console.log('❌ Tutorial not available or already completed:', {
+      console.log('❌ Tutorial not available:', {
         tutorialExists: !!appointmentTutorial,
-        isCompleted,
         isOnTrial,
-        tutorialStarted,
-        cookieStatus: isTutorialCompleted('appointment-start')
+        tutorialStarted
       })
     }
-  }, [startTutorial, isTutorialCompleted, isOnTrial, tutorialStarted])
+  }, [startTutorial, isOnTrial, tutorialStarted])
 
   return {
     // Estado del tutorial (compatible con código existente)
@@ -228,7 +191,7 @@ export function useTutorial() {
     tutorialIndex: stepIndex,
     currentTutorial,
     isLoading: isLoading || authLoading || trialLoading,
-    
+
     // Acciones básicas
     startTutorial,
     stopTutorial,
@@ -238,11 +201,10 @@ export function useTutorial() {
     nextStep,
     previousStep,
     setStepIndex,
-    
+
     // Utilidades
-    isTutorialCompleted,
-    markTutorialCompleted,
     getAvailableTutorials,
+    getAllTutorialsForDropdown,
     getJoyrideSteps,
     getCurrentStep,
     startTutorialAfterWelcome,

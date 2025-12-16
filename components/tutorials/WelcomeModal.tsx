@@ -14,6 +14,7 @@ import {
 import { getClientCookie, setClientCookie } from '@/lib/utils/cookies'
 import { updateTutorialStartedAction } from '@/lib/actions/business-account'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import { useBusinessAccount } from '@/hooks/use-business-account'
 
 interface WelcomeModalProps {
   isOpen: boolean
@@ -39,7 +40,11 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
   const handleStartTutorial = async () => {
     // Marcar tutorial como iniciado en la DB
     if (businessAccountId) {
-      await updateTutorialStartedAction(businessAccountId, true)
+      const result = await updateTutorialStartedAction(businessAccountId, true)
+      if (!result.success) {
+        console.error('Error al marcar tutorial como iniciado:', result.error)
+        return
+      }
     }
     
     if (dontShowAgain) {
@@ -54,14 +59,13 @@ export function WelcomeModal({ isOpen, onClose, onStartTutorial }: WelcomeModalP
   const handleSkipTutorial = async () => {
     // Marcar tutorial como iniciado (aunque se saltó) en la DB
     if (businessAccountId) {
-      await updateTutorialStartedAction(businessAccountId, true)
+      const result = await updateTutorialStartedAction(businessAccountId, true)
+      if (!result.success) {
+        console.error('Error al marcar tutorial como iniciado:', result.error)
+        return
+      }
     }
     
-    if (dontShowAgain) {
-      setClientCookie(WELCOME_MODAL_COOKIE, 'true', {
-        maxAge: 365 * 24 * 60 * 60, // 1 year
-      })
-    }
     onClose()
   }
 
