@@ -111,57 +111,74 @@ export function TutorialProvider() {
   )
 
   // Función para forzar focus en inputs y selects
-  const forceFocusOnInput = useCallback((stepIndex: number) => {
-    // Obtener el paso objetivo
-    const targetStep = tutorialId ? TUTORIALS[tutorialId]?.steps[stepIndex] : null
-    if (!targetStep) return
+  const forceFocusOnInput = useCallback(
+    (stepIndex: number) => {
+      // Obtener el paso objetivo
+      const targetStep = tutorialId
+        ? TUTORIALS[tutorialId]?.steps[stepIndex]
+        : null
+      if (!targetStep) return
 
-    // Determinar el selector del target
-    let targetSelector = targetStep.target
-    if (targetSelector && !targetSelector.startsWith('[') && !targetSelector.startsWith('#') && !targetSelector.startsWith('.')) {
-      targetSelector = `[data-tutorial="${targetStep.target}"]`
-    }
-
-    // Esperar un momento a que Joyride se posicione
-    setTimeout(() => {
-      let element = document.querySelector(targetSelector)
-
-      // Si no se encuentra directamente, buscar en modales
-      if (!element) {
-        const modals = Array.from(document.querySelectorAll('[role="dialog"]'))
-        for (const modal of modals) {
-          const foundInModal = modal.querySelector(targetSelector)
-          if (foundInModal) {
-            element = foundInModal
-            break
-          }
-        }
+      // Determinar el selector del target
+      let targetSelector = targetStep.target
+      if (
+        targetSelector &&
+        !targetSelector.startsWith('[') &&
+        !targetSelector.startsWith('#') &&
+        !targetSelector.startsWith('.')
+      ) {
+        targetSelector = `[data-tutorial="${targetStep.target}"]`
       }
 
-      if (element) {
-        // Verificar si es un input, textarea o select
-        const isFocusableElement = 
-          element.tagName === 'INPUT' || 
-          element.tagName === 'TEXTAREA' || 
-          element.tagName === 'SELECT' ||
-          element.getAttribute('role') === 'combobox' // para selects personalizados
+      // Esperar un momento a que Joyride se posicione
+      setTimeout(() => {
+        let element = document.querySelector(targetSelector)
 
-        if (isFocusableElement) {
-          console.log('🎯 Forcing focus on element:', element)
-          ;(element as HTMLElement).focus()
-          
-          // Para inputs, también colocar cursor al final
-          if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-            const inputElement = element as HTMLInputElement | HTMLTextAreaElement
-            inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length)
+        // Si no se encuentra directamente, buscar en modales
+        if (!element) {
+          const modals = Array.from(
+            document.querySelectorAll('[role="dialog"]')
+          )
+          for (const modal of modals) {
+            const foundInModal = modal.querySelector(targetSelector)
+            if (foundInModal) {
+              element = foundInModal
+              break
+            }
           }
-
-          // Hacer scroll suave al elemento
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
-      }
-    }, 300) // Dar tiempo a Joyride para que se posicione
-  }, [tutorialId])
+
+        if (element) {
+          // Verificar si es un input, textarea o select
+          const isFocusableElement =
+            element.tagName === 'INPUT' ||
+            element.tagName === 'TEXTAREA' ||
+            element.tagName === 'SELECT' ||
+            element.getAttribute('role') === 'combobox' // para selects personalizados
+
+          if (isFocusableElement) {
+            console.log('🎯 Forcing focus on element:', element)
+            ;(element as HTMLElement).focus()
+
+            // Para inputs, también colocar cursor al final
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+              const inputElement = element as
+                | HTMLInputElement
+                | HTMLTextAreaElement
+              inputElement.setSelectionRange(
+                inputElement.value.length,
+                inputElement.value.length
+              )
+            }
+
+            // Hacer scroll suave al elemento
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }
+      }, 300) // Dar tiempo a Joyride para que se posicione
+    },
+    [tutorialId]
+  )
 
   // Manejar callback de Joyride
   const handleCallback = (data: CallBackProps) => {
@@ -190,15 +207,15 @@ export function TutorialProvider() {
         if (currentStep?.triggerAction) {
           executeTriggerAction(currentStep.triggerAction)
         }
-        
+
         // Avanzar al siguiente paso
         nextStep()
-        
+
         // Forzar focus en el input/select del siguiente paso
         setTimeout(() => forceFocusOnInput(index + 1), 100)
       } else if (action === ACTIONS.PREV) {
         previousStep()
-        
+
         // También forzar focus al ir atrás
         setTimeout(() => forceFocusOnInput(index - 1), 100)
       } else if (action === ACTIONS.CLOSE) {
@@ -331,6 +348,11 @@ export function TutorialProvider() {
       styleElement.textContent = `
         .react-joyride__tooltip button {
           pointer-events: auto !important;
+        }
+
+        /* Asegurar que dropdowns de combobox estén por encima de Joyride */
+        [data-slot="popover-content"] {
+          z-index: 10000 !important;
         }
       `
 
