@@ -413,7 +413,7 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
     })
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 w-[20.5rem] min-w-full">
         <DataTableToolbar
           table={table}
           filters={filters}
@@ -429,14 +429,17 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
               : undefined
           }
         />
-        <div className="overflow-hidden rounded-md border">
-          <Table>
-            <TableHeader className="text-[0.75rem] bg-secondary">
+        <div className="overflow-hidden rounded-md border ">
+          <Table className="w-full">
+            <TableHeader className="bg-gray-100 dark:bg-transparent">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id}>
+                      <TableHead
+                        key={header.id}
+                        className="px-2 py-3 whitespace-nowrap min-w-[60px] sm:min-w-[80px] md:min-w-[100px]"
+                      >
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -469,7 +472,10 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
                     data-state={row.getIsSelected() && 'selected'}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell
+                        key={cell.id}
+                        className="px-2 py-3 whitespace-nowrap min-w-[60px] sm:min-w-[80px] md:min-w-[100px]"
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()

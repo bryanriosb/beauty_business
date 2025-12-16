@@ -91,8 +91,8 @@ export function DataTableToolbar<TData>({
   }, [currentFilterValue])
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-1 items-center space-x-2">
+    <div className="flex  items-center justify-between">
+      <div className="flex flex-wrap md:flex-nowrap gap-2 items-center space-x-2">
         {searchConfig && (
           <Input
             placeholder={searchConfig.placeholder}
