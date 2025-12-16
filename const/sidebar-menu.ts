@@ -114,6 +114,7 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
     url: '/admin/specialists/goals',
     icon: UserCircle,
     moduleCode: 'specialists',
+    targetTutorialStep: 'specialists-menu',
     allowedRoles: [
       USER_ROLES.COMPANY_ADMIN,
       USER_ROLES.BUSINESS_ADMIN,

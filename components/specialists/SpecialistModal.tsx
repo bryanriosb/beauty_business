@@ -27,7 +27,15 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form'
-import { Loader2, Clock, Briefcase, ChevronDown, RefreshCw, Eye, EyeOff } from 'lucide-react'
+import {
+  Loader2,
+  Clock,
+  Briefcase,
+  ChevronDown,
+  RefreshCw,
+  Eye,
+  EyeOff,
+} from 'lucide-react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -58,6 +66,7 @@ function generatePassword(length = 10): string {
 const baseSchema = {
   first_name: z.string().min(1, 'El nombre es requerido'),
   last_name: z.string().optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
   specialty: z.string().optional().or(z.literal('')),
   bio: z.string().optional().or(z.literal('')),
   profile_picture_url: z.string().optional().or(z.literal('')),
@@ -73,7 +82,11 @@ const createSchema = z.object({
 const editSchema = z.object({
   ...baseSchema,
   email: z.string().email('Email inválido').optional().or(z.literal('')),
-  newPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional().or(z.literal('')),
+  newPassword: z
+    .string()
+    .min(6, 'La contraseña debe tener al menos 6 caracteres')
+    .optional()
+    .or(z.literal('')),
 })
 
 type CreateFormValues = z.infer<typeof createSchema>
@@ -167,6 +180,7 @@ export function SpecialistModal({
       last_name: '',
       email: '',
       password: '',
+      phone: '',
       specialty: '',
       bio: '',
       profile_picture_url: '',
@@ -239,7 +253,10 @@ export function SpecialistModal({
         toast.error('No hay sucursal seleccionada para subir la imagen')
         return { success: false, error: 'No hay sucursal seleccionada' }
       }
-      const result = await storageService.uploadSpecialistImage(file, businessId)
+      const result = await storageService.uploadSpecialistImage(
+        file,
+        businessId
+      )
       if (!result.success) {
         toast.error(result.error || 'Error al subir la imagen')
       }
@@ -269,12 +286,13 @@ export function SpecialistModal({
   const onSubmit = async (data: SpecialistFormValues) => {
     setIsSubmitting(true)
     try {
-      const specialtyFromCategories = selectedCategoryIds.length > 0
-        ? serviceCategories
-            .filter((c) => selectedCategoryIds.includes(c.id))
-            .map((c) => c.name)
-            .join(', ')
-        : data.specialty || null
+      const specialtyFromCategories =
+        selectedCategoryIds.length > 0
+          ? serviceCategories
+              .filter((c) => selectedCategoryIds.includes(c.id))
+              .map((c) => c.name)
+              .join(', ')
+          : data.specialty || null
 
       const saveData: SpecialistInsert | SpecialistUpdate = {
         first_name: data.first_name,
@@ -287,13 +305,15 @@ export function SpecialistModal({
         is_featured: data.is_featured,
       }
 
-      const availabilityData: Omit<SpecialistAvailability, 'id' | 'specialist_id'>[] =
-        Object.entries(schedule).map(([day, config]) => ({
-          day_of_week: day as DayOfWeek,
-          start_time: config.start_time,
-          end_time: config.end_time,
-          is_available: config.enabled,
-        }))
+      const availabilityData: Omit<
+        SpecialistAvailability,
+        'id' | 'specialist_id'
+      >[] = Object.entries(schedule).map(([day, config]) => ({
+        day_of_week: day as DayOfWeek,
+        start_time: config.start_time,
+        end_time: config.end_time,
+        is_available: config.enabled,
+      }))
 
       let credentials: SpecialistCredentials | undefined
       let credentialsUpdate: SpecialistCredentialsUpdate | undefined
@@ -304,8 +324,10 @@ export function SpecialistModal({
 
       if (isEditing && specialist?.user_profile_id) {
         const editData = data as EditFormValues
-        const emailChanged = editData.email && editData.email !== specialist.email
-        const hasNewPassword = editData.newPassword && editData.newPassword.length >= 6
+        const emailChanged =
+          editData.email && editData.email !== specialist.email
+        const hasNewPassword =
+          editData.newPassword && editData.newPassword.length >= 6
 
         if (emailChanged || hasNewPassword) {
           credentialsUpdate = {
@@ -315,7 +337,13 @@ export function SpecialistModal({
         }
       }
 
-      await onSave(saveData, availabilityData, selectedCategoryIds, credentials, credentialsUpdate)
+      await onSave(
+        saveData,
+        availabilityData,
+        selectedCategoryIds,
+        credentials,
+        credentialsUpdate
+      )
       onOpenChange(false)
     } catch (error) {
       console.error('Error saving specialist:', error)
@@ -350,7 +378,12 @@ export function SpecialistModal({
                       Nombre <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="María" disabled={isSubmitting} data-tutorial="specialist-name-input" {...field} />
+                      <Input
+                        placeholder="María"
+                        disabled={isSubmitting}
+                        data-tutorial="specialist-name-input"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -364,7 +397,12 @@ export function SpecialistModal({
                   <FormItem>
                     <FormLabel>Apellido</FormLabel>
                     <FormControl>
-                      <Input placeholder="García" disabled={isSubmitting} {...field} />
+                      <Input
+                        placeholder="García"
+                        disabled={isSubmitting}
+                        data-tutorial="specialist-last-name-input"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -378,7 +416,8 @@ export function SpecialistModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Email {!isEditing && <span className="text-destructive">*</span>}
+                    Email{' '}
+                    {!isEditing && <span className="text-destructive">*</span>}
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -420,7 +459,11 @@ export function SpecialistModal({
                               className="h-7 w-7"
                               onClick={() => setShowPassword(!showPassword)}
                             >
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
                             </Button>
                           </div>
                         </div>
@@ -437,50 +480,59 @@ export function SpecialistModal({
                       </Button>
                     </div>
                     <FormDescription className="text-xs">
-                      Contraseña sugerida. Puedes modificarla o regenerar una nueva.
+                      Contraseña sugerida. Puedes modificarla o regenerar una
+                      nueva.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            ) : specialist?.user_profile_id && (
-              <FormField
-                control={form.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nueva Contraseña (opcional)</FormLabel>
-                    <div className="flex gap-2">
-                      <FormControl>
-                        <div className="relative flex-1">
-                          <Input
-                            type={showNewPassword ? 'text' : 'password'}
-                            placeholder="Dejar vacío para no cambiar"
-                            disabled={isSubmitting}
-                            className="pr-10"
-                            {...field}
-                          />
-                          <div className="absolute right-1 top-1/2 -translate-y-1/2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => setShowNewPassword(!showNewPassword)}
-                            >
-                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
+            ) : (
+              specialist?.user_profile_id && (
+                <FormField
+                  control={form.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nueva Contraseña (opcional)</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <div className="relative flex-1">
+                            <Input
+                              type={showNewPassword ? 'text' : 'password'}
+                              placeholder="Dejar vacío para no cambiar"
+                              disabled={isSubmitting}
+                              className="pr-10"
+                              {...field}
+                            />
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() =>
+                                  setShowNewPassword(!showNewPassword)
+                                }
+                              >
+                                {showNewPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      </FormControl>
-                    </div>
-                    <FormDescription className="text-xs">
-                      Solo completa si deseas cambiar la contraseña actual.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                        </FormControl>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Solo completa si deseas cambiar la contraseña actual.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )
             )}
 
             {/* Service Categories - Collapsible */}
@@ -493,7 +545,9 @@ export function SpecialistModal({
                 >
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Servicios que realiza</span>
+                    <span className="text-sm font-medium">
+                      Servicios que realiza
+                    </span>
                     {selectedCategoryIds.length > 0 && (
                       <span className="text-xs text-muted-foreground">
                         ({selectedCategoryIds.length} seleccionados)
@@ -590,9 +644,12 @@ export function SpecialistModal({
                 >
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Horario de trabajo</span>
+                    <span className="text-sm font-medium">
+                      Horario de trabajo
+                    </span>
                     <span className="text-xs text-muted-foreground">
-                      ({Object.values(schedule).filter((d) => d.enabled).length} días activos)
+                      ({Object.values(schedule).filter((d) => d.enabled).length}{' '}
+                      días activos)
                     </span>
                   </div>
                   <ChevronDown
@@ -606,8 +663,10 @@ export function SpecialistModal({
                 {DAYS_CONFIG.map(({ key, label }) => {
                   const businessDay = getBusinessHoursForDay(key)
                   const businessIsOpen = isBusinessOpenOnDay(key)
-                  const businessOpenTime = businessDay?.open_time?.slice(0, 5) || '09:00'
-                  const businessCloseTime = businessDay?.close_time?.slice(0, 5) || '18:00'
+                  const businessOpenTime =
+                    businessDay?.open_time?.slice(0, 5) || '09:00'
+                  const businessCloseTime =
+                    businessDay?.close_time?.slice(0, 5) || '18:00'
 
                   return (
                     <div
@@ -636,26 +695,34 @@ export function SpecialistModal({
                             min={businessOpenTime}
                             max={businessCloseTime}
                             onChange={(e) =>
-                              updateDaySchedule(key, { start_time: e.target.value })
+                              updateDaySchedule(key, {
+                                start_time: e.target.value,
+                              })
                             }
                             disabled={isSubmitting}
                             className="h-8 text-xs w-28"
                           />
-                          <span className="text-muted-foreground text-xs">a</span>
+                          <span className="text-muted-foreground text-xs">
+                            a
+                          </span>
                           <Input
                             type="time"
                             value={schedule[key].end_time}
                             min={businessOpenTime}
                             max={businessCloseTime}
                             onChange={(e) =>
-                              updateDaySchedule(key, { end_time: e.target.value })
+                              updateDaySchedule(key, {
+                                end_time: e.target.value,
+                              })
                             }
                             disabled={isSubmitting}
                             className="h-8 text-xs w-28"
                           />
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">No trabaja</span>
+                        <span className="text-xs text-muted-foreground">
+                          No trabaja
+                        </span>
                       )}
                     </div>
                   )
@@ -672,8 +739,14 @@ export function SpecialistModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting} data-tutorial="save-specialist-button">
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                data-tutorial="save-specialist-button"
+              >
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {specialist ? 'Actualizar' : 'Crear'}
               </Button>
             </DialogFooter>
