@@ -160,15 +160,22 @@ export function TutorialProvider() {
             console.log('🎯 Forcing focus on element:', element)
             ;(element as HTMLElement).focus()
 
-            // Para inputs, también colocar cursor al final
+            // Para inputs, también colocar cursor al final (solo para tipos que lo soportan)
             if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
               const inputElement = element as
                 | HTMLInputElement
                 | HTMLTextAreaElement
-              inputElement.setSelectionRange(
-                inputElement.value.length,
-                inputElement.value.length
-              )
+              
+              // Verificar si el input soporta setSelectionRange
+              if (element.tagName === 'TEXTAREA' || 
+                  (element.tagName === 'INPUT' && 
+                   ['text', 'search', 'url', 'tel', 'password'].includes((inputElement as HTMLInputElement).type))) {
+                inputElement.setSelectionRange(
+                  inputElement.value.length,
+                  inputElement.value.length
+                )
+              }
+              // Para inputs de tipo number, date, etc., solo hacer focus
             }
 
             // Hacer scroll suave al elemento
@@ -183,6 +190,14 @@ export function TutorialProvider() {
   // Manejar callback de Joyride
   const handleCallback = (data: CallBackProps) => {
     const { status, type, action, index } = data
+
+    // Prevenir cierre inesperado del tutorial (solo permitir cierre explícito)
+    if (action === ACTIONS.CLOSE) {
+      // Solo permitir cierre si viene del botón de skip/close del tooltip
+      // Ignorar cierres por clicks en el overlay
+      console.log('🚫 Tutorial close action blocked (overlay click)', { type, status, index })
+      return // No ejecutar stopTutorial()
+    }
 
     // Manejar tutorial finalizado
     if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
@@ -207,19 +222,17 @@ export function TutorialProvider() {
         if (currentStep?.triggerAction) {
           executeTriggerAction(currentStep.triggerAction)
         }
-
+        
         // Avanzar al siguiente paso
         nextStep()
-
+        
         // Forzar focus en el input/select del siguiente paso
         setTimeout(() => forceFocusOnInput(index + 1), 100)
       } else if (action === ACTIONS.PREV) {
         previousStep()
-
+        
         // También forzar focus al ir atrás
         setTimeout(() => forceFocusOnInput(index - 1), 100)
-      } else if (action === ACTIONS.CLOSE) {
-        stopTutorial()
       }
     }
 
@@ -420,6 +433,7 @@ export function TutorialProvider() {
         showProgress={true}
         showSkipButton={true}
         disableScrolling={true} // Evitar scrolling el cual interfiere con FormField focus
+        disableOverlayClose={true} // Evitar que el tutorial se cierre con clicks fuera
         debug={true}
         styles={{
           options: {

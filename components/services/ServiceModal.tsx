@@ -433,7 +433,7 @@ export function ServiceModal({
                       Duración (min) <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input
+                      <NumericInput
                         type="number"
                         min={10}
                         placeholder="30"
