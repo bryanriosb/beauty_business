@@ -53,6 +53,7 @@ import type { BusinessHours } from '@/lib/models/business/business-hours'
 import type { ServiceCategory } from '@/lib/models/service/service'
 import type { DayOfWeek } from '@/lib/types/enums'
 import { ServiceCategorySelector } from './ServiceCategorySelector'
+import PhoneInput from 'react-phone-number-input'
 
 function generatePassword(length = 10): string {
   const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -87,6 +88,7 @@ const editSchema = z.object({
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
     .optional()
     .or(z.literal('')),
+  newPhone: z.string().optional().or(z.literal('')),
 })
 
 type CreateFormValues = z.infer<typeof createSchema>
@@ -130,6 +132,7 @@ export interface SpecialistCredentials {
 export interface SpecialistCredentialsUpdate {
   newEmail?: string
   newPassword?: string
+  newPhone?: string
 }
 
 interface SpecialistModalProps {
@@ -188,22 +191,19 @@ export function SpecialistModal({
     },
   })
 
-  const regeneratePassword = useCallback(() => {
-    const newPass = generatePassword()
-    form.setValue('password', newPass)
-  }, [form])
-
   useEffect(() => {
     if (specialist) {
       form.reset({
         first_name: specialist.first_name,
         last_name: specialist.last_name || '',
         email: specialist.email || '',
+        phone: specialist.phone || '',
         specialty: specialist.specialty || '',
         bio: specialist.bio || '',
         profile_picture_url: specialist.profile_picture_url || '',
         is_featured: specialist.is_featured,
         newPassword: '',
+        newPhone: '',
       } as EditFormValues)
 
       setSelectedCategoryIds(initialCategoryIds || [])
@@ -236,6 +236,7 @@ export function SpecialistModal({
         last_name: '',
         email: '',
         password: suggestedPassword,
+        phone: '',
         specialty: '',
         bio: '',
         profile_picture_url: '',
@@ -319,7 +320,11 @@ export function SpecialistModal({
       let credentialsUpdate: SpecialistCredentialsUpdate | undefined
 
       if (!isEditing && data.email && 'password' in data && data.password) {
-        credentials = { email: data.email, password: data.password }
+        credentials = {
+          email: data.email,
+          password: data.password,
+          phone: data.phone,
+        }
       }
 
       if (isEditing && specialist?.user_profile_id) {
@@ -328,11 +333,13 @@ export function SpecialistModal({
           editData.email && editData.email !== specialist.email
         const hasNewPassword =
           editData.newPassword && editData.newPassword.length >= 6
+        const hasNewPhone = editData.newPhone && editData.newPhone.length > 0
 
-        if (emailChanged || hasNewPassword) {
+        if (emailChanged || hasNewPassword || hasNewPhone) {
           credentialsUpdate = {
             newEmail: emailChanged ? editData.email : undefined,
             newPassword: hasNewPassword ? editData.newPassword : undefined,
+            newPhone: hasNewPhone ? editData.newPhone : undefined,
           }
         }
       }
@@ -432,6 +439,36 @@ export function SpecialistModal({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Teléfono</FormLabel>
+                  <FormControl>
+                    <PhoneInput
+                      defaultCountry="CO"
+                      international
+                      countryCallingCodeEditable={false}
+                      placeholder="300 123 4567"
+                      limitMaxLength={true}
+                      value={field.value}
+                      onChange={field.onChange}
+                      data-tutorial="specialist-phone-input"
+                      className="phone-input"
+                    />
+                    {/* <Input
+                      type="tel"
+                      placeholder="+57 300 123 4567"
+                      disabled={isSubmitting}
+                      {...field}
+                    /> */}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {!isEditing ? (
               <FormField
                 control={form.control}
@@ -472,7 +509,10 @@ export function SpecialistModal({
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={regeneratePassword}
+                        onClick={() => {
+                          const newPass = generatePassword()
+                          form.setValue('password', newPass)
+                        }}
                         disabled={isSubmitting}
                         title="Generar nueva contraseña"
                       >
@@ -489,49 +529,73 @@ export function SpecialistModal({
               />
             ) : (
               specialist?.user_profile_id && (
-                <FormField
-                  control={form.control}
-                  name="newPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nueva Contraseña (opcional)</FormLabel>
-                      <div className="flex gap-2">
-                        <FormControl>
-                          <div className="relative flex-1">
-                            <Input
-                              type={showNewPassword ? 'text' : 'password'}
-                              placeholder="Dejar vacío para no cambiar"
-                              disabled={isSubmitting}
-                              className="pr-10"
-                              {...field}
-                            />
-                            <div className="absolute right-1 top-1/2 -translate-y-1/2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() =>
-                                  setShowNewPassword(!showNewPassword)
-                                }
-                              >
-                                {showNewPassword ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </Button>
+                <>
+                  <FormField
+                    control={form.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nueva Contraseña (opcional)</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <div className="relative flex-1">
+                              <Input
+                                type={showNewPassword ? 'text' : 'password'}
+                                placeholder="Dejar vacío para no cambiar"
+                                disabled={isSubmitting}
+                                className="pr-10"
+                                {...field}
+                              />
+                              <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() =>
+                                    setShowNewPassword(!showNewPassword)
+                                  }
+                                >
+                                  {showNewPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
+                          </FormControl>
+                        </div>
+                        <FormDescription className="text-xs">
+                          Solo completa si deseas cambiar la contraseña actual.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="newPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nuevo Teléfono (opcional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="+57 300 123 4567"
+                            disabled={isSubmitting}
+                            {...field}
+                          />
                         </FormControl>
-                      </div>
-                      <FormDescription className="text-xs">
-                        Solo completa si deseas cambiar la contraseña actual.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormDescription className="text-xs">
+                          Solo completa si deseas cambiar el teléfono actual.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
               )
             )}
 

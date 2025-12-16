@@ -105,8 +105,24 @@ export async function getSpecialistByIdAction(
       .gte('end_time', new Date().toISOString())
       .order('start_time')
 
+    // Get phone from auth.users if user_profile_id exists
+    let phone = null
+    if (specialist.user_profile_id) {
+      const { data: userProfile } = await supabase
+        .from('users_profile')
+        .select('user_id')
+        .eq('id', specialist.user_profile_id)
+        .single()
+
+      if (userProfile?.user_id) {
+        const { data: authUser } = await supabase.auth.admin.getUserById(userProfile.user_id)
+        phone = authUser.user?.phone || null
+      }
+    }
+
     return {
       ...specialist,
+      phone,
       availability: availability || [],
       time_off: timeOff || [],
     }
@@ -230,14 +246,15 @@ export interface UpdateSpecialistCredentialsData {
   specialistId: string
   newEmail?: string
   newPassword?: string
+  newPhone?: string
 }
 
 export async function updateSpecialistCredentialsAction(
   input: UpdateSpecialistCredentialsData
 ): Promise<{ success: boolean; error?: string }> {
-  const { specialistId, newEmail, newPassword } = input
+  const { specialistId, newEmail, newPassword, newPhone } = input
 
-  if (!newEmail && !newPassword) {
+  if (!newEmail && !newPassword && !newPhone) {
     return { success: true }
   }
 
@@ -264,12 +281,15 @@ export async function updateSpecialistCredentialsAction(
       return { success: false, error: 'No se encontró el usuario de autenticación' }
     }
 
-    const updateData: { email?: string; password?: string } = {}
+    const updateData: { email?: string; password?: string; phone?: string } = {}
     if (newEmail && newEmail !== specialist.email) {
       updateData.email = newEmail
     }
     if (newPassword) {
       updateData.password = newPassword
+    }
+    if (newPhone) {
+      updateData.phone = newPhone
     }
 
     if (Object.keys(updateData).length > 0) {

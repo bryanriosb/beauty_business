@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import Loading from '@/components/ui/loading'
-
 export default function AdminPage() {
   const { isLoading, role } = useCurrentUser()
   const router = useRouter()

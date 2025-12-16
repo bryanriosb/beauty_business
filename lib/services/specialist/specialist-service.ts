@@ -4,6 +4,7 @@ import {
   createSpecialistAction,
   createSpecialistWithAuthAction,
   updateSpecialistAction,
+  updateSpecialistCredentialsAction,
   deleteSpecialistAction,
   deleteSpecialistsAction,
   fetchSpecialistAvailabilityAction,
@@ -111,6 +112,17 @@ export default class SpecialistService {
       return await createSpecialistWithAuthAction(input)
     } catch (error: any) {
       console.error('Error creating specialist with auth:', error)
+      throw error
+    }
+  }
+
+  async updateCredentials(
+    input: { specialistId: string; newEmail?: string; newPassword?: string; newPhone?: string }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      return await updateSpecialistCredentialsAction(input)
+    } catch (error: any) {
+      console.error('Error updating specialist credentials:', error)
       throw error
     }
   }

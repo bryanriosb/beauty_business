@@ -103,6 +103,9 @@ export function SpecialistCard({
               {specialist.specialty ? translateSpecialty(specialist.specialty) : 'Especialista'}
             </p>
             <p className="text-xs text-muted-foreground/70">@{username}</p>
+            {specialist.phone && (
+              <p className="text-xs text-muted-foreground/70">{specialist.phone}</p>
+            )}
           </div>
 
           {(onEdit || onDelete) && (

@@ -8,6 +8,7 @@ export interface Specialist {
   last_name: string | null
   email: string | null
   username: string | null
+  phone?: string | null
   specialty: string | null
   profile_picture_url: string | null
   bio: string | null
@@ -30,6 +31,7 @@ export interface SpecialistInsert {
   last_name?: string | null
   email?: string | null
   username?: string | null
+  phone?: string | null
   specialty?: string | null
   profile_picture_url?: string | null
   bio?: string | null
@@ -43,6 +45,7 @@ export interface SpecialistUpdate {
   last_name?: string | null
   email?: string | null
   username?: string | null
+  phone?: string | null
   specialty?: string | null
   profile_picture_url?: string | null
   bio?: string | null

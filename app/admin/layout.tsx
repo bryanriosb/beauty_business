@@ -24,7 +24,10 @@ export default async function AdminLayout({
   const businessAccountId = user?.business_account_id || null
   const userRole = user?.role || 'customer'
 
-  const accessibleModules = await getAccessibleModules(businessAccountId, userRole)
+  const accessibleModules = await getAccessibleModules(
+    businessAccountId,
+    userRole
+  )
 
   return (
     <SidebarProvider defaultOpen={true}>

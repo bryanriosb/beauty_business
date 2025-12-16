@@ -178,6 +178,9 @@ export function SpecialistDetailPanel({
                   {specialist.specialty || 'Especialista'}
                 </p>
                 <p className="text-sm text-muted-foreground/70">@{username}</p>
+                {specialist.phone && (
+                  <p className="text-sm text-muted-foreground">{specialist.phone}</p>
+                )}
               </div>
             </div>
 

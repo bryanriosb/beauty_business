@@ -35,7 +35,6 @@ import {
 import { registerBusinessAction } from '@/lib/actions/registration'
 import type { BusinessType } from '@/lib/types/enums'
 import PhoneInput from 'react-phone-number-input'
-import 'react-phone-number-input/style.css'
 import {
   sendEmailVerificationAction,
   sendSMSVerificationAction,
@@ -198,6 +197,7 @@ export function SignUpForm() {
     const result = await verifyEmailCodeAction(email, code)
 
     if (result.success) {
+      sessionStorage.setItem('email', email)
       setEmailVerified(true)
       setShowEmailDialog(false)
       toast.success('Email verificado correctamente')
@@ -214,6 +214,7 @@ export function SignUpForm() {
     const result = await verifySMSCodeAction(phone, code)
 
     if (result.success) {
+      sessionStorage.setItem('phone', phone)
       setPhoneVerified(true)
       setLastVerifiedPhone(phone)
       setShowPhoneDialog(false)
@@ -329,11 +330,13 @@ export function SignUpForm() {
                           isLoading ||
                           isVerifyingEmail ||
                           emailVerified ||
+                          sessionStorage.getItem('email') === field.value ||
                           !field.value
                         }
                         title="Verificar email"
                       >
-                        {emailVerified ? (
+                        {emailVerified ||
+                        sessionStorage.getItem('email') === field.value ? (
                           <span className="flex gap-2 text-xs">
                             Verificado
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -377,7 +380,7 @@ export function SignUpForm() {
                           value={field.value}
                           onChange={field.onChange}
                           disabled={isLoading}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+                          className="phone-input"
                         />
                       </div>
                       <Button
@@ -390,11 +393,13 @@ export function SignUpForm() {
                           isLoading ||
                           isVerifyingPhone ||
                           phoneVerified ||
+                          sessionStorage.getItem('phone') === field.value ||
                           !field.value
                         }
                         title="Verificar teléfono"
                       >
-                        {phoneVerified ? (
+                        {phoneVerified ||
+                        sessionStorage.getItem('phone') === field.value ? (
                           <span className="flex gap-2 text-xs">
                             Verificado
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
