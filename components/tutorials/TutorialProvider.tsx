@@ -266,14 +266,12 @@ export function TutorialProvider() {
       }
 
       // Estilos CSS para permitir interacción con inputs durante el tutorial
+      // y mantener el comportamiento de Joyride para otros elementos
       styleElement.textContent = `
         .react-joyride__tooltip button {
           pointer-events: auto !important;
         }
       `
-
-      // Agregar clase específica al input para asegurar interacción
-      inputElement.classList.add('joyride-interactive-input')
 
       return () => {
         const style = document.getElementById(styleId)
@@ -327,22 +325,6 @@ export function TutorialProvider() {
     setShowModal(false)
   }
 
-  // Determinar si el paso actual es un input para ajustar configuración
-  const getIsCurrentStepInput = () => {
-    const currentStep = getCurrentStep()
-    if (!currentStep) return false
-
-    const selector = currentStep.target.startsWith('[')
-      ? currentStep.target
-      : `[data-tutorial="${currentStep.target}"]`
-    const element = document.querySelector(selector)
-    return (
-      element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
-    )
-  }
-
-  const isCurrentStepInput = getIsCurrentStepInput()
-
   // Renderizar Joyride solo si hay tutorial activo
   const tutorialComponent =
     isActive && tutorialId ? (
@@ -354,11 +336,8 @@ export function TutorialProvider() {
         continuous={true}
         showProgress={true}
         showSkipButton={true}
-        scrollToFirstStep={false} // Desactivar scroll automático que puede interferir con focus
-        //disableOverlay={isCurrentStepInput ? true : false} // Desactivar overlay solo para inputs
         disableScrolling={true} // Evitar scrolling el cual interfiere con FormField focus
         debug={true}
-        //spotlightPadding={0}
         styles={{
           options: {
             arrowColor: '#fff',
@@ -381,20 +360,14 @@ export function TutorialProvider() {
           buttonSkip: {
             color: '#6b7280',
           },
-          overlay: {
-            // Overlay transparente para no bloquear interacción cuando está habilitado
-            backgroundColor: 'rgba(0, 0, 0, 0.1)',
-            ...(isCurrentStepInput && {
-              backgroundColor: 'rgba(0, 0, 0, 0)',
-              pointerEvents: 'none',
-            }),
-          },
         }}
         locale={{
           back: 'Anterior',
           close: 'Cerrar',
           last: 'Finalizar',
-          next: 'Siguiente',
+          nextLabelWithProgress: `Siguiente ${stepIndex + 1} de ${
+            getJoyrideSteps().length
+          }`,
           open: 'Abrir el tutorial',
           skip: 'Omitir tutorial',
         }}
