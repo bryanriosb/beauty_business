@@ -64,7 +64,6 @@ export function WelcomeModal({
     // Marcar tutorial como iniciado (aunque se saltó) en la DB
     if (businessAccountId) {
       const result = await updateTutorialStartedAction(businessAccountId, true)
-      sessionStorage.setItem('not_show_welcome', 'true')
       if (!result.success) {
         console.error('Error al marcar tutorial como iniciado:', result.error)
         return

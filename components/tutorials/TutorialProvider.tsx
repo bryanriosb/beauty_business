@@ -299,10 +299,7 @@ export function TutorialProvider() {
       pathname === '/admin/appointments' ||
       pathname === '/admin/services'
 
-    // Verificar sessionStorage para prevenir reaparición en la misma sesión
-    const notShowWelcome = sessionStorage.getItem('not_show_welcome') === 'true'
-
-    // Solo mostrar modal si hay un business activo y tutorial_started es false Y no hay flag de sessionStorage
+    // Solo mostrar modal si hay un business activo y tutorial_started es false
     if (
       isOnValidPage &&
       !isLoading &&
@@ -310,7 +307,6 @@ export function TutorialProvider() {
       !tutorialStarted &&
       !isActive &&
       !showModal &&
-      !notShowWelcome &&
       activeBusiness
     ) {
       const timer = setTimeout(() => {
@@ -328,54 +324,47 @@ export function TutorialProvider() {
     activeBusiness,
   ])
 
-  // Efecto para manejar la interacción con inputs durante el tutorial
+  // Efecto para inyectar estilos CSS globales durante el tutorial
+  // Esto permite que los botones de Joyride y los dropdowns funcionen correctamente
   useEffect(() => {
-    if (!isActive || !isReady || !shouldRun) return
+    if (!isActive || !shouldRun) return
 
-    const currentStep = getCurrentStep()
-    if (!currentStep) return
+    // Crear un estilo dinámico para el tutorial
+    const styleId = 'joyride-tutorial-styles'
+    let styleElement = document.getElementById(styleId)
 
-    // Detectar si el paso actual apunta a un input
-    const selector = currentStep.target.startsWith('[')
-      ? currentStep.target
-      : `[data-tutorial="${currentStep.target}"]`
+    if (!styleElement) {
+      styleElement = document.createElement('style')
+      styleElement.id = styleId
+      document.head.appendChild(styleElement)
+    }
 
-    const element = document.querySelector(selector)
-    const isInput =
-      element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')
-
-    if (isInput && element) {
-      // Crear un estilo dinámico para permitir la interacción con inputs
-      const styleId = 'joyride-input-fix'
-      let styleElement = document.getElementById(styleId)
-
-      if (!styleElement) {
-        styleElement = document.createElement('style')
-        styleElement.id = styleId
-        document.head.appendChild(styleElement)
+    // Estilos CSS globales para el tutorial:
+    // 1. Habilitar pointer-events en los botones del tooltip de Joyride
+    // 2. Asegurar que los dropdowns/popovers estén por encima del overlay de Joyride
+    styleElement.textContent = `
+      .react-joyride__tooltip button {
+        pointer-events: auto !important;
       }
 
-      // Estilos CSS para permitir interacción con inputs durante el tutorial
-      // y mantener el comportamiento de Joyride para otros elementos
-      styleElement.textContent = `
-        .react-joyride__tooltip button {
-          pointer-events: auto !important;
-        }
+      /* Asegurar que dropdowns de combobox estén por encima de Joyride */
+      [data-slot="popover-content"] {
+        z-index: 10000 !important;
+      }
 
-        /* Asegurar que dropdowns de combobox estén por encima de Joyride */
-        [data-slot="popover-content"] {
-          z-index: 1000 !important;
-        }
-      `
+      /* SelectContent de Radix UI también necesita z-index alto */
+      [data-radix-popper-content-wrapper] {
+        z-index: 10000 !important;
+      }
+    `
 
-      return () => {
-        const style = document.getElementById(styleId)
-        if (style) {
-          style.remove()
-        }
+    return () => {
+      const style = document.getElementById(styleId)
+      if (style) {
+        style.remove()
       }
     }
-  }, [isActive, isReady, shouldRun, getCurrentStep])
+  }, [isActive, shouldRun])
 
   // Efecto para prevenir selección automática de texto en inputs durante tutoriales
   useEffect(() => {
