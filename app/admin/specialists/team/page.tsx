@@ -33,6 +33,7 @@ import {
   updateSpecialistServiceCategoriesAction,
   updateSpecialistCredentialsAction,
   syncSpecialistProfilePictureAction,
+  getSpecialistByIdAction,
 } from '@/lib/actions/specialist'
 import { calculateGoalProgress } from '@/lib/models/specialist/specialist-goal'
 import type {
@@ -202,16 +203,24 @@ export default function SpecialistsTeamPage() {
   }
 
   const handleEditSpecialist = async (specialist: Specialist) => {
-    setSelectedSpecialist(specialist)
     try {
-      const [availability, categoryIds] = await Promise.all([
-        specialistService.getAvailability(specialist.id),
+      // Obtener datos completos del especialista incluyendo teléfono de auth
+      const [fullSpecialist, categoryIds] = await Promise.all([
+        getSpecialistByIdAction(specialist.id),
         fetchSpecialistServiceCategoriesAction(specialist.id),
       ])
-      setSelectedAvailability(availability)
+
+      if (fullSpecialist) {
+        setSelectedSpecialist(fullSpecialist)
+        setSelectedAvailability(fullSpecialist.availability || [])
+      } else {
+        setSelectedSpecialist(specialist)
+        setSelectedAvailability([])
+      }
       setSelectedCategoryIds(categoryIds)
     } catch (error) {
       console.error('Error loading specialist data:', error)
+      setSelectedSpecialist(specialist)
       setSelectedAvailability([])
       setSelectedCategoryIds([])
     }

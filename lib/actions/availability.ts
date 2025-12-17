@@ -756,11 +756,23 @@ export async function getAvailabilityForMultipleServicesAction(params: {
         )
 
         if (specialistAvail && specialistAvail.length > 0) {
+          // El especialista tiene disponibilidad configurada - verificar si el slot está dentro
           for (const avail of specialistAvail) {
             const availStart = timeToMinutes(avail.start_time)
             const availEnd = timeToMinutes(avail.end_time)
 
             if (slotStartMinutes >= availStart && slotEndMinutes <= availEnd) {
+              isAvailable = true
+              break
+            }
+          }
+        } else {
+          // El especialista NO tiene disponibilidad configurada - asumimos disponible en horario del negocio
+          for (const shift of openShifts) {
+            const shiftStart = timeToMinutes(shift.open_time!)
+            const shiftEnd = timeToMinutes(shift.close_time!)
+
+            if (slotStartMinutes >= shiftStart && slotEndMinutes <= shiftEnd) {
               isAvailable = true
               break
             }

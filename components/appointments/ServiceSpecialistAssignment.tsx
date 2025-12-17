@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { cn, translateSpecialty } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -901,7 +901,7 @@ export default function ServiceSpecialistAssignmentComponent({
                       </p>
                       {specialist.specialty && (
                         <p className="text-xs text-muted-foreground truncate">
-                          {translateSpecialty(specialist.specialty)}
+                          {specialist.specialty}
                         </p>
                       )}
                     </div>

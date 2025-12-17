@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { PieChart } from './charts/PieChart'
 import { ExportButton } from './ExportButton'
 import ReportsService from '@/lib/services/reports/reports-service'
-import { formatCurrency, translateCategory } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import {
   exportServicesReportAction,
   type ExportFormat,
@@ -199,7 +199,7 @@ export function ServicesReport({
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="font-normal">
-                          {translateCategory(s.category_name)}
+                          {s.category_name}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

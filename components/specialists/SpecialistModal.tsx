@@ -192,11 +192,17 @@ export function SpecialistModal({
 
   useEffect(() => {
     if (specialist) {
+      // Normalizar teléfono para PhoneInput (debe tener prefijo +)
+      let normalizedPhone = specialist.phone || ''
+      if (normalizedPhone && !normalizedPhone.startsWith('+')) {
+        normalizedPhone = '+' + normalizedPhone
+      }
+
       form.reset({
         first_name: specialist.first_name,
         last_name: specialist.last_name || '',
         email: specialist.email || '',
-        phone: specialist.phone || '',
+        phone: normalizedPhone,
         specialty: specialist.specialty || '',
         bio: specialist.bio || '',
         profile_picture_url: specialist.profile_picture_url || '',
@@ -452,8 +458,10 @@ export function SpecialistModal({
                   <FormControl>
                     <PhoneInput
                       defaultCountry="CO"
+                      countries={['CO']}
                       international
                       countryCallingCodeEditable={false}
+                      countrySelectProps={{ disabled: true }}
                       placeholder="300 123 4567"
                       limitMaxLength={true}
                       value={field.value}
@@ -567,34 +575,6 @@ export function SpecialistModal({
                         </div>
                         <FormDescription className="text-xs">
                           Solo completa si deseas cambiar la contraseña actual.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="newPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nuevo Teléfono (opcional)</FormLabel>
-                        <FormControl>
-                          <PhoneInput
-                            defaultCountry="CO"
-                            international
-                            countryCallingCodeEditable={false}
-                            placeholder="300 123 4567"
-                            limitMaxLength={true}
-                            value={field.value}
-                            onChange={field.onChange}
-                            data-tutorial="specialist-phone-input"
-                            className="phone-input"
-                            disabled={isSubmitting}
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          Solo completa si deseas cambiar el teléfono actual.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Clock, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import type { Specialist } from '@/lib/models/specialist/specialist'
-import { cn, translateCategory, translateSpecialty } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 export interface CurrentAppointment {
   startTime: string
@@ -100,7 +100,7 @@ export function SpecialistCard({
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-sm truncate">{fullName}</h3>
             <p className="text-xs text-muted-foreground truncate">
-              {specialist.specialty ? translateSpecialty(specialist.specialty) : 'Especialista'}
+              {specialist.specialty || 'Especialista'}
             </p>
             <p className="text-xs text-muted-foreground/70">@{username}</p>
             {specialist.phone && (
@@ -199,7 +199,7 @@ export function SpecialistCard({
                     variant="secondary"
                     className="text-xs px-2 py-0"
                   >
-                    {translateCategory(tag.trim())}
+                    {tag.trim()}
                   </Badge>
                 ))}
             </div>

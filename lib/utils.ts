@@ -5,25 +5,4 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-const CATEGORY_TRANSLATIONS: Record<string, string> = {
-  coloring: 'Coloración',
-  facial: 'Facial',
-  haircut: 'Corte de cabello',
-  makeup: 'Maquillaje',
-  massage: 'Masaje',
-  nails: 'Uñas',
-  spa: 'Spa',
-  waxing: 'Depilación',
-}
 
-export function translateCategory(name: string): string {
-  const key = name.toLowerCase().trim()
-  return CATEGORY_TRANSLATIONS[key] || name
-}
-
-export function translateSpecialty(specialty: string): string {
-  return specialty
-    .split(',')
-    .map((cat) => translateCategory(cat.trim()))
-    .join(', ')
-}
