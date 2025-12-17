@@ -45,6 +45,12 @@ export function TutorialProvider() {
   const [shouldRun, setShouldRun] = useState(false)
   const [isReady, setIsReady] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [notShowWelcome, setNotShowWelcome] = useState(true) // Default true to prevent flash
+
+  // Cargar valor de sessionStorage solo en el cliente
+  useEffect(() => {
+    setNotShowWelcome(sessionStorage.getItem('not_show_welcome') === 'true')
+  }, [])
 
   // Helper para convertir target a selector
   const getTargetSelector = (target: string) => {
@@ -497,6 +503,7 @@ export function TutorialProvider() {
 
         // Guardar en sessionStorage para evitar que el modal aparezca de nuevo
         sessionStorage.setItem('not_show_welcome', 'true')
+        setNotShowWelcome(true)
       }
       stopTutorial()
       return
@@ -697,9 +704,6 @@ export function TutorialProvider() {
       pathname === '/admin/appointments' ||
       pathname === '/admin/services'
 
-    // Verificar sessionStorage para prevenir reaparición en la misma sesión
-    const notShowWelcome = sessionStorage.getItem('not_show_welcome') === 'true'
-
     // Solo mostrar modal si hay un business activo y tutorial_started es false
     if (
       isOnValidPage &&
@@ -724,6 +728,7 @@ export function TutorialProvider() {
     isActive,
     showModal,
     activeBusiness,
+    notShowWelcome,
   ])
 
   // Efecto para inyectar estilos CSS globales durante el tutorial

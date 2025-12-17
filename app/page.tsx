@@ -14,7 +14,7 @@ import {
 } from '@/components/landing'
 import { JsonLd } from '@/components/seo/JsonLd'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://beluvio.borls.com'
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://beluvio.borls.com'
 
 export const metadata: Metadata = {
   title:

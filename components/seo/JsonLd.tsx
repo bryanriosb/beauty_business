@@ -1,4 +1,4 @@
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://beluvio.com'
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://beluvio.com'
 
 interface JsonLdProps {
   type: 'organization' | 'software' | 'faq' | 'webpage' | 'all'
@@ -10,7 +10,8 @@ const organizationSchema = {
   name: 'Beluvio',
   url: siteUrl,
   logo: `${siteUrl}/beluvio.svg`,
-  description: 'Plataforma de gestión todo-en-uno para negocios de belleza, estéticas, spas y centros de bienestar.',
+  description:
+    'Plataforma de gestión todo-en-uno para negocios de belleza, estéticas, spas y centros de bienestar.',
   foundingDate: '2024',
   contactPoint: {
     '@type': 'ContactPoint',
@@ -37,7 +38,8 @@ const softwareSchema = {
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web Browser',
   url: siteUrl,
-  description: 'Software de gestión para estéticas, spas, barberías y centros de belleza. Incluye agenda inteligente, WhatsApp integrado, asistente IA y control de inventario.',
+  description:
+    'Software de gestión para estéticas, spas, barberías y centros de belleza. Incluye agenda inteligente, WhatsApp integrado, asistente IA y control de inventario.',
   offers: {
     '@type': 'AggregateOffer',
     priceCurrency: 'USD',
@@ -64,7 +66,8 @@ const softwareSchema = {
         name: 'Plan Enterprise',
         price: '99',
         priceCurrency: 'USD',
-        description: 'Para grandes negocios - Soporte premium y personalización',
+        description:
+          'Para grandes negocios - Soporte premium y personalización',
       },
     ],
   },
@@ -148,7 +151,8 @@ const webPageSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
   name: 'Beluvio - Software de Gestión para Negocios de Belleza',
-  description: 'Plataforma todo-en-uno para gestionar tu estética, spa, barbería o centro de belleza.',
+  description:
+    'Plataforma todo-en-uno para gestionar tu estética, spa, barbería o centro de belleza.',
   url: siteUrl,
   isPartOf: {
     '@type': 'WebSite',

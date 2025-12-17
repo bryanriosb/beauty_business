@@ -103,6 +103,16 @@ export function SignUpForm() {
   const [showPhoneDialog, setShowPhoneDialog] = useState(false)
   const [lastVerifiedPhone, setLastVerifiedPhone] = useState<string>('')
 
+  // Estados para sessionStorage (solo cliente)
+  const [storedEmail, setStoredEmail] = useState<string | null>(null)
+  const [storedPhone, setStoredPhone] = useState<string | null>(null)
+
+  // Cargar valores de sessionStorage solo en el cliente
+  useEffect(() => {
+    setStoredEmail(sessionStorage.getItem('email'))
+    setStoredPhone(sessionStorage.getItem('phone'))
+  }, [])
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -198,6 +208,7 @@ export function SignUpForm() {
 
     if (result.success) {
       sessionStorage.setItem('email', email)
+      setStoredEmail(email)
       setEmailVerified(true)
       setShowEmailDialog(false)
       toast.success('Email verificado correctamente')
@@ -215,6 +226,7 @@ export function SignUpForm() {
 
     if (result.success) {
       sessionStorage.setItem('phone', phone)
+      setStoredPhone(phone)
       setPhoneVerified(true)
       setLastVerifiedPhone(phone)
       setShowPhoneDialog(false)
@@ -330,13 +342,13 @@ export function SignUpForm() {
                           isLoading ||
                           isVerifyingEmail ||
                           emailVerified ||
-                          sessionStorage.getItem('email') === field.value ||
+                          storedEmail === field.value ||
                           !field.value
                         }
                         title="Verificar email"
                       >
                         {emailVerified ||
-                        sessionStorage.getItem('email') === field.value ? (
+                        storedEmail === field.value ? (
                           <span className="flex gap-2 text-xs">
                             Verificado
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -393,13 +405,13 @@ export function SignUpForm() {
                           isLoading ||
                           isVerifyingPhone ||
                           phoneVerified ||
-                          sessionStorage.getItem('phone') === field.value ||
+                          storedPhone === field.value ||
                           !field.value
                         }
                         title="Verificar teléfono"
                       >
                         {phoneVerified ||
-                        sessionStorage.getItem('phone') === field.value ? (
+                        storedPhone === field.value ? (
                           <span className="flex gap-2 text-xs">
                             Verificado
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
