@@ -612,15 +612,23 @@ export function TutorialProvider() {
       ? currentStep.target
       : `[data-tutorial="${currentStep.target}"]`
 
+    console.log('🔍 Navegación: buscando target para paso', currentStep.target)
+    console.log('🔍 Selector:', targetSelector)
+
     let element = document.querySelector(targetSelector)
+    console.log('🔍 Elemento encontrado inicial:', !!element)
 
     // Si el elemento no está visible, buscar dentro de modales
     if (!element) {
+      console.log('🔍 Buscando dentro de modales...')
       // Buscar en todos los modales abiertos
       const modals = Array.from(document.querySelectorAll('[role="dialog"]'))
+      console.log('🔍 Modales encontrados:', modals.length)
+
       for (const modal of modals) {
         const foundInModal = modal.querySelector(targetSelector)
         if (foundInModal) {
+          console.log('🔍 Elemento encontrado en modal:', foundInModal)
           element = foundInModal
           break
         }
@@ -629,10 +637,42 @@ export function TutorialProvider() {
 
     // Si el elemento aún no está visible pero hay triggerAction, marcar como listo de todos modos
     if (!element && currentStep.triggerAction) {
+      console.log('🔍 Hay triggerAction, marcando como listo sin elemento')
       setIsReady(true)
       return
     }
 
+    // Para pasos específicos que deben estar dentro de modales, esperar más tiempo
+    if (
+      !element &&
+      (currentStep.target === 'appointment-customer-select' ||
+        currentStep.target === 'appointment-service-select')
+    ) {
+      console.log(
+        '🔍 Elemento de select no encontrado, esperando más tiempo...'
+      )
+      const checkElementInModal = () => {
+        setTimeout(() => {
+          const elementAgain = document.querySelector(targetSelector)
+          if (elementAgain) {
+            console.log(
+              '🔍 Elemento encontrado después de espera:',
+              elementAgain
+            )
+            setIsReady(true)
+          } else {
+            console.log(
+              '🔍 Aún no encontrado, marcando como ready para permitir interacción'
+            )
+            setIsReady(true)
+          }
+        }, 1000) // Esperar 1 segundo más
+      }
+      checkElementInModal()
+      return
+    }
+
+    console.log('🔍 Marcando como ready - elemento encontrado:', !!element)
     setIsReady(true)
   }, [isActive, isPaused, pathname, getCurrentStep, router, stepIndex])
 
@@ -692,23 +732,9 @@ export function TutorialProvider() {
     // Estilos CSS globales para el tutorial:
     // 1. Habilitar pointer-events en los botones del tooltip de Joyride
     // 2. Asegurar que los dropdowns/popovers estén por encima del overlay de Joyride
-    // 3. Permitir interacción en subpasos
-    const isInSubStepsClass = isInSubSteps ? 'joyride-substeps-active' : ''
     styleElement.textContent = `
       .react-joyride__tooltip button {
-          pointer-events: auto !important;
-          position: relative;
-          z-index: 10002 !important;
-        }
-
-      /* Asegurar que dropdowns de combobox estén por encima de Joyride */
-      [data-slot="popover-content"] {
-        z-index: 10000 !important;
-      }
-
-      /* SelectContent de Radix UI también necesita z-index alto */
-      [data-radix-popper-content-wrapper] {
-        z-index: 10000 !important;
+        pointer-events: auto !important;
       }
 
       /* Estilos para permitir interacción con inputs */
@@ -716,16 +742,6 @@ export function TutorialProvider() {
         pointer-events: none !important;
         background-color: transparent !important;
       }
-      
-      .react-joyride__tooltip {
-        pointer-events: none !important;
-      }
-    
-      /* Permitir interacción con todos los elementos dentro de modales cuando estamos en subpasos */
-      [role="dialog"] * {
-        pointer-events: auto !important;
-      }
-        
     `
 
     return () => {

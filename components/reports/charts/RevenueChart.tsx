@@ -3,7 +3,7 @@
 import ReactECharts from 'echarts-for-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import type { RevenueTrendItem } from '@/lib/actions/reports'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -14,7 +14,11 @@ interface RevenueChartProps {
   title?: string
 }
 
-export function RevenueChart({ data, loading, title = 'Tendencia de Ingresos' }: RevenueChartProps) {
+export function RevenueChart({
+  data,
+  loading,
+  title = 'Tendencia de Ingresos',
+}: RevenueChartProps) {
   if (loading) {
     return (
       <Card className="border">
@@ -35,9 +39,10 @@ export function RevenueChart({ data, loading, title = 'Tendencia de Ingresos' }:
         const date = params[0]?.name || ''
         let html = `<div class="font-medium">${date}</div>`
         params.forEach((param: any) => {
-          const value = param.seriesName === 'Ingresos'
-            ? formatCurrency(param.value / 100)
-            : param.value
+          const value =
+            param.seriesName === 'Ingresos'
+              ? formatCurrency(param.value / 100)
+              : param.value
           html += `<div class="flex items-center gap-2">
             <span style="background:${param.color}" class="w-2 h-2 rounded-full inline-block"></span>
             <span>${param.seriesName}: ${value}</span>
@@ -98,7 +103,10 @@ export function RevenueChart({ data, loading, title = 'Tendencia de Ingresos' }:
         areaStyle: {
           color: {
             type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
             colorStops: [
               { offset: 0, color: 'rgba(139, 92, 246, 0.3)' },
               { offset: 1, color: 'rgba(139, 92, 246, 0.05)' },

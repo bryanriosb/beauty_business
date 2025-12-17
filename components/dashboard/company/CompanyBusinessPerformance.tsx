@@ -4,14 +4,17 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency } from '@/lib/utils'
-import { fetchCompanyBusinessPerformanceAction, type CompanyBusinessPerformance } from '@/lib/actions/company-reports'
+import { formatCurrency } from '@/lib/utils/currency'
+import {
+  fetchCompanyBusinessPerformanceAction,
+  type CompanyBusinessPerformance,
+} from '@/lib/actions/company-reports'
 import {
   TrendingUp,
   TrendingDown,
   Users,
   Calendar,
-  BarChart3
+  BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -41,7 +44,10 @@ function BusinessItemSkeleton() {
   )
 }
 
-export function CompanyBusinessPerformance({ dateRange, limit = 8 }: CompanyBusinessPerformanceProps) {
+export function CompanyBusinessPerformance({
+  dateRange,
+  limit = 8,
+}: CompanyBusinessPerformanceProps) {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<CompanyBusinessPerformance[]>([])
 
@@ -94,7 +100,9 @@ export function CompanyBusinessPerformance({ dateRange, limit = 8 }: CompanyBusi
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-32">
-            <p className="text-muted-foreground">No hay datos de rendimiento disponibles</p>
+            <p className="text-muted-foreground">
+              No hay datos de rendimiento disponibles
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -120,26 +128,30 @@ export function CompanyBusinessPerformance({ dateRange, limit = 8 }: CompanyBusi
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
                   {index + 1}
                 </div>
-                 <div>
-                   <div className="flex items-center gap-2">
-                     <h4 className="font-medium">{business.business_name}</h4>
-                     {business.is_trial && (
-                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                         TRIAL
-                       </Badge>
-                     )}
-                   </div>
-                   <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium">{business.business_name}</h4>
+                    {business.is_trial && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                      >
+                        TRIAL
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {business.appointments} citas
                     </span>
-                    {business.customers !== undefined && business.customers > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {business.customers} clientes
-                      </span>
-                    )}
+                    {business.customers !== undefined &&
+                      business.customers > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {business.customers} clientes
+                        </span>
+                      )}
                   </div>
                 </div>
               </div>
@@ -148,22 +160,29 @@ export function CompanyBusinessPerformance({ dateRange, limit = 8 }: CompanyBusi
                 <div className="text-lg font-semibold">
                   {formatCurrency(business.revenue / 100)}
                 </div>
-                {business.growth_percentage !== undefined && business.growth_percentage !== 0 && (
-                  <Badge
-                    variant={business.growth_percentage >= 0 ? "default" : "secondary"}
-                    className={cn(
-                      "text-xs",
-                      business.growth_percentage >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                    )}
-                  >
-                    {business.growth_percentage >= 0 ? (
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 mr-1" />
-                    )}
-                    {Math.abs(business.growth_percentage).toFixed(1)}%
-                  </Badge>
-                )}
+                {business.growth_percentage !== undefined &&
+                  business.growth_percentage !== 0 && (
+                    <Badge
+                      variant={
+                        business.growth_percentage >= 0
+                          ? 'default'
+                          : 'secondary'
+                      }
+                      className={cn(
+                        'text-xs',
+                        business.growth_percentage >= 0
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      )}
+                    >
+                      {business.growth_percentage >= 0 ? (
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3 mr-1" />
+                      )}
+                      {Math.abs(business.growth_percentage).toFixed(1)}%
+                    </Badge>
+                  )}
               </div>
             </div>
           ))}

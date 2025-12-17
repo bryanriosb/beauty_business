@@ -92,9 +92,9 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
     // },
   },
   {
-    target: 'appointment-service-select', //service-special-price-button
+    target: 'appointment-service-select',
     content:
-      'Selecciona uno o más servicios para esta cita. Y dependiendo de los servicios, podrás asignar especialistas por servicio si lo deseas. En este punto tendrás alertas de stock limitado o agotado en servicios con insumos asociados.',
+      'Selecciona uno o más servicios para esta cita. Y dependiendo de los servicios, podrás asignar especialistas por servicio si lo deseas. En este punto tendrás alertas de stock limitado o agotado en servicios con insumos asociados. Finalmente en cada servicio seleccionado podrás asignar un precio especial para esta cita si lo deseas.',
     title: 'Seleccionar Servicios para la Cita',
     placement: 'top',
     disableBeacon: true,
@@ -104,19 +104,7 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
     spotlightClicks: true,
   },
   {
-    target: 'service-special-price-button',
-    content:
-      'Cada servicio puede tener un precio especial para esta cita. Haz clic aquí para asignar precios especiales si lo deseas.',
-    title: 'Precio Especial por Servicio',
-    placement: 'top',
-    disableBeacon: true,
-    showProgress: true,
-    showSkipButton: true,
-    page: '/admin/appointments',
-    spotlightClicks: true,
-  },
-  {
-    target: 'appointment-date-picker', //specialist-selection
+    target: 'appointment-date-picker',
     content:
       'Selecciona la fecha para la cita. Esto validará de forma inteligente la disponibilidad de los profesionales.',
     title: 'Seleccionar Fecha de la Cita',

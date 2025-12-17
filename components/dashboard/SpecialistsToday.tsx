@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import {
   fetchSpecialistsTodayAction,
   type SpecialistTodayStatus,
@@ -21,10 +21,14 @@ interface SpecialistsTodayProps {
 }
 
 function SpecialistRow({ specialist }: { specialist: SpecialistTodayStatus }) {
-  const initials = `${specialist.first_name[0]}${specialist.last_name?.[0] || ''}`.toUpperCase()
-  const completionRate = specialist.total_appointments > 0
-    ? (specialist.completed_appointments / specialist.total_appointments) * 100
-    : 0
+  const initials = `${specialist.first_name[0]}${
+    specialist.last_name?.[0] || ''
+  }`.toUpperCase()
+  const completionRate =
+    specialist.total_appointments > 0
+      ? (specialist.completed_appointments / specialist.total_appointments) *
+        100
+      : 0
 
   return (
     <div className="flex items-center gap-2 sm:gap-3 py-1.5 sm:py-2">
@@ -117,7 +121,10 @@ export function SpecialistsToday({ businessId }: SpecialistsTodayProps) {
             <span className="truncate">Equipo de Hoy</span>
           </CardTitle>
           {!loading && specialists.length > 0 && (
-            <Badge variant="secondary" className="font-normal text-[10px] sm:text-xs shrink-0">
+            <Badge
+              variant="secondary"
+              className="font-normal text-[10px] sm:text-xs shrink-0"
+            >
               {formatCurrency(totalExpectedRevenue / 100)}
             </Badge>
           )}

@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import InvoiceItemsEditor from './InvoiceItemsEditor'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import type {
   Invoice,
   InvoiceInsert,
@@ -144,7 +144,8 @@ export default function InvoiceModal({
       0
     )
     const subtotalCents = totalCents - taxCents
-    const avgTaxRate = subtotalCents > 0 ? Math.round((taxCents / subtotalCents) * 100) : 0
+    const avgTaxRate =
+      subtotalCents > 0 ? Math.round((taxCents / subtotalCents) * 100) : 0
     return { subtotalCents, taxCents, totalCents, avgTaxRate }
   }, [formData.items])
 

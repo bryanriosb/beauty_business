@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { KPICard, KPIGrid } from './KPICard'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import {
   fetchAccountsReceivableAction,
   type AccountsReceivableSummary,
@@ -46,9 +46,13 @@ export function AccountsReceivableReport({
 }: AccountsReceivableReportProps) {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<AccountsReceivableSummary | null>(null)
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<
+    string | null
+  >(null)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null
+  )
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
 
   const fetchData = async () => {
@@ -188,11 +192,9 @@ export function AccountsReceivableReport({
                         </button>
                       </TableCell>
                       <TableCell>
-                        {format(
-                          new Date(item.appointment_date),
-                          "d MMM yyyy",
-                          { locale: es }
-                        )}
+                        {format(new Date(item.appointment_date), 'd MMM yyyy', {
+                          locale: es,
+                        })}
                       </TableCell>
                       <TableCell>{item.specialist_name}</TableCell>
                       <TableCell className="text-right">
@@ -228,7 +230,9 @@ export function AccountsReceivableReport({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewAppointment(item.appointment_id)}
+                            onClick={() =>
+                              handleViewAppointment(item.appointment_id)
+                            }
                             title="Ver cita"
                           >
                             <Eye className="h-4 w-4" />
@@ -263,9 +267,7 @@ export function AccountsReceivableReport({
                 </p>
               </div>
               <div>
-                <p className="text-2xl font-bold">
-                  {data.total_appointments}
-                </p>
+                <p className="text-2xl font-bold">{data.total_appointments}</p>
                 <p className="text-xs text-muted-foreground">
                   Citas pendientes
                 </p>
@@ -273,8 +275,10 @@ export function AccountsReceivableReport({
               <div>
                 <p className="text-2xl font-bold text-green-600">
                   {formatCurrency(
-                    data.items.reduce((sum, i) => sum + i.amount_paid_cents, 0) /
-                      100
+                    data.items.reduce(
+                      (sum, i) => sum + i.amount_paid_cents,
+                      0
+                    ) / 100
                   )}
                 </p>
                 <p className="text-xs text-muted-foreground">Total abonado</p>

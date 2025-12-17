@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
 import { ExportButton } from './ExportButton'
 import ReportsService from '@/lib/services/reports/reports-service'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import {
   exportSpecialistsReportAction,
   type ExportFormat,

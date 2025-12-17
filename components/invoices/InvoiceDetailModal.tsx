@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import type { Invoice } from '@/lib/models/invoice/invoice'
 import type { InvoiceStatus } from '@/lib/types/enums'
 
@@ -125,12 +125,17 @@ export default function InvoiceDetailModal({
                     <tr key={index}>
                       <td className="p-3">
                         <div>{item.name}</div>
-                        {item.tax_rate !== null && item.tax_rate !== undefined && item.tax_rate > 0 ? (
+                        {item.tax_rate !== null &&
+                        item.tax_rate !== undefined &&
+                        item.tax_rate > 0 ? (
                           <span className="text-xs text-primary">
-                            IVA {item.tax_rate}% ({formatCurrency((item.tax_cents || 0) / 100)})
+                            IVA {item.tax_rate}% (
+                            {formatCurrency((item.tax_cents || 0) / 100)})
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Sin IVA</span>
+                          <span className="text-xs text-muted-foreground">
+                            Sin IVA
+                          </span>
                         )}
                       </td>
                       <td className="p-3 text-center">{item.quantity}</td>
@@ -150,7 +155,9 @@ export default function InvoiceDetailModal({
           <div className="flex justify-end">
             <div className="w-64 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal (sin IVA)</span>
+                <span className="text-muted-foreground">
+                  Subtotal (sin IVA)
+                </span>
                 <span>{formatCurrency(invoice.subtotal_cents / 100)}</span>
               </div>
               {invoice.tax_cents > 0 && (

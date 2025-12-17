@@ -3,7 +3,7 @@
 import ReactECharts from 'echarts-for-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 
 interface PieChartProps {
   data: { name: string; value: number }[]
@@ -12,7 +12,12 @@ interface PieChartProps {
   formatAsCurrency?: boolean
 }
 
-export function PieChart({ data, loading, title, formatAsCurrency = true }: PieChartProps) {
+export function PieChart({
+  data,
+  loading,
+  title,
+  formatAsCurrency = true,
+}: PieChartProps) {
   if (loading) {
     return (
       <Card className="border">
@@ -26,7 +31,14 @@ export function PieChart({ data, loading, title, formatAsCurrency = true }: PieC
     )
   }
 
-  const colors = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#6366f1']
+  const colors = [
+    '#8b5cf6',
+    '#ec4899',
+    '#f59e0b',
+    '#10b981',
+    '#3b82f6',
+    '#6366f1',
+  ]
 
   const option = {
     tooltip: {

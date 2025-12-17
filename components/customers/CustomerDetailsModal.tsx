@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import Loading from '@/components/ui/loading'
 import BusinessCustomerService from '@/lib/services/customer/business-customer-service'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import type { BusinessCustomer } from '@/lib/models/customer/business-customer'
 import {
   User,
@@ -34,10 +34,22 @@ interface CustomerDetailsModalProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  active: { label: 'Activo', className: 'bg-green-100 text-green-800 border-green-200' },
-  inactive: { label: 'Inactivo', className: 'bg-gray-100 text-gray-800 border-gray-200' },
-  vip: { label: 'VIP', className: 'bg-purple-100 text-purple-800 border-purple-200' },
-  blocked: { label: 'Bloqueado', className: 'bg-red-100 text-red-800 border-red-200' },
+  active: {
+    label: 'Activo',
+    className: 'bg-green-100 text-green-800 border-green-200',
+  },
+  inactive: {
+    label: 'Inactivo',
+    className: 'bg-gray-100 text-gray-800 border-gray-200',
+  },
+  vip: {
+    label: 'VIP',
+    className: 'bg-purple-100 text-purple-800 border-purple-200',
+  },
+  blocked: {
+    label: 'Bloqueado',
+    className: 'bg-red-100 text-red-800 border-red-200',
+  },
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -158,7 +170,9 @@ export default function CustomerDetailsModal({
               <div className="flex items-center gap-3">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
-                  {format(new Date(customer.birthday), "d 'de' MMMM", { locale: es })}
+                  {format(new Date(customer.birthday), "d 'de' MMMM", {
+                    locale: es,
+                  })}
                 </span>
               </div>
             )}
@@ -190,7 +204,9 @@ export default function CustomerDetailsModal({
               <Clock className="h-4 w-4" />
               <span>
                 Última visita:{' '}
-                {format(new Date(customer.last_visit_at), "d MMM yyyy", { locale: es })}
+                {format(new Date(customer.last_visit_at), 'd MMM yyyy', {
+                  locale: es,
+                })}
               </span>
             </div>
           )}
@@ -217,7 +233,9 @@ export default function CustomerDetailsModal({
 
           <div className="text-xs text-muted-foreground text-center">
             Cliente desde{' '}
-            {format(new Date(customer.created_at), "d 'de' MMMM 'de' yyyy", { locale: es })}
+            {format(new Date(customer.created_at), "d 'de' MMMM 'de' yyyy", {
+              locale: es,
+            })}
           </div>
         </div>
       </DialogContent>

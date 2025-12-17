@@ -18,7 +18,7 @@ import {
   type SupplyConsumptionSummary,
   type SupplyConsumptionTrendItem,
 } from '@/lib/actions/reports'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import { PieChart } from './charts/PieChart'
 import { RevenueChart } from './charts/RevenueChart'
 
@@ -28,7 +28,11 @@ interface SuppliesReportProps {
   endDate: Date
 }
 
-export function SuppliesReport({ businessId, startDate, endDate }: SuppliesReportProps) {
+export function SuppliesReport({
+  businessId,
+  startDate,
+  endDate,
+}: SuppliesReportProps) {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<SupplyConsumptionSummary | null>(null)
   const [trend, setTrend] = useState<SupplyConsumptionTrendItem[]>([])
@@ -89,7 +93,9 @@ export function SuppliesReport({ businessId, startDate, endDate }: SuppliesRepor
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         <Card className="border">
           <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Costo Total Consumos</div>
+            <div className="text-sm text-muted-foreground">
+              Costo Total Consumos
+            </div>
             <div className="text-2xl font-bold mt-1">
               {loading ? (
                 <Skeleton className="h-8 w-28" />
@@ -101,7 +107,9 @@ export function SuppliesReport({ businessId, startDate, endDate }: SuppliesRepor
         </Card>
         <Card className="border">
           <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Total Movimientos</div>
+            <div className="text-sm text-muted-foreground">
+              Total Movimientos
+            </div>
             <div className="text-2xl font-bold mt-1">
               {loading ? (
                 <Skeleton className="h-8 w-20" />

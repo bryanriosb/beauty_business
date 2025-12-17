@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import {
   fetchCompanyServiceAnalyticsAction,
-  type CompanyServiceAnalytics
+  type CompanyServiceAnalytics,
 } from '@/lib/actions/company-reports'
 import { Scissors, DollarSign, Calendar, TrendingUp } from 'lucide-react'
 
@@ -31,7 +31,11 @@ function ServiceRowSkeleton() {
   )
 }
 
-export function CompanyServicesReport({ startDate, endDate, businessId }: CompanyServicesReportProps) {
+export function CompanyServicesReport({
+  startDate,
+  endDate,
+  businessId,
+}: CompanyServicesReportProps) {
   const [services, setServices] = useState<CompanyServiceAnalytics[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -58,14 +62,19 @@ export function CompanyServicesReport({ startDate, endDate, businessId }: Compan
   }, [startDate, endDate, businessId])
 
   const totalRevenue = services.reduce((sum, s) => sum + s.total_revenue, 0)
-  const totalAppointments = services.reduce((sum, s) => sum + s.total_appointments, 0)
+  const totalAppointments = services.reduce(
+    (sum, s) => sum + s.total_appointments,
+    0
+  )
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Servicios Activos</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Servicios Activos
+            </CardTitle>
             <Scissors className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -74,7 +83,9 @@ export function CompanyServicesReport({ startDate, endDate, businessId }: Compan
             ) : (
               <>
                 <div className="text-2xl font-bold">{services.length}</div>
-                <p className="text-xs text-muted-foreground">servicios con actividad</p>
+                <p className="text-xs text-muted-foreground">
+                  servicios con actividad
+                </p>
               </>
             )}
           </CardContent>
@@ -82,7 +93,9 @@ export function CompanyServicesReport({ startDate, endDate, businessId }: Compan
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos por Servicios</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Ingresos por Servicios
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -90,8 +103,12 @@ export function CompanyServicesReport({ startDate, endDate, businessId }: Compan
               <Skeleton className="h-8 w-24" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{formatCurrency(totalRevenue / 100)}</div>
-                <p className="text-xs text-muted-foreground">facturado en servicios</p>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(totalRevenue / 100)}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  facturado en servicios
+                </p>
               </>
             )}
           </CardContent>
@@ -99,7 +116,9 @@ export function CompanyServicesReport({ startDate, endDate, businessId }: Compan
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Servicios Realizados</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Servicios Realizados
+            </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -108,7 +127,9 @@ export function CompanyServicesReport({ startDate, endDate, businessId }: Compan
             ) : (
               <>
                 <div className="text-2xl font-bold">{totalAppointments}</div>
-                <p className="text-xs text-muted-foreground">servicios completados</p>
+                <p className="text-xs text-muted-foreground">
+                  servicios completados
+                </p>
               </>
             )}
           </CardContent>
@@ -144,7 +165,9 @@ export function CompanyServicesReport({ startDate, endDate, businessId }: Compan
                       <h4 className="font-medium">{service.service_name}</h4>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>{service.total_appointments} realizados</span>
-                        <span>Precio prom: {formatCurrency(service.avg_price / 100)}</span>
+                        <span>
+                          Precio prom: {formatCurrency(service.avg_price / 100)}
+                        </span>
                       </div>
                     </div>
                   </div>

@@ -2,11 +2,17 @@
 
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import type { Invoice } from './invoice'
 import type { InvoiceStatus } from '@/lib/types/enums'
 
-const STATUS_CONFIG: Record<InvoiceStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+const STATUS_CONFIG: Record<
+  InvoiceStatus,
+  {
+    label: string
+    variant: 'default' | 'secondary' | 'destructive' | 'outline'
+  }
+> = {
   DRAFT: { label: 'Borrador', variant: 'secondary' },
   ISSUED: { label: 'Emitida', variant: 'default' },
   PAID: { label: 'Pagada', variant: 'outline' },
@@ -30,7 +36,9 @@ export const INVOICE_COLUMNS: ColumnDef<Invoice>[] = [
         <div className="flex flex-col">
           <span className="font-medium">{invoice.customer_name}</span>
           {invoice.customer_email && (
-            <span className="text-xs text-muted-foreground">{invoice.customer_email}</span>
+            <span className="text-xs text-muted-foreground">
+              {invoice.customer_email}
+            </span>
           )}
         </div>
       )
@@ -61,7 +69,11 @@ export const INVOICE_COLUMNS: ColumnDef<Invoice>[] = [
     cell: ({ row }) => {
       const status = row.getValue('status') as InvoiceStatus
       const config = STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT
-      return <Badge variant={config.variant} className="block w-full text-center">{config.label}</Badge>
+      return (
+        <Badge variant={config.variant} className="block w-full text-center">
+          {config.label}
+        </Badge>
+      )
     },
   },
   {

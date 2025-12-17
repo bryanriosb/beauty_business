@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import {
   fetchUpcomingAppointmentsAction,
   type UpcomingAppointment,
@@ -20,7 +20,11 @@ interface UpcomingAppointmentsProps {
   businessId: string
 }
 
-function AppointmentItem({ appointment }: { appointment: UpcomingAppointment }) {
+function AppointmentItem({
+  appointment,
+}: {
+  appointment: UpcomingAppointment
+}) {
   const now = new Date()
   const startTime = new Date(appointment.start_time)
   const minutesUntil = differenceInMinutes(startTime, now)
@@ -33,8 +37,10 @@ function AppointmentItem({ appointment }: { appointment: UpcomingAppointment }) 
   }`.toUpperCase()
 
   const statusColors = {
-    PENDING: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-    CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    PENDING:
+      'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+    CONFIRMED:
+      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   }
 
   return (
@@ -46,15 +52,20 @@ function AppointmentItem({ appointment }: { appointment: UpcomingAppointment }) 
       )}
     >
       <div className="flex flex-col items-center min-w-[40px] sm:min-w-[50px]">
-        <span className={cn(
-          'text-base sm:text-lg font-bold',
-          isNow && 'text-primary',
-          isImminent && !isNow && 'text-amber-600'
-        )}>
+        <span
+          className={cn(
+            'text-base sm:text-lg font-bold',
+            isNow && 'text-primary',
+            isImminent && !isNow && 'text-amber-600'
+          )}
+        >
           {format(startTime, 'HH:mm')}
         </span>
         {isNow && (
-          <Badge variant="default" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0">
+          <Badge
+            variant="default"
+            className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0"
+          >
             AHORA
           </Badge>
         )}
@@ -72,7 +83,10 @@ function AppointmentItem({ appointment }: { appointment: UpcomingAppointment }) 
           </span>
           <Badge
             variant="secondary"
-            className={cn('text-[9px] sm:text-[10px] px-1 sm:px-1.5', statusColors[appointment.status as keyof typeof statusColors])}
+            className={cn(
+              'text-[9px] sm:text-[10px] px-1 sm:px-1.5',
+              statusColors[appointment.status as keyof typeof statusColors]
+            )}
           >
             {appointment.status === 'PENDING' ? 'Pend.' : 'Conf.'}
           </Badge>
@@ -82,7 +96,9 @@ function AppointmentItem({ appointment }: { appointment: UpcomingAppointment }) 
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
           <Avatar className="h-4 w-4 sm:h-5 sm:w-5">
-            <AvatarImage src={appointment.specialist.profile_picture_url || undefined} />
+            <AvatarImage
+              src={appointment.specialist.profile_picture_url || undefined}
+            />
             <AvatarFallback className="text-[8px] sm:text-[10px] bg-primary/10 text-primary">
               {specialistInitials}
             </AvatarFallback>
@@ -116,7 +132,9 @@ function AppointmentSkeleton() {
   )
 }
 
-export function UpcomingAppointments({ businessId }: UpcomingAppointmentsProps) {
+export function UpcomingAppointments({
+  businessId,
+}: UpcomingAppointmentsProps) {
   const [loading, setLoading] = useState(true)
   const [appointments, setAppointments] = useState<UpcomingAppointment[]>([])
 

@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, SearchConfig } from '@/components/DataTable'
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
-import { formatCurrency } from '@/lib/utils'
-import { fetchCompanyServiceAnalyticsAction, type CompanyServiceAnalytics } from '@/lib/actions/company-reports'
+import { formatCurrency } from '@/lib/utils/currency'
+import {
+  fetchCompanyServiceAnalyticsAction,
+  type CompanyServiceAnalytics,
+} from '@/lib/actions/company-reports'
 import { BarChart3 } from 'lucide-react'
 
 interface CompanyServiceAnalyticsProps {
@@ -22,11 +25,7 @@ const SERVICE_ANALYTICS_COLUMNS: ColumnDef<CompanyServiceAnalytics>[] = [
     header: 'Servicio',
     cell: ({ row }) => {
       const serviceName = row.getValue('service_name') as string
-      return (
-        <div className="font-medium">
-          {serviceName}
-        </div>
-      )
+      return <div className="font-medium">{serviceName}</div>
     },
   },
   {
@@ -94,9 +93,9 @@ const SEARCH_CONFIG: SearchConfig = {
   column: 'service_name',
 }
 
-
-
-export function CompanyServiceAnalytics({ dateRange }: CompanyServiceAnalyticsProps) {
+export function CompanyServiceAnalytics({
+  dateRange,
+}: CompanyServiceAnalyticsProps) {
   const [data, setData] = useState<CompanyServiceAnalytics[]>([])
   const [loading, setLoading] = useState(true)
 

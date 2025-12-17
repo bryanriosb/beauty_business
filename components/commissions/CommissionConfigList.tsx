@@ -10,7 +10,7 @@ import {
   COMMISSION_BASIS_LABELS,
   type CommissionConfigWithSpecialist,
 } from '@/lib/models/commission'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 
 interface CommissionConfigListProps {
   configs: CommissionConfigWithSpecialist[]
@@ -29,7 +29,10 @@ export function CommissionConfigList({
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-[180px] rounded-lg bg-muted animate-pulse" />
+          <div
+            key={i}
+            className="h-[180px] rounded-lg bg-muted animate-pulse"
+          />
         ))}
       </div>
     )
@@ -41,7 +44,9 @@ export function CommissionConfigList({
         <div className="rounded-full bg-muted p-6 mb-4">
           <Settings2 className="h-12 w-12 text-muted-foreground" />
         </div>
-        <p className="text-muted-foreground">No hay configuraciones de comisión</p>
+        <p className="text-muted-foreground">
+          No hay configuraciones de comisión
+        </p>
         <p className="text-sm text-muted-foreground mt-1">
           Crea una configuración para empezar a calcular comisiones
         </p>
@@ -69,14 +74,20 @@ interface CommissionConfigCardProps {
   onDelete: (id: string) => void
 }
 
-function CommissionConfigCard({ config, onEdit, onDelete }: CommissionConfigCardProps) {
+function CommissionConfigCard({
+  config,
+  onEdit,
+  onDelete,
+}: CommissionConfigCardProps) {
   const commissionDisplay =
     config.commission_type === 'percentage'
       ? `${config.commission_value}%`
       : formatCurrency(config.commission_value)
 
   const specialistName = config.specialist
-    ? `${config.specialist.first_name} ${config.specialist.last_name || ''}`.trim()
+    ? `${config.specialist.first_name} ${
+        config.specialist.last_name || ''
+      }`.trim()
     : null
 
   return (
@@ -114,7 +125,9 @@ function CommissionConfigCard({ config, onEdit, onDelete }: CommissionConfigCard
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Comisión</span>
-            <span className="text-lg font-bold text-primary">{commissionDisplay}</span>
+            <span className="text-lg font-bold text-primary">
+              {commissionDisplay}
+            </span>
           </div>
 
           <div className="flex items-center justify-between text-sm">
@@ -131,7 +144,9 @@ function CommissionConfigCard({ config, onEdit, onDelete }: CommissionConfigCard
             {config.specialist ? (
               <div className="flex items-center gap-2">
                 <Avatar className="h-6 w-6">
-                  <AvatarImage src={config.specialist.profile_picture_url || undefined} />
+                  <AvatarImage
+                    src={config.specialist.profile_picture_url || undefined}
+                  />
                   <AvatarFallback>
                     {config.specialist.first_name[0]}
                   </AvatarFallback>

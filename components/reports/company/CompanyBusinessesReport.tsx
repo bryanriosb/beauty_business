@@ -4,17 +4,17 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import {
   fetchCompanyBusinessPerformanceAction,
-  type CompanyBusinessPerformance
+  type CompanyBusinessPerformance,
 } from '@/lib/actions/company-reports'
 import {
   Building2,
   TrendingUp,
   TrendingDown,
   Calendar,
-  Users
+  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -38,7 +38,10 @@ function BusinessRowSkeleton() {
   )
 }
 
-export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinessesReportProps) {
+export function CompanyBusinessesReport({
+  startDate,
+  endDate,
+}: CompanyBusinessesReportProps) {
   const [loading, setLoading] = useState(true)
   const [businesses, setBusinesses] = useState<CompanyBusinessPerformance[]>([])
 
@@ -46,7 +49,11 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
     const fetchData = async () => {
       setLoading(true)
       try {
-        const data = await fetchCompanyBusinessPerformanceAction(startDate.toISOString(), endDate.toISOString(), 20)
+        const data = await fetchCompanyBusinessPerformanceAction(
+          startDate.toISOString(),
+          endDate.toISOString(),
+          20
+        )
         setBusinesses(data)
       } catch (error) {
         console.error('Error fetching businesses report:', error)
@@ -59,14 +66,19 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
   }, [startDate, endDate])
 
   const totalRevenue = businesses.reduce((sum, b) => sum + b.revenue, 0)
-  const totalAppointments = businesses.reduce((sum, b) => sum + b.appointments, 0)
+  const totalAppointments = businesses.reduce(
+    (sum, b) => sum + b.appointments,
+    0
+  )
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Negocios</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Negocios
+            </CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -75,7 +87,9 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
             ) : (
               <>
                 <div className="text-2xl font-bold">{businesses.length}</div>
-                <p className="text-xs text-muted-foreground">negocios activos</p>
+                <p className="text-xs text-muted-foreground">
+                  negocios activos
+                </p>
               </>
             )}
           </CardContent>
@@ -83,7 +97,9 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos Consolidados</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Ingresos Consolidados
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -91,7 +107,9 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
               <Skeleton className="h-8 w-24" />
             ) : (
               <>
-                <div className="text-2xl font-bold">{formatCurrency(totalRevenue / 100)}</div>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(totalRevenue / 100)}
+                </div>
                 <p className="text-xs text-muted-foreground">en el período</p>
               </>
             )}
@@ -109,7 +127,9 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
             ) : (
               <>
                 <div className="text-2xl font-bold">{totalAppointments}</div>
-                <p className="text-xs text-muted-foreground">citas completadas</p>
+                <p className="text-xs text-muted-foreground">
+                  citas completadas
+                </p>
               </>
             )}
           </CardContent>
@@ -133,7 +153,8 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
           ) : businesses.length > 0 ? (
             <div className="space-y-4">
               {businesses.map((business, index) => {
-                const percentage = totalRevenue > 0 ? (business.revenue / totalRevenue) * 100 : 0
+                const percentage =
+                  totalRevenue > 0 ? (business.revenue / totalRevenue) * 100 : 0
                 return (
                   <div
                     key={business.business_id}
@@ -144,18 +165,21 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
                         {index + 1}
                       </div>
                       <div>
-                        <h4 className="font-medium">{business.business_name}</h4>
+                        <h4 className="font-medium">
+                          {business.business_name}
+                        </h4>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {business.appointments} citas
                           </span>
-                          {business.customers !== undefined && business.customers > 0 && (
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {business.customers} clientes
-                            </span>
-                          )}
+                          {business.customers !== undefined &&
+                            business.customers > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {business.customers} clientes
+                              </span>
+                            )}
                           <span className="text-xs">
                             ({percentage.toFixed(1)}% del total)
                           </span>
@@ -167,24 +191,25 @@ export function CompanyBusinessesReport({ startDate, endDate }: CompanyBusinesse
                       <div className="text-lg font-semibold">
                         {formatCurrency(business.revenue / 100)}
                       </div>
-                      {business.growth_percentage !== undefined && business.growth_percentage !== 0 && (
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-xs",
-                            business.growth_percentage >= 0
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          )}
-                        >
-                          {business.growth_percentage >= 0 ? (
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                          ) : (
-                            <TrendingDown className="h-3 w-3 mr-1" />
-                          )}
-                          {Math.abs(business.growth_percentage).toFixed(1)}%
-                        </Badge>
-                      )}
+                      {business.growth_percentage !== undefined &&
+                        business.growth_percentage !== 0 && (
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              'text-xs',
+                              business.growth_percentage >= 0
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            )}
+                          >
+                            {business.growth_percentage >= 0 ? (
+                              <TrendingUp className="h-3 w-3 mr-1" />
+                            ) : (
+                              <TrendingDown className="h-3 w-3 mr-1" />
+                            )}
+                            {Math.abs(business.growth_percentage).toFixed(1)}%
+                          </Badge>
+                        )}
                     </div>
                   </div>
                 )

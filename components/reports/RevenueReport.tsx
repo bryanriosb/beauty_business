@@ -6,7 +6,7 @@ import { RevenueChart } from './charts/RevenueChart'
 import { PieChart } from './charts/PieChart'
 import { ExportButton } from './ExportButton'
 import ReportsService from '@/lib/services/reports/reports-service'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import {
   exportRevenueReportAction,
   type ExportFormat,

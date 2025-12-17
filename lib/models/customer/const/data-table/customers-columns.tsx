@@ -1,9 +1,13 @@
-import type { BusinessCustomer, CustomerStatus, CustomerSource } from '@/lib/models/customer/business-customer'
+import type {
+  BusinessCustomer,
+  CustomerStatus,
+  CustomerSource,
+} from '@/lib/models/customer/business-customer'
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 
 const statusLabels: Record<CustomerStatus, string> = {
   active: 'Activo',
@@ -12,7 +16,10 @@ const statusLabels: Record<CustomerStatus, string> = {
   blocked: 'Bloqueado',
 }
 
-const statusVariants: Record<CustomerStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+const statusVariants: Record<
+  CustomerStatus,
+  'default' | 'secondary' | 'destructive' | 'outline'
+> = {
   active: 'default',
   inactive: 'secondary',
   vip: 'default',
@@ -63,7 +70,9 @@ export const CUSTOMERS_COLUMNS: ColumnDef<BusinessCustomer>[] = [
       return (
         <Badge
           variant={statusVariants[status]}
-          className={`block w-full text-center ${status === 'vip' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
+          className={`block w-full text-center ${
+            status === 'vip' ? 'bg-amber-500 hover:bg-amber-600' : ''
+          }`}
         >
           {statusLabels[status]}
         </Badge>

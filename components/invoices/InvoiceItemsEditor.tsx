@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils/currency'
 import type { InvoiceItem } from '@/lib/models/invoice/invoice'
 
 const DEFAULT_TAX_RATE = 19
@@ -90,9 +90,13 @@ export default function InvoiceItemsEditor({
                 <div className="text-xs text-muted-foreground">
                   {formatCurrency(item.unit_price_cents / 100)} c/u
                   {item.tax_rate !== null && item.tax_rate > 0 ? (
-                    <span className="ml-2 text-primary">IVA {item.tax_rate}%</span>
+                    <span className="ml-2 text-primary">
+                      IVA {item.tax_rate}%
+                    </span>
                   ) : (
-                    <span className="ml-2 text-muted-foreground/70">Sin IVA</span>
+                    <span className="ml-2 text-muted-foreground/70">
+                      Sin IVA
+                    </span>
                   )}
                 </div>
               </div>
@@ -101,7 +105,9 @@ export default function InvoiceItemsEditor({
                   type="number"
                   min={1}
                   value={item.quantity}
-                  onChange={(e) => handleUpdateQuantity(index, parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    handleUpdateQuantity(index, parseInt(e.target.value) || 1)
+                  }
                   className="w-16 h-8 text-center"
                   disabled={disabled}
                 />
@@ -159,7 +165,10 @@ export default function InvoiceItemsEditor({
               checked={newItemHasTax}
               onCheckedChange={setNewItemHasTax}
             />
-            <Label htmlFor="new-item-tax" className="text-xs text-muted-foreground cursor-pointer">
+            <Label
+              htmlFor="new-item-tax"
+              className="text-xs text-muted-foreground cursor-pointer"
+            >
               {newItemHasTax ? `Incluye IVA (${DEFAULT_TAX_RATE}%)` : 'Sin IVA'}
             </Label>
           </div>
@@ -170,18 +179,26 @@ export default function InvoiceItemsEditor({
         <div className="flex justify-end pt-2 border-t">
           <div className="text-sm space-y-1">
             <div>
-              <span className="text-muted-foreground">Subtotal (sin IVA): </span>
-              <span className="font-medium">{formatCurrency((subtotal - totalTax) / 100)}</span>
+              <span className="text-muted-foreground">
+                Subtotal (sin IVA):{' '}
+              </span>
+              <span className="font-medium">
+                {formatCurrency((subtotal - totalTax) / 100)}
+              </span>
             </div>
             {totalTax > 0 && (
               <div>
                 <span className="text-muted-foreground">IVA: </span>
-                <span className="font-medium">{formatCurrency(totalTax / 100)}</span>
+                <span className="font-medium">
+                  {formatCurrency(totalTax / 100)}
+                </span>
               </div>
             )}
             <div>
               <span className="text-muted-foreground">Total: </span>
-              <span className="font-medium">{formatCurrency(subtotal / 100)}</span>
+              <span className="font-medium">
+                {formatCurrency(subtotal / 100)}
+              </span>
             </div>
           </div>
         </div>
