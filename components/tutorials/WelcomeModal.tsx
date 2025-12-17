@@ -116,7 +116,10 @@ export function WelcomeModal({
               ¿Listo para configurar tu negocio?
             </h3>
             <p className="text-[var(--muted-foreground)]">
-              Te guiaremos paso a paso en la configuración inicial
+              Te guiaremos paso a paso en la configuración inicial y la creación
+              de una cita. Tan solo debes dar al botón de{' '}
+              <span className="text-secondary font-bold">Siguiente</span> y
+              diligenciar los datos que se te soliciten.
             </p>
           </div>
 

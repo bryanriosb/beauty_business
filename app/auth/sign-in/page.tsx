@@ -120,12 +120,12 @@ export default function SignInPage() {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Contraseña</FormLabel>
-                      <a
-                        href="#"
+                      <Link
+                        href="/auth/forgot-password"
                         className="text-sm underline-offset-2 hover:underline"
                       >
                         ¿Olvidaste tu contraseña?
-                      </a>
+                      </Link>
                     </div>
                     <FormControl>
                       <Input
@@ -160,13 +160,13 @@ export default function SignInPage() {
 
           <FieldDescription className="text-center">
             Al continuar, aceptas nuestros{' '}
-            <a href="#" className="underline underline-offset-4">
+            <Link href="/terminos" className="underline underline-offset-4">
               Términos de Servicio
-            </a>{' '}
+            </Link>{' '}
             y{' '}
-            <a href="#" className="underline underline-offset-4">
+            <Link href="/privacidad" className="underline underline-offset-4">
               Política de Privacidad
-            </a>
+            </Link>
             .
           </FieldDescription>
         </div>

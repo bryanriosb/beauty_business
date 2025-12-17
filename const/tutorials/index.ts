@@ -74,9 +74,9 @@ export const TUTORIALS: Record<string, Tutorial> = {
     description: 'Aprende a crear tu primer servicio, especialista y cita',
     steps: [
       ...ENABLE_BUSSINESS_HOURS_TUTORIALS,
-      // ...SERVICES_TUTORIALS,
-      // ...SPECIALIST_TUTORIALS,
-      // ...APPOINTMENTS_TUTORIALS,
+      ...SERVICES_TUTORIALS,
+      ...SPECIALIST_TUTORIALS,
+      ...APPOINTMENTS_TUTORIALS,
     ],
   },
   // 'dashboard-overview': {

@@ -1,26 +1,23 @@
-import { Metadata } from 'next'
-import Link from 'next/link'
-import { ArrowLeft, Calendar, User, Mail, Phone } from 'lucide-react'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'Términos de Uso | Beluvio - Plataforma para Negocios de Belleza',
-  description: 'Términos y condiciones de uso de la plataforma Beluvio para la gestión de negocios de belleza y salud.',
-  robots: 'index, follow'
-}
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, User, Mail, Phone } from 'lucide-react'
 
 export default function TerminosUso() {
+  const router = useRouter()
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-6">
-          <Link 
-            href="/" 
+          <button
+            onClick={() => router.back()}
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver al inicio
-          </Link>
+            Volver
+          </button>
           
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-2">Términos de Uso</h1>

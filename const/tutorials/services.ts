@@ -5,7 +5,7 @@ export const SERVICES_TUTORIALS: TutorialStep[] = [
     target: 'services-menu',
     content:
       '¡Bienvenido! Vamos a crear tu primer servicio. Haz clic en "Servicios" en el menú lateral para comenzar.',
-    title: 'Paso 1: Crear un Servicio',
+    title: 'Crear un Servicio',
     placement: 'right',
     disableBeacon: false,
     showProgress: true,
@@ -33,6 +33,18 @@ export const SERVICES_TUTORIALS: TutorialStep[] = [
     content:
       'Aquí puedes dar un nombre claro a tu servicio. Por ejemplo: "Corte de Cabello Masculino" o "Manicure"',
     title: 'Nombre del Servicio',
+    placement: 'top',
+    disableBeacon: true,
+    showProgress: true,
+    showSkipButton: true,
+    page: '/admin/services',
+    spotlightClicks: true,
+  },
+  {
+    target: 'service-type-input',
+    content:
+      'Selecciona el tipo de servicio que estás creando. "Valoriación" es para servicios gratuitos, mientras que "Regular" es para servicios con costo.',
+    title: 'Tipo del Servicio',
     placement: 'top',
     disableBeacon: true,
     showProgress: true,
@@ -90,8 +102,7 @@ export const SERVICES_TUTORIALS: TutorialStep[] = [
   },
   {
     target: 'save-service-button',
-    content:
-      '¡Excelente! Una vez completados los datos, guarda tu servicio para finalizar el tutorial.',
+    content: '¡Excelente! Una vez completados los datos, guarda tu servicio.',
     title: 'Guardar Servicio',
     placement: 'top',
     disableBeacon: true,
@@ -108,8 +119,8 @@ export const SERVICES_TUTORIALS: TutorialStep[] = [
   {
     target: 'services-menu',
     content:
-      '¡Felicidades! Has completado los pasos para crear tu primer servicio. Ahora vamos a crear un especialista para tu servicio y finalmente crear una cita.',
-    title: '¡Primera fase Completada!',
+      '¡Felicidades! Has completado los pasos para crear tu primer servicio. Ahora vamos a crear un especialista y asociarlo a tu servicio.',
+    title: '¡Primer Servicio Creado!',
     placement: 'right',
     disableBeacon: true,
     showProgress: true,

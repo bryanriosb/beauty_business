@@ -853,7 +853,7 @@ export function TutorialProvider() {
         continuous={true}
         showProgress={true}
         showSkipButton={true}
-        disableScrolling={false} // Permitir scrolling en subpasos para llegar a inputs
+        disableScrolling={true} // Permitir scrolling en subpasos para llegar a inputs
         disableOverlayClose={true} // Evitar que el tutorial se cierre con clicks fuera
         disableOverlay={isInSubSteps} // Quitar overlay en subpasos para permitir interacción
         spotlightClicks={true} // Permitir clicks a través del spotlight hacia los elementos

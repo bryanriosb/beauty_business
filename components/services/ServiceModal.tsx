@@ -338,7 +338,10 @@ export function ServiceModal({
                     disabled={isSubmitting}
                   >
                     <FormControl>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger
+                        className="w-full"
+                        data-tutorial="service-type-input"
+                      >
                         <SelectValue placeholder="Selecciona el tipo" />
                       </SelectTrigger>
                     </FormControl>

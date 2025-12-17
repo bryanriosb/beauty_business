@@ -293,9 +293,13 @@ export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between mb-4">
         <CardTitle>Horarios de Atención</CardTitle>
-        <Button onClick={handleSave} disabled={isSaving}>
+        <Button
+          onClick={handleSave}
+          disabled={isSaving}
+          data-tutorial="business-hours-save-button"
+        >
           {isSaving ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
           ) : (
@@ -334,7 +338,12 @@ export function OperatingHoursCard({ businessId }: OperatingHoursCardProps) {
               >
                 Lun - Vie
               </Button>
-              <Button variant="secondary" size="sm" onClick={handleApplyToAll}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleApplyToAll}
+                data-tutorial="business-hours-apply-all-button"
+              >
                 Todos
               </Button>
             </div>

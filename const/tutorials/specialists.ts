@@ -52,7 +52,7 @@ export const SPECIALIST_TUTORIALS: TutorialStep[] = [
   {
     target: 'specialist-email-input',
     content: 'Aquí defines los apellidos.',
-    title: 'Apellidos del Especialista',
+    title: 'Correo del Especialista',
     placement: 'top',
     disableBeacon: true,
     showProgress: true,

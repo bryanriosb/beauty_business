@@ -4,7 +4,7 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
   {
     target: 'appointments-menu',
     content:
-      'Para finalizar el tutorial vamos a crear tu primera cita. Haz clic en "Citas" en el menú lateral.',
+      'Para finalizar el tutorial vamos a crear tu primera cita. Vamos directamente a "Citas".',
     title: 'Crear una Cita',
     placement: 'right',
     disableBeacon: false,
@@ -94,8 +94,8 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
   {
     target: 'appointment-service-select',
     content:
-      'Selecciona uno o más servicios para esta cita. Y dependiendo de los servicios, podrás asignar especialistas por servicio si lo deseas. En este punto tendrás alertas de stock limitado o agotado en servicios con insumos asociados. Finalmente en cada servicio seleccionado podrás asignar un precio especial para esta cita si lo deseas.',
-    title: 'Seleccionar Servicios para la Cita',
+      'Selecciona uno o más servicios para esta cita. Y dependiendo de los servicios, podrás asignar especialistas por servicio si lo deseas. En este punto tendrás alertas de stock limitado o agotado en servicios con insumos asociados. Finalmente en cada servicio seleccionado podrás asignar un precio especial para esta cita en caso de ser necesario.',
+    title: 'Servicios para la Cita',
     placement: 'top',
     disableBeacon: true,
     showProgress: true,
@@ -107,7 +107,7 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
     target: 'appointment-date-picker',
     content:
       'Selecciona la fecha para la cita. Esto validará de forma inteligente la disponibilidad de los profesionales.',
-    title: 'Seleccionar Fecha para la Cita',
+    title: 'Fecha para la Cita',
     placement: 'top',
     disableBeacon: true,
     showProgress: true,
