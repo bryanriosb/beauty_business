@@ -44,15 +44,16 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight"
           >
-            Gestiona tu{' '}
+            Software de Gestión para{' '}
             <span className="relative inline-block">
               <span className="relative z-10 bg-gradient-to-r from-secondary via-accent to-secondary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                negocio
+                Estéticas, Spas
               </span>
               <svg
                 className="absolute -bottom-1 left-0 w-full"
                 viewBox="0 0 200 8"
                 fill="none"
+                aria-hidden="true"
               >
                 <motion.path
                   initial={{ pathLength: 0 }}
@@ -77,7 +78,7 @@ export function Hero() {
                 </defs>
               </svg>
             </span>{' '}
-            de belleza como un profesional
+            y Centros de Belleza
           </motion.h1>
 
           <motion.p
@@ -200,10 +201,11 @@ export function Hero() {
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 z-10 group-hover:opacity-0 transition-opacity duration-500" />
               <Image
                 src="/6asbQM4nKb-beluvio.jpg"
-                alt="Profesional de belleza"
+                alt="Profesional de estética usando software de gestión Beluvio para administrar citas y clientes en su salón de belleza"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                 priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent group-hover:from-background/40 transition-all duration-500" />
 
