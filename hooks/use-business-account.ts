@@ -9,7 +9,9 @@ import BusinessAccountService from '@/lib/services/business-account/business-acc
 export function useBusinessAccount() {
   const { user, businessAccountId } = useCurrentUser()
   const [account, setAccount] = useState<BusinessAccount | null>(null)
-  const [membership, setMembership] = useState<BusinessAccountMember | null>(null)
+  const [membership, setMembership] = useState<BusinessAccountMember | null>(
+    null
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastFetchedId, setLastFetchedId] = useState<string | null>(null)
@@ -37,10 +39,6 @@ export function useBusinessAccount() {
         const accountData = await service.getAccountById(businessAccountId)
         setAccount(accountData)
         setLastFetchedId(businessAccountId) // Marcar como fetched DESPUÉS del fetch
-        console.log('✅ Business account data updated:', {
-          id: accountData?.id,
-          tutorial_started: accountData?.tutorial_started
-        })
 
         if (user.user_profile_id) {
           const members = await service.getAccountMembers(businessAccountId)
@@ -71,7 +69,7 @@ export function useBusinessAccount() {
   // Función para forzar refresh manual
   const refetch = () => {
     setLastFetchedId(null) // Resetear para forzar nuevo fetch
-    setForceRefresh(prev => prev + 1)
+    setForceRefresh((prev) => prev + 1)
   }
 
   return {

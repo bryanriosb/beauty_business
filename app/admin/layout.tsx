@@ -10,6 +10,8 @@ import { getAccessibleModules } from '@/lib/actions/sidebar'
 import { NavigationLoader } from '@/components/NavigationLoader'
 import { PermissionsLoader } from '@/components/PermissionsLoader'
 import { TutorialProvider } from '@/components/tutorials/TutorialProvider'
+import { TrialProviderClient } from '@/components/trial/TrialProviderClient'
+import { getTrialDataFromServer } from '@/lib/services/trial/trial-server-service'
 
 export default async function AdminLayout({
   children,
@@ -29,22 +31,43 @@ export default async function AdminLayout({
     userRole
   )
 
+  // Obtener datos del trial desde el servidor para pre-carga
+  const trialData = await getTrialDataFromServer()
+
   return (
     <SidebarProvider defaultOpen={true}>
       <Suspense fallback={<SidebarSkeleton />}>
         <AppSidebar accessibleModules={accessibleModules} />
       </Suspense>
-      <section className="grid gap-4 w-full h-full overflow-x-hidden">
-        <PermissionsLoader />
-        <TrialBanner />
-        <div className="grid gap-4 p-4">
-          <AdminHeader />
-          <Suspense fallback={null}>
-            <NavigationLoader>{children}</NavigationLoader>
-          </Suspense>
-        </div>
-      </section>
-      <TutorialProvider />
+      {businessAccountId && (
+        <TrialProviderClient 
+          businessAccountId={businessAccountId}
+          initialData={trialData || undefined}
+        >
+          <section className="grid gap-4 w-full h-full overflow-x-hidden">
+            <PermissionsLoader />
+            <TrialBanner />
+            <div className="grid gap-4 p-4">
+              <AdminHeader />
+              <Suspense fallback={null}>
+                <NavigationLoader>{children}</NavigationLoader>
+              </Suspense>
+            </div>
+          </section>
+          <TutorialProvider />
+        </TrialProviderClient>
+      )}
+      {!businessAccountId && (
+        <section className="grid gap-4 w-full h-full overflow-x-hidden">
+          <PermissionsLoader />
+          <div className="grid gap-4 p-4">
+            <AdminHeader />
+            <Suspense fallback={null}>
+              <NavigationLoader>{children}</NavigationLoader>
+            </Suspense>
+          </div>
+        </section>
+      )}
     </SidebarProvider>
   )
 }

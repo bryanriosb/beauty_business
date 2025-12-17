@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AlertCircle, Clock, X } from 'lucide-react'
+import { useTrialContext } from './TrialProviderClient'
 import { useTrialCheck } from '@/hooks/use-trial-check'
 import { cn } from '@/lib/utils'
 
@@ -10,9 +11,16 @@ interface TrialBannerProps {
 }
 
 export function TrialBanner({ className }: TrialBannerProps) {
+  // Try to use server-loaded data first, fallback to client-side validation
+  const serverData = useTrialContext()
   const { isOnTrial, daysRemaining, wasJustExpired, newPlanCode, resetExpiredFlag } = useTrialCheck()
   const [showExpiredNotice, setShowExpiredNotice] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+
+  // Use server data if available, prioritize it over client data
+  // If we have initial data from server, use it regardless of loading state
+  const actualIsOnTrial = serverData ? serverData.isOnTrial : isOnTrial
+  const actualDaysRemaining = serverData ? serverData.daysRemaining : daysRemaining
 
   useEffect(() => {
     if (wasJustExpired) {
@@ -53,9 +61,11 @@ export function TrialBanner({ className }: TrialBannerProps) {
     )
   }
 
-  if (!isOnTrial || dismissed) return null
+  if (!actualIsOnTrial || dismissed) {
+    return null
+  }
 
-  const isUrgent = daysRemaining !== null && daysRemaining <= 3
+  const isUrgent = actualDaysRemaining !== null && actualDaysRemaining <= 3
 
   return (
     <div className={cn(
@@ -67,13 +77,13 @@ export function TrialBanner({ className }: TrialBannerProps) {
         <Clock className={cn('h-4 w-4', isUrgent ? 'text-amber-500' : 'text-primary')} />
         <p className="text-sm">
           <span className="font-medium">Período de prueba:</span>{' '}
-          {daysRemaining !== null ? (
-            daysRemaining === 0 ? (
+          {actualDaysRemaining !== null ? (
+            actualDaysRemaining === 0 ? (
               <span className="text-amber-500 font-medium">Expira hoy</span>
-            ) : daysRemaining === 1 ? (
+            ) : actualDaysRemaining === 1 ? (
               <span className={isUrgent ? 'text-amber-500' : ''}>1 día restante</span>
             ) : (
-              <span className={isUrgent ? 'text-amber-500' : ''}>{daysRemaining} días restantes</span>
+              <span className={isUrgent ? 'text-amber-500' : ''}>{actualDaysRemaining} días restantes</span>
             )
           ) : (
             'Activo'

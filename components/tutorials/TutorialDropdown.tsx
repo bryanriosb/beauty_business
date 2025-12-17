@@ -28,9 +28,10 @@ export function TutorialDropdown({ className }: TutorialDropdownProps) {
     setIsOpen(false)
   }
 
-  if (isLoading) {
-    return null
-  }
+  // Mostrar siempre el dropdown, incluso si está cargando
+  // if (isLoading) {
+  //   return null
+  // }
 
   // Mostrar TODOS los tutoriales disponibles sin filtrar
   const allTutorials = Object.values(TUTORIALS)

@@ -12,6 +12,7 @@ import {
 import { WelcomeModal } from './WelcomeModal'
 import { useTutorial } from '@/hooks/use-tutorial'
 import { useActiveBusinessAccount } from '@/hooks/use-active-business-account'
+import { useTrialContext } from '../trial/TrialProviderClient'
 import { updateTutorialStartedAction } from '@/lib/actions/business-account'
 
 export function TutorialProvider() {
@@ -41,6 +42,7 @@ export function TutorialProvider() {
   const { startTutorialAfterWelcome } = useTutorial()
   const { tutorialStarted, isLoading, canUseTutorialStatus, activeBusiness } =
     useActiveBusinessAccount()
+  const serverData = useTrialContext()
 
   const [shouldRun, setShouldRun] = useState(false)
   const [isReady, setIsReady] = useState(false)
@@ -704,12 +706,14 @@ export function TutorialProvider() {
       pathname === '/admin/appointments' ||
       pathname === '/admin/services'
 
+    // Usar datos del servidor si están disponibles, sino datos del hook
+    const actualTutorialStarted = serverData ? serverData.tutorialStarted : tutorialStarted
     // Solo mostrar modal si hay un business activo y tutorial_started es false
     if (
       isOnValidPage &&
       !isLoading &&
       canUseTutorialStatus &&
-      !tutorialStarted &&
+      !actualTutorialStarted &&
       !isActive &&
       !showModal &&
       !notShowWelcome &&
