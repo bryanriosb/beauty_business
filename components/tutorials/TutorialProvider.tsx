@@ -732,15 +732,32 @@ export function TutorialProvider() {
     // Estilos CSS globales para el tutorial:
     // 1. Habilitar pointer-events en los botones del tooltip de Joyride
     // 2. Asegurar que los dropdowns/popovers estén por encima del overlay de Joyride
+    // 3. Deshabilitar pointer-events en spotlight para evitar interferencia con selects/popovers
     styleElement.textContent = `
       .react-joyride__tooltip button {
         pointer-events: auto !important;
       }
+      .radix-popover-content,
+      .PopoverContent,
+      [data-radix-popper-content-wrapper],
+      [role="listbox"] {
+        z-index: 10001 !important;
+      }
 
-      /* Estilos para permitir interacción con inputs */
+      /* Estilos para permitir interacción con inputs y selects */
       .react-joyride__overlay {
         pointer-events: none !important;
-        background-color: transparent !important;
+        
+      }
+
+      /* Deshabilitar pointer-events en el spotlight para que no interfiera con clicks en selects */
+      .react-joyride__spotlight {
+        pointer-events: none !important;
+      }
+
+      /* Asegurar que el beacon no interfiera */
+      .react-joyride__beacon {
+        pointer-events: auto !important;
       }
     `
 
@@ -806,6 +823,7 @@ export function TutorialProvider() {
         disableScrolling={false} // Permitir scrolling en subpasos para llegar a inputs
         disableOverlayClose={true} // Evitar que el tutorial se cierre con clicks fuera
         disableOverlay={isInSubSteps} // Quitar overlay en subpasos para permitir interacción
+        spotlightClicks={true} // Permitir clicks a través del spotlight hacia los elementos
         debug={false}
         styles={{
           options: {

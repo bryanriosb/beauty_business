@@ -30,7 +30,7 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
   {
     target: 'appointment-customer-select',
     content:
-      'Busca o crea un cliente mediante el botón "Crear nuevo cliente" para la cita.',
+      'Haz clic en el campo "Cliente", busca uno existente escribiendo el nombre o crea mediante el botón "Crear nuevo cliente" para la cita.',
     title: 'Definir Cliente para la Cita',
     placement: 'top',
     disableBeacon: true,
@@ -107,7 +107,7 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
     target: 'appointment-date-picker',
     content:
       'Selecciona la fecha para la cita. Esto validará de forma inteligente la disponibilidad de los profesionales.',
-    title: 'Seleccionar Fecha de la Cita',
+    title: 'Seleccionar Fecha para la Cita',
     placement: 'top',
     disableBeacon: true,
     showProgress: true,
@@ -119,7 +119,7 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
     target: 'appointment-specialist-selection',
     content:
       'Ahora, selecciona el especialista que realizará el servicio en esta cita.',
-    title: 'Seleccionar Fecha de la Cita',
+    title: 'Elige el Especialista',
     placement: 'top',
     disableBeacon: true,
     showProgress: true,
