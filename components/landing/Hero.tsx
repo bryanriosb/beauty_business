@@ -15,8 +15,8 @@ export function Hero() {
       {/* Animated background blobs - subtle and organic */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-10 right-[10%] w-[500px] h-[500px] bg-primary/25 rounded-full blur-[100px] animate-blob" />
-        <div className="absolute top-[30%] -left-[10%] w-[400px] h-[400px] bg-secondary/20 rounded-full blur-[120px] animate-blob animation-delay-2000" />
-        <div className="absolute bottom-[10%] right-[20%] w-[350px] h-[350px] bg-accent/15 rounded-full blur-[100px] animate-blob animation-delay-4000" />
+        <div className="absolute top-[30%] left-[6%] w-[400px] h-[400px] bg-secondary/20 rounded-full blur-[120px] animate-blob animation-delay-200" />
+        <div className="absolute bottom-[10%] right-[20%] w-[350px] h-[350px] bg-accent/15 rounded-full blur-[100px] animate-blob animation-delay-300" />
       </div>
 
       {/* Soft gradient overlay */}
@@ -199,7 +199,7 @@ export function Hero() {
             <div className="absolute inset-0 rounded-[3rem] shadow-2xl overflow-hidden group-hover:shadow-secondary/20 transition-shadow duration-500">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 z-10 group-hover:opacity-0 transition-opacity duration-500" />
               <Image
-                src="/photo-login.png"
+                src="/6asbQM4nKb-beluvio.jpg"
                 alt="Profesional de belleza"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"

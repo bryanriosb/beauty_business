@@ -9,7 +9,13 @@ export default function SignUpPage() {
       {/* Columna izquierda - Formulario */}
       <div className="relative flex items-center justify-center p-6 md:p-8 bg-card">
         <Link href="/" className="absolute top-6 left-6">
-          <Image src="/logo.png" alt="Beluvio" width={120} height={36} priority />
+          <Image
+            src="/logo.png"
+            alt="Beluvio"
+            width={120}
+            height={36}
+            priority
+          />
         </Link>
 
         <div className="w-full max-w-md space-y-6">
@@ -24,7 +30,10 @@ export default function SignUpPage() {
 
           <div className="text-center text-sm">
             ¿Ya tienes una cuenta?{' '}
-            <Link href="/auth/sign-in" className="font-medium underline underline-offset-4">
+            <Link
+              href="/auth/sign-in"
+              className="font-medium underline underline-offset-4"
+            >
               Inicia sesión
             </Link>
           </div>
@@ -46,7 +55,7 @@ export default function SignUpPage() {
       {/* Columna derecha - Imagen */}
       <div className="relative hidden md:block">
         <Image
-          src="/hayley-kim-studios-sRSRuxkOuzI-unsplash.jpg"
+          src="/V0d4HpVHLp-beluvio.jpg"
           alt="Beauty salon"
           className="absolute inset-0 h-full w-full object-cover"
           fill

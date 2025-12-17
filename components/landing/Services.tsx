@@ -72,15 +72,15 @@ export function Services() {
                   transition={{ duration: 0.5, delay: 0.1 }}
                   className="aspect-[4/5] rounded-3xl overflow-hidden relative group"
                 >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/20" />
-                   <Image
-                     src="/carol-oliver-NnCA_Z6Fjg4-unsplash.jpg"
-                     alt="Servicio de salon"
-                     width={300}
-                     height={400}
-                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                   />
-                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/20" />
+                  <Image
+                    src="/IFpZQ4klYO-beluvio.jpg"
+                    alt="Servicio de salon"
+                    width={300}
+                    height={400}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
                 </motion.div>
 
                 {/* Stats card */}
@@ -91,7 +91,7 @@ export function Services() {
                   transition={{ duration: 0.5, delay: 0.3 }}
                   className="relative rounded-3xl bg-gradient-to-br from-secondary/80 to-accent/80 p-6 text-white overflow-hidden"
                 >
-                  <div className="absolute inset-0 bg-[url('/anthony-tran-Sd9A6NVHsd4-unsplash.jpg')] bg-cover opacity-10" />
+                  <div className="absolute inset-0 bg-[url('/dAPhgEzm3T-beluvio.jpg')] bg-cover opacity-10" />
                   <div className="relative">
                     <p className="text-5xl font-bold">98%</p>
                     <p className="text-white/80 text-sm mt-1">
@@ -142,15 +142,15 @@ export function Services() {
                   transition={{ duration: 0.5, delay: 0.4 }}
                   className="aspect-[4/5] rounded-3xl overflow-hidden relative group"
                 >
-                 <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 to-primary/20" />
-                   <Image
-                     src="/daniel-PnDr2j28gXA-unsplash.jpg"
-                     alt="Servicio de salon"
-                     width={300}
-                     height={400}
-                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                   />
-                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 to-primary/20" />
+                  <Image
+                    src="/dAPhgEzm3T-beluvio.jpg"
+                    alt="Servicio de salon"
+                    width={300}
+                    height={400}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
                 </motion.div>
               </div>
             </div>

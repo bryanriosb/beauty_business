@@ -1,7 +1,18 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Calendar, Users, Package, TrendingUp, MessageCircle, CreditCard, ArrowRight, Sparkles, Bot, Zap } from 'lucide-react'
+import {
+  Calendar,
+  Users,
+  Package,
+  TrendingUp,
+  MessageCircle,
+  CreditCard,
+  ArrowRight,
+  Sparkles,
+  Bot,
+  Zap,
+} from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -9,7 +20,8 @@ const features = [
   {
     icon: Calendar,
     title: 'Agenda inteligente',
-    description: 'Gestiona citas con calendario visual, recordatorios automaticos y evita solapamientos. Sincroniza con Google Calendar.',
+    description:
+      'Gestiona citas con calendario visual, recordatorios automaticos y evita solapamientos. Sincroniza con Google Calendar.',
     gradient: 'from-primary/80 to-primary/40',
     iconBg: 'from-primary to-primary/60',
     highlight: 'Mas popular',
@@ -17,35 +29,40 @@ const features = [
   {
     icon: Users,
     title: 'Clientes y fidelizacion',
-    description: 'Base de datos completa con historial, preferencias y programas de lealtad que aumentan la retencion.',
+    description:
+      'Base de datos completa con historial, preferencias y programas de lealtad que aumentan la retencion.',
     gradient: 'from-secondary/60 to-accent/40',
     iconBg: 'from-secondary to-accent',
   },
   {
     icon: Package,
     title: 'Control de inventario',
-    description: 'Monitorea productos en tiempo real, recibe alertas de stock bajo y registra consumo por servicio.',
+    description:
+      'Monitorea productos en tiempo real, recibe alertas de stock bajo y registra consumo por servicio.',
     gradient: 'from-accent/60 to-secondary/40',
     iconBg: 'from-accent to-secondary/80',
   },
   {
     icon: TrendingUp,
     title: 'Reportes avanzados',
-    description: 'Dashboard interactivo con metricas de ventas, servicios populares y rendimiento del equipo.',
+    description:
+      'Dashboard interactivo con metricas de ventas, servicios populares y rendimiento del equipo.',
     gradient: 'from-primary/60 to-secondary/40',
     iconBg: 'from-primary/80 to-secondary',
   },
   {
     icon: MessageCircle,
     title: 'WhatsApp integrado',
-    description: 'Envia confirmaciones y recordatorios automaticos directo al WhatsApp. Reduce cancelaciones un 40%.',
+    description:
+      'Envia confirmaciones y recordatorios automaticos directo al WhatsApp. Reduce cancelaciones un 40%.',
     gradient: 'from-green-500/40 to-secondary/40',
     iconBg: 'from-green-500 to-green-600',
   },
   {
     icon: CreditCard,
     title: 'Facturacion electronica',
-    description: 'Genera facturas profesionales, controla pagos pendientes y gestiona cuentas por cobrar facilmente.',
+    description:
+      'Genera facturas profesionales, controla pagos pendientes y gestiona cuentas por cobrar facilmente.',
     gradient: 'from-secondary/60 to-primary/40',
     iconBg: 'from-secondary to-primary/80',
   },
@@ -96,7 +113,8 @@ export function Features() {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Herramientas profesionales disenadas para esteticas, spas, clinicas de cirugia plastica, barberias y centros de belleza.
+            Herramientas profesionales disenadas para esteticas, spas, clinicas
+            de cirugia plastica, barberias y centros de belleza.
           </p>
         </motion.div>
 
@@ -111,7 +129,7 @@ export function Features() {
           <div className="relative rounded-3xl overflow-hidden">
             {/* Background gradient */}
             <div className="absolute inset-0 bg-gradient-to-r from-secondary via-accent to-secondary opacity-90" />
-            <div className="absolute inset-0 bg-[url('/alexander-mass-5hYOxhwYzKU-unsplash.jpg')] bg-cover bg-center opacity-5" />
+            <div className="absolute inset-0 bg-[url('/rez2r9Q4BQ-beluvio.jpg')] bg-cover bg-center opacity-5" />
 
             {/* Animated blobs - subtle */}
             <div className="absolute -top-20 -right-20 w-[350px] h-[350px] bg-primary/25 rounded-full blur-[80px] animate-blob" />
@@ -132,9 +150,11 @@ export function Features() {
                   </h3>
 
                   <p className="text-white/80 text-lg leading-relaxed">
-                    Tu asistente virtual trabaja 24/7 gestionando automaticamente tu negocio.
-                    Los clientes pueden agendar, reagendar o cancelar citas por WhatsApp, chat web o telefono,
-                    mientras el sistema verifica disponibilidad en tiempo real y realiza llamadas de confirmación.
+                    Tu asistente virtual trabaja 24/7 gestionando
+                    automaticamente tu negocio. Los clientes pueden agendar,
+                    reagendar o cancelar citas por WhatsApp, chat web o
+                    telefono, mientras el sistema verifica disponibilidad en
+                    tiempo real y realiza llamadas de confirmación.
                   </p>
 
                   {/* Capabilities grid */}
@@ -149,8 +169,16 @@ export function Features() {
                         className="flex items-center gap-2 text-white/90 text-sm"
                       >
                         <div className="w-5 h-5 rounded-full bg-primary/30 flex items-center justify-center shrink-0">
-                          <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <svg
+                            className="w-3 h-3 text-primary"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </div>
                         {capability}
@@ -158,14 +186,14 @@ export function Features() {
                     ))}
                   </div>
 
-                 <Button
-                     size="lg"
-                     className="gap-2 rounded-full px-8 bg-white text-secondary hover:bg-white/90 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 mt-4 cursor-default"
-                     onClick={(e) => e.preventDefault()}
-                   >
-                       Próximamente
-                       <ArrowRight className="h-4 w-4" />
-                     </Button>
+                  <Button
+                    size="lg"
+                    className="gap-2 rounded-full px-8 bg-white text-secondary hover:bg-white/90 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 mt-4 cursor-default"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    Próximamente
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </div>
 
                 {/* Right - Chat mockup */}
@@ -184,7 +212,9 @@ export function Features() {
                           <Bot className="h-5 w-5 text-secondary" />
                         </div>
                         <div>
-                          <p className="text-white font-semibold text-sm">Asistente Beluvio</p>
+                          <p className="text-white font-semibold text-sm">
+                            Asistente Beluvio
+                          </p>
                           <p className="text-white/60 text-xs flex items-center gap-1">
                             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                             En linea
@@ -202,7 +232,9 @@ export function Features() {
                           className="flex justify-end"
                         >
                           <div className="bg-primary/30 rounded-2xl rounded-tr-sm px-4 py-2 max-w-[80%]">
-                            <p className="text-white text-sm">Hola! Quiero agendar un corte para manana</p>
+                            <p className="text-white text-sm">
+                              Hola! Quiero agendar un corte para manana
+                            </p>
                           </div>
                         </motion.div>
 
@@ -214,7 +246,10 @@ export function Features() {
                           className="flex justify-start"
                         >
                           <div className="bg-white/20 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[80%]">
-                            <p className="text-white text-sm">Perfecto! Tengo disponibilidad manana a las 10:00, 14:00 y 16:30. ¿Cual prefieres?</p>
+                            <p className="text-white text-sm">
+                              Perfecto! Tengo disponibilidad manana a las 10:00,
+                              14:00 y 16:30. ¿Cual prefieres?
+                            </p>
                           </div>
                         </motion.div>
 
@@ -226,7 +261,9 @@ export function Features() {
                           className="flex justify-end"
                         >
                           <div className="bg-primary/30 rounded-2xl rounded-tr-sm px-4 py-2 max-w-[80%]">
-                            <p className="text-white text-sm">A las 10:00 por favor</p>
+                            <p className="text-white text-sm">
+                              A las 10:00 por favor
+                            </p>
                           </div>
                         </motion.div>
 
@@ -238,7 +275,10 @@ export function Features() {
                           className="flex justify-start"
                         >
                           <div className="bg-white/20 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[80%]">
-                            <p className="text-white text-sm">¡Listo! Tu cita quedo agendada para manana a las 10:00. Te envio confirmacion por WhatsApp</p>
+                            <p className="text-white text-sm">
+                              ¡Listo! Tu cita quedo agendada para manana a las
+                              10:00. Te envio confirmacion por WhatsApp
+                            </p>
                           </div>
                         </motion.div>
                       </div>
@@ -247,11 +287,17 @@ export function Features() {
                     {/* Floating badge */}
                     <motion.div
                       animate={{ y: [0, -8, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
                       className="absolute -top-4 -right-4 bg-white rounded-xl px-4 py-2 shadow-xl"
                     >
                       <p className="text-secondary font-bold text-sm">40%</p>
-                      <p className="text-muted-foreground text-xs">menos cancelaciones</p>
+                      <p className="text-muted-foreground text-xs">
+                        menos cancelaciones
+                      </p>
                     </motion.div>
                   </motion.div>
                 </div>
@@ -292,7 +338,7 @@ export function Features() {
 }
 
 interface FeatureCardProps {
-  feature: typeof features[0]
+  feature: (typeof features)[0]
   index: number
 }
 
@@ -310,7 +356,9 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
       {/* Card */}
       <div className="relative h-full p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 overflow-hidden">
         {/* Gradient background on hover */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+        <div
+          className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+        />
         <div className="absolute inset-0 bg-card opacity-100 group-hover:opacity-95 transition-opacity duration-500" />
 
         {/* Shimmer effect */}
@@ -330,7 +378,9 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
           )}
 
           {/* Icon */}
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.iconBg} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-300`}>
+          <div
+            className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.iconBg} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-300`}
+          >
             <Icon className="h-7 w-7 text-white" />
           </div>
 

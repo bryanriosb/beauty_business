@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
 import { ChevronsUpDown, Store, Check, RefreshCw, Loader2 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -26,47 +26,33 @@ import {
   Business,
 } from '@/lib/store/active-business-store'
 import { USER_ROLES } from '@/const/roles'
-import BusinessService from '@/lib/services/business/business-service'
 import Loading from './ui/loading'
 
 export function BusinessSwitcher() {
   const { isMobile, state } = useSidebar()
   const isCollapsed = state === 'collapsed'
   const { businessAccountId, role, isLoading: isUserLoading } = useCurrentUser()
-  const { activeBusiness, setActiveBusiness, initializeFromSession } =
-    useActiveBusinessStore()
-  const [businesses, setBusinesses] = useState<Business[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { 
+    activeBusiness, 
+    businesses, 
+    isLoading, 
+    setActiveBusiness, 
+    loadBusinesses 
+  } = useActiveBusinessStore()
 
-  const loadBusinesses = useCallback(async () => {
+  const handleRefreshBusinesses = useCallback(async () => {
     if (!businessAccountId) return
-
-    setIsLoading(true)
     try {
-      const service = new BusinessService()
-      const result = await service.fetchItems({
-        business_account_id: businessAccountId,
-        page_size: 50,
-      })
-      const loadedBusinesses = result.data.map((b) => ({
-        id: b.id,
-        name: b.name,
-        business_account_id: b.business_account_id,
-      }))
-      setBusinesses(loadedBusinesses)
-      initializeFromSession(loadedBusinesses)
+      // Force reload by clearing cache first
+      await loadBusinesses(businessAccountId)
     } catch (error) {
-      console.error('Error loading businesses:', error)
-    } finally {
-      setIsLoading(false)
+      console.error('Error refreshing businesses:', error)
     }
-  }, [businessAccountId, initializeFromSession])
+  }, [businessAccountId, loadBusinesses])
 
   useEffect(() => {
     if (role === USER_ROLES.BUSINESS_ADMIN && businessAccountId) {
-      loadBusinesses()
-    } else {
-      setIsLoading(false)
+      loadBusinesses(businessAccountId)
     }
   }, [role, businessAccountId, loadBusinesses])
 
@@ -106,7 +92,7 @@ export function BusinessSwitcher() {
     )
   }
 
-  if (businesses.length === 0) {
+  if (!isLoading && businesses.length === 0) {
     return null
   }
 
@@ -148,7 +134,7 @@ export function BusinessSwitcher() {
       {businesses.map((business) => (
         <DropdownMenuItem
           key={business.id}
-          onClick={() => setActiveBusiness(business)}
+          onClick={() => setActiveBusiness(business as Business)}
           className="gap-2 p-2"
         >
           <div className="flex size-6 items-center justify-center rounded-md border">
@@ -164,7 +150,7 @@ export function BusinessSwitcher() {
       <DropdownMenuItem
         onClick={(e) => {
           e.preventDefault()
-          loadBusinesses()
+          handleRefreshBusinesses()
         }}
         className="gap-2 p-2"
         disabled={isLoading}

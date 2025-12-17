@@ -69,7 +69,10 @@ export default function ResetPasswordPage() {
 
       if (error) {
         setIsError(true)
-        setErrorMessage(errorDescription || 'El enlace de recuperación es inválido o ha expirado.')
+        setErrorMessage(
+          errorDescription ||
+            'El enlace de recuperación es inválido o ha expirado.'
+        )
         return
       }
 
@@ -138,7 +141,13 @@ export default function ResetPasswordPage() {
       <div className="w-full min-h-screen grid md:grid-cols-2">
         <div className="relative flex items-center justify-center p-6 md:p-8 bg-card">
           <Link href="/" className="absolute top-6 left-6">
-            <Image src="/logo.png" alt="Beluvio" width={120} height={36} priority />
+            <Image
+              src="/logo.png"
+              alt="Beluvio"
+              width={120}
+              height={36}
+              priority
+            />
           </Link>
 
           <div className="w-full max-w-md space-y-6">
@@ -165,7 +174,7 @@ export default function ResetPasswordPage() {
         {/* Columna derecha - Imagen */}
         <div className="relative hidden md:block">
           <Image
-            src="/hayley-kim-studios-sRSRuxkOuzI-unsplash.jpg"
+            src="/V0d4HpVHLp-beluvio.jpg"
             alt="Beauty salon"
             className="absolute inset-0 h-full w-full object-cover"
             fill
@@ -181,7 +190,13 @@ export default function ResetPasswordPage() {
       {/* Columna izquierda - Formulario */}
       <div className="relative flex items-center justify-center p-6 md:p-8 bg-card">
         <Link href="/" className="absolute top-6 left-6">
-          <Image src="/logo.png" alt="Beluvio" width={120} height={36} priority />
+          <Image
+            src="/logo.png"
+            alt="Beluvio"
+            width={120}
+            height={36}
+            priority
+          />
         </Link>
 
         <div className="w-full max-w-md space-y-6">
@@ -190,12 +205,16 @@ export default function ResetPasswordPage() {
               <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">Crear nueva contraseña</h1>
                 <p className="text-balance text-muted-foreground">
-                  Ingresa tu nueva contraseña. Asegúrate de que sea segura y fácil de recordar.
+                  Ingresa tu nueva contraseña. Asegúrate de que sea segura y
+                  fácil de recordar.
                 </p>
               </div>
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={form.control}
                     name="password"
@@ -251,7 +270,9 @@ export default function ResetPasswordPage() {
                               variant="ghost"
                               size="sm"
                               className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              onClick={() =>
+                                setShowConfirmPassword(!showConfirmPassword)
+                              }
                             >
                               {showConfirmPassword ? (
                                 <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -296,14 +317,13 @@ export default function ResetPasswordPage() {
               <div className="space-y-2">
                 <h1 className="text-2xl font-bold">¡Contraseña actualizada!</h1>
                 <p className="text-muted-foreground">
-                  Tu contraseña ha sido actualizada exitosamente. Serás redirigido al inicio de sesión en unos segundos.
+                  Tu contraseña ha sido actualizada exitosamente. Serás
+                  redirigido al inicio de sesión en unos segundos.
                 </p>
               </div>
 
               <Link href="/auth/sign-in">
-                <Button className="gap-2">
-                  Ir a iniciar sesión
-                </Button>
+                <Button className="gap-2">Ir a iniciar sesión</Button>
               </Link>
             </div>
           )}
@@ -313,7 +333,7 @@ export default function ResetPasswordPage() {
       {/* Columna derecha - Imagen */}
       <div className="relative hidden md:block">
         <Image
-          src="/hayley-kim-studios-sRSRuxkOuzI-unsplash.jpg"
+          src="/V0d4HpVHLp-beluvio.jpg"
           alt="Beauty salon"
           className="absolute inset-0 h-full w-full object-cover"
           fill

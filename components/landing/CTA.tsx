@@ -24,7 +24,7 @@ export function CTA() {
         >
           {/* Background layers */}
           <div className="absolute inset-0 bg-gradient-to-r from-secondary via-accent to-secondary" />
-          <div className="absolute inset-0 bg-[url('/kimia-kazemi-u93nTfWqR9w-unsplash.jpg')] bg-cover bg-center opacity-10" />
+          <div className="absolute inset-0 bg-[url('/27l4R4D3Ig-beluvio.jpg')] bg-cover bg-center opacity-10" />
 
           {/* Animated blobs - subtle */}
           <div className="absolute -top-20 -left-20 w-[400px] h-[400px] bg-primary/20 rounded-full blur-[100px] animate-blob" />

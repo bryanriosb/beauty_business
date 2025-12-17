@@ -83,7 +83,13 @@ export default function ForgotPasswordPage() {
       {/* Columna izquierda - Formulario */}
       <div className="relative flex items-center justify-center p-6 md:p-8 bg-card">
         <Link href="/" className="absolute top-6 left-6">
-          <Image src="/logo.png" alt="Beluvio" width={120} height={36} priority />
+          <Image
+            src="/logo.png"
+            alt="Beluvio"
+            width={120}
+            height={36}
+            priority
+          />
         </Link>
 
         <div className="w-full max-w-md space-y-6">
@@ -92,12 +98,16 @@ export default function ForgotPasswordPage() {
               <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">Recuperar contraseña</h1>
                 <p className="text-balance text-muted-foreground">
-                  Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
+                  Ingresa tu correo electrónico y te enviaremos un enlace para
+                  restablecer tu contraseña.
                 </p>
               </div>
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={form.control}
                     name="email"
@@ -124,7 +134,9 @@ export default function ForgotPasswordPage() {
                     disabled={isLoading}
                   >
                     {isLoading ? <Loading /> : <Mail className="h-4 w-4" />}
-                    {isLoading ? 'Enviando...' : 'Enviar enlace de recuperación'}
+                    {isLoading
+                      ? 'Enviando...'
+                      : 'Enviar enlace de recuperación'}
                   </Button>
                 </form>
               </Form>
@@ -145,7 +157,8 @@ export default function ForgotPasswordPage() {
 
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
-                  Si no ves el correo, revisa tu carpeta de spam o correo no deseado.
+                  Si no ves el correo, revisa tu carpeta de spam o correo no
+                  deseado.
                 </p>
                 <p>El enlace expirará en 1 hora.</p>
               </div>
@@ -177,7 +190,7 @@ export default function ForgotPasswordPage() {
       {/* Columna derecha - Imagen */}
       <div className="relative hidden md:block">
         <Image
-          src="/hayley-kim-studios-sRSRuxkOuzI-unsplash.jpg"
+          src="/V0d4HpVHLp-beluvio.jpg"
           alt="Beauty salon"
           className="absolute inset-0 h-full w-full object-cover"
           fill
