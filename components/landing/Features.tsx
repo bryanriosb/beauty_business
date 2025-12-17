@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { LANDING_IMAGES } from '@/lib/config/supabase-images'
 
 const features = [
   {
@@ -129,7 +130,7 @@ export function Features() {
           <div className="relative rounded-3xl overflow-hidden">
             {/* Background gradient */}
             <div className="absolute inset-0 bg-gradient-to-r from-secondary via-accent to-secondary opacity-90" />
-            <div className="absolute inset-0 bg-[url('/rez2r9Q4BQ-beluvio.jpg')] bg-cover bg-center opacity-5" />
+            <div className="absolute inset-0 bg-cover bg-center opacity-5" style={{backgroundImage: `url(${LANDING_IMAGES.features})`}} />
 
             {/* Animated blobs - subtle */}
             <div className="absolute -top-20 -right-20 w-[350px] h-[350px] bg-primary/25 rounded-full blur-[80px] animate-blob" />

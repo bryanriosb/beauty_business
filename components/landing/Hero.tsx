@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, Sparkles, Play, CheckCircle2, Star } from 'lucide-react'
+import { LANDING_IMAGES } from '@/lib/config/supabase-images'
 
 export function Hero() {
   return (
@@ -200,7 +201,7 @@ export function Hero() {
             <div className="absolute inset-0 rounded-[3rem] shadow-2xl overflow-hidden group-hover:shadow-secondary/20 transition-shadow duration-500">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 z-10 group-hover:opacity-0 transition-opacity duration-500" />
               <Image
-                src="/6asbQM4nKb-beluvio.jpg"
+                src={LANDING_IMAGES.hero}
                 alt="Profesional de estética usando software de gestión Beluvio para administrar citas y clientes en su salón de belleza"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105"

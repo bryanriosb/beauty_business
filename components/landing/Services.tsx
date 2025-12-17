@@ -11,6 +11,7 @@ import {
   Eye,
   CheckCircle2,
 } from 'lucide-react'
+import { LANDING_IMAGES } from '@/lib/config/supabase-images'
 
 const services = [
   {
@@ -74,8 +75,8 @@ export function Services() {
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/20" />
                   <Image
-                    src="/IFpZQ4klYO-beluvio.jpg"
-                    alt="Profesional de peluquería realizando corte de cabello en salón de belleza gestionado con Beluvio"
+                    src={LANDING_IMAGES.services.haircare}
+                    alt="Profesional de peluquería realizando tratamiento capilar en salón de belleza gestionado con Beluvio"
                     width={300}
                     height={400}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
@@ -92,7 +93,7 @@ export function Services() {
                   transition={{ duration: 0.5, delay: 0.3 }}
                   className="relative rounded-3xl bg-gradient-to-br from-secondary/80 to-accent/80 p-6 text-white overflow-hidden"
                 >
-                  <div className="absolute inset-0 bg-[url('/dAPhgEzm3T-beluvio.jpg')] bg-cover opacity-10" />
+                  <div className="absolute inset-0 bg-cover opacity-10" style={{backgroundImage: `url(${LANDING_IMAGES.services.treatment})`}} />
                   <div className="relative">
                     <p className="text-5xl font-bold">98%</p>
                     <p className="text-white/80 text-sm mt-1">
@@ -145,8 +146,8 @@ export function Services() {
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 to-primary/20" />
                   <Image
-                    src="/dAPhgEzm3T-beluvio.jpg"
-                    alt="Tratamiento de manicure y cuidado de uñas en spa utilizando sistema de reservas Beluvio"
+                    src={LANDING_IMAGES.services.treatment}
+                    alt="Mujer recibiendo tratamiento facial en salon de estética utilizando sistema de gestión Beluvio"
                     width={300}
                     height={400}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"

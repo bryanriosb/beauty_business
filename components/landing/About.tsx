@@ -2,12 +2,14 @@
 
 import { motion } from 'framer-motion'
 import { Heart, Sparkles, Users, Award, Zap } from 'lucide-react'
+import { LANDING_IMAGES } from '@/lib/config/supabase-images'
 
 export function About() {
   return (
     <section id="about" className="py-24 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/5 to-background" />
+      <div className="absolute inset-0 bg-cover bg-center opacity-5" style={{backgroundImage: `url(${LANDING_IMAGES.about})`}} />
       <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2" />
       <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
