@@ -238,10 +238,12 @@ export const SIDE_SYSTEM_MENU_ITEMS: MenuItem[] = [
     icon: Settings,
     skipPlanCheck: true, // Siempre visible para acceso a suscripción y pagos
     allowedRoles: [USER_ROLES.COMPANY_ADMIN, USER_ROLES.BUSINESS_ADMIN],
+    targetTutorialStep: 'settings-menu',
     items: [
       {
         title: 'Horarios',
-        url: '/admin/settings/scheduler',
+        url: '/admin/settings/hours',
+        targetTutorialStep: 'business-hours-menu',
       },
       {
         title: 'Facturación',

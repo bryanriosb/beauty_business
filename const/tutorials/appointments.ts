@@ -142,18 +142,30 @@ export const APPOINTMENTS_TUTORIALS: TutorialStep[] = [
   {
     target: 'save-appointment-button',
     content:
-      '¡Buen Trabajo! Si el número del cliente es valido recibirá una notificación por WhatsApp. Guarda tu cita habrás completado el tutorial.',
-    title: 'Guardar Servicio',
+      '¡Buen Trabajo! Si el número del cliente es válido recibirá una notificación por WhatsApp. Haz clic en "Crear" para guardar tu cita y completar el tutorial.',
+    title: 'Guardar Cita',
     placement: 'top',
     disableBeacon: true,
     showProgress: true,
     showSkipButton: true,
     page: '/admin/appointments',
+    spotlightClicks: true,
     triggerAction: {
       type: 'click',
-      selector: '[data-tutorial="save-specialist-button"]',
+      selector: '[data-tutorial="save-appointment-button"]',
       delay: 500,
       waitForModal: false,
     },
+  },
+  {
+    target: 'appointments-menu',
+    content:
+      '¡Felicidades! Has completado los pasos para crear tu primer cita.',
+    title: '¡Cita Completada!',
+    placement: 'right',
+    disableBeacon: true,
+    showProgress: true,
+    showSkipButton: true,
+    page: '/admin/appointments',
   },
 ]

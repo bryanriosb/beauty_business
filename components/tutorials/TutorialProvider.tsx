@@ -12,6 +12,7 @@ import {
 import { WelcomeModal } from './WelcomeModal'
 import { useTutorial } from '@/hooks/use-tutorial'
 import { useActiveBusinessAccount } from '@/hooks/use-active-business-account'
+import { updateTutorialStartedAction } from '@/lib/actions/business-account'
 
 export function TutorialProvider() {
   const pathname = usePathname()
@@ -485,6 +486,17 @@ export function TutorialProvider() {
       if (tutorialId) {
         const tutorial = TUTORIALS[tutorialId]
         tutorial?.onComplete?.()
+
+        // Marcar tutorial como completado en la base de datos
+        if (activeBusiness?.business_account_id) {
+          updateTutorialStartedAction(
+            activeBusiness.business_account_id,
+            true
+          ).catch(console.error)
+        }
+
+        // Guardar en sessionStorage para evitar que el modal aparezca de nuevo
+        sessionStorage.setItem('not_show_welcome', 'true')
       }
       stopTutorial()
       return
@@ -733,10 +745,12 @@ export function TutorialProvider() {
     // 1. Habilitar pointer-events en los botones del tooltip de Joyride
     // 2. Asegurar que los dropdowns/popovers estén por encima del overlay de Joyride
     // 3. Deshabilitar pointer-events en spotlight para evitar interferencia con selects/popovers
+    // 4. Permitir scroll dentro de modales durante el tutorial
     styleElement.textContent = `
       .react-joyride__tooltip button {
         pointer-events: auto !important;
       }
+    
       .radix-popover-content,
       .PopoverContent,
       [data-radix-popper-content-wrapper],
@@ -744,10 +758,14 @@ export function TutorialProvider() {
         z-index: 10001 !important;
       }
 
+      .react-joyride__overlay {
+        pointer-events: none !important;
+        background-color: transparent !important;
+      }
+
       /* Estilos para permitir interacción con inputs y selects */
       .react-joyride__overlay {
         pointer-events: none !important;
-        
       }
 
       /* Deshabilitar pointer-events en el spotlight para que no interfiera con clicks en selects */
@@ -758,6 +776,21 @@ export function TutorialProvider() {
       /* Asegurar que el beacon no interfiera */
       .react-joyride__beacon {
         pointer-events: auto !important;
+      }
+
+      /* Permitir scroll dentro de modales durante el tutorial */
+      [role="dialog"] {
+        overflow: visible !important;
+      }
+      [role="dialog"] > div {
+        overflow-y: auto !important;
+        max-height: 90vh !important;
+      }
+
+      /* Asegurar que el contenido scrolleable dentro del modal funcione */
+      [data-slot="dialog-content"] {
+        overflow-y: auto !important;
+        max-height: 90vh !important;
       }
     `
 
@@ -824,28 +857,39 @@ export function TutorialProvider() {
         disableOverlayClose={true} // Evitar que el tutorial se cierre con clicks fuera
         disableOverlay={isInSubSteps} // Quitar overlay en subpasos para permitir interacción
         spotlightClicks={true} // Permitir clicks a través del spotlight hacia los elementos
+        disableScrollParentFix={true} // Evitar problemas con scroll en modales
+        floaterProps={{
+          disableAnimation: true,
+        }}
         debug={false}
         styles={{
           options: {
             arrowColor: '#fff',
             backgroundColor: '#fff',
-            primaryColor: '#0ea5e9',
+            primaryColor: '#fada99',
             textColor: '#333',
             zIndex: isInSubSteps ? 10001 : 10000, // Mayor z-index en subpasos
           },
           tooltip: {
             borderRadius: '8px',
+            fontWeight: '500',
             padding: '16px',
             fontSize: '14px',
           },
           buttonNext: {
-            backgroundColor: '#0ea5e9',
-            color: '#fff',
+            backgroundColor: '#fada99',
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#333',
           },
           buttonBack: {
+            fontSize: '14px',
+            fontWeight: '600',
             color: '#6b7280',
           },
           buttonSkip: {
+            fontSize: '14px',
+            fontWeight: '600',
             color: '#6b7280',
           },
         }}
