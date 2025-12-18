@@ -79,43 +79,34 @@ export function WelcomeModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-2xl overflow-hidden border-0 shadow-2xl"
+        className="min-w-[360px] sm:max-w-2xl max-h-screen sm:max-h-[85vh] overflow-hidden border-0 shadow-2xl "
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         {/* Header con gradiente usando colores de la marca */}
-        <div className="relative bg-gradient-to-br from-[var(--primary)] via-[var(--secondary)] to-[var(--accent)] p-8 text-white">
-          <div className="absolute top-4 right-4">
-            <Badge
-              variant="secondary"
-              className="bg-white/20 text-white border-white/30"
-            >
-              NUEVO USUARIO
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm">
-              <Sparkles className="h-8 w-8 text-white" />
+        <div className="flex items-center justify-center bg-gradient-to-br from-[var(--primary)] via-[var(--secondary)] to-[var(--accent)] p-4 text-white h-32">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="p-2 sm:p-3 bg-white/20 rounded-full backdrop-blur-sm">
+              <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <div>
-              <DialogTitle className="text-2xl font-bold text-white mb-1">
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-sm sm:text-2xl font-bold text-white mb-1 truncate">
                 ¡Bienvenido a tu Gestor de Belleza!
               </DialogTitle>
-              <p className="text-white/90 text-base">
+              <p className="text-white/90 text-sm sm:text-base">
                 Estamos emocionados de acompañarte en este nuevo viaje
               </p>
             </div>
           </div>
         </div>
 
-        {/* Contenido principal */}
-        <div className="p-8 space-y-6">
+        {/* Contenido principal con scroll */}
+        <div className="p-4 space-y-4 sm:space-y-6 overflow-y-auto h-full">
           <div className="text-center space-y-2">
-            <h3 className="text-xl font-semibold text-[var(--foreground)]">
+            <h3 className="text-lg sm:text-xl font-semibold text-[var(--foreground)]">
               ¿Listo para configurar tu negocio?
             </h3>
-            <p className="text-[var(--muted-foreground)]">
+            <p className="text-sm sm:text-base text-[var(--muted-foreground)]">
               Te guiaremos paso a paso en la configuración inicial y la creación
               de una cita. Tan solo debes dar al botón de{' '}
               <span className="text-secondary font-bold">Siguiente</span> y
@@ -124,21 +115,21 @@ export function WelcomeModal({
           </div>
 
           {/* Sección de beneficios del tutorial */}
-          <div className="bg-gradient-to-r from-[var(--muted)]/50 to-[var(--secondary)]/10 rounded-xl p-6 border border-[var(--border)]">
-            <div className="flex items-center gap-2 mb-4">
-              <BookOpen className="h-5 w-5 text-[var(--secondary)]" />
-              <h4 className="font-semibold text-[var(--foreground)]">
+          <div className="bg-gradient-to-r from-[var(--muted)]/50 to-[var(--secondary)]/10 rounded-xl p-4 sm:p-6 border border-[var(--border)]">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--secondary)]" />
+              <h4 className="text-sm sm:text-base font-semibold text-[var(--foreground)]">
                 ¿Qué aprenderás en el tutorial?
               </h4>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5">
-                  <CheckCircle className="h-4 w-4 text-[var(--primary)]" />
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="p-1 sm:p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5 flex-shrink-0">
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--primary)]" />
                 </div>
-                <div>
-                  <p className="font-medium text-[var(--foreground)] text-sm">
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--foreground)] text-xs sm:text-sm">
                     Crear tus primeros servicios
                   </p>
                   <p className="text-[var(--muted-foreground)] text-xs">
@@ -147,12 +138,12 @@ export function WelcomeModal({
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5">
-                  <CheckCircle className="h-4 w-4 text-[var(--primary)]" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="p-1 sm:p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5 flex-shrink-0">
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--primary)]" />
                 </div>
-                <div>
-                  <p className="font-medium text-[var(--foreground)] text-sm">
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--foreground)] text-xs sm:text-sm">
                     Registrar a tus especialistas
                   </p>
                   <p className="text-[var(--muted-foreground)] text-xs">
@@ -161,12 +152,12 @@ export function WelcomeModal({
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5">
-                  <CheckCircle className="h-4 w-4 text-[var(--primary)]" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="p-1 sm:p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5 flex-shrink-0">
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--primary)]" />
                 </div>
-                <div>
-                  <p className="font-medium text-[var(--foreground)] text-sm">
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--foreground)] text-xs sm:text-sm">
                     Gestionar tu primer cita
                   </p>
                   <p className="text-[var(--muted-foreground)] text-xs">
@@ -175,12 +166,12 @@ export function WelcomeModal({
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5">
-                  <Clock className="h-4 w-4 text-[var(--primary)]" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="p-1 sm:p-1.5 rounded-full bg-[var(--primary)]/20 mt-0.5 flex-shrink-0">
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--primary)]" />
                 </div>
-                <div>
-                  <p className="font-medium text-[var(--foreground)] text-sm">
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--foreground)] text-xs sm:text-sm">
                     Solo 5 minutos
                   </p>
                   <p className="text-[var(--muted-foreground)] text-xs">
@@ -192,34 +183,34 @@ export function WelcomeModal({
           </div>
 
           {/* Checkbox para no volver a mostrar */}
-          <div className="flex items-center gap-2 p-3 bg-[var(--muted)]/30 rounded-lg">
+          <div className="flex items-center gap-2 p-2 sm:p-3 bg-[var(--muted)]/30 rounded-lg">
             <input
               type="checkbox"
               id="dont-show"
               checked={dontShowAgain}
               onChange={(e) => setDontShowAgain(e.target.checked)}
-              className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)]"
+              className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] w-4 h-4 sm:w-auto sm:h-auto"
             />
             <label
               htmlFor="dont-show"
-              className="text-sm text-[var(--muted-foreground)]"
+              className="text-xs sm:text-sm text-[var(--muted-foreground)] leading-tight"
             >
               No volver a mostrar este mensaje
             </label>
           </div>
 
           {/* Botones de acción */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
             <Button
               variant="outline"
               onClick={handleSkipTutorial}
-              className="flex-1 border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              className="w-full sm:flex-1 border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] text-sm sm:text-base"
             >
               Saltar tutorial
             </Button>
             <Button
               onClick={handleStartTutorial}
-              className="flex-1 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:from-[var(--primary)]/90 hover:to-[var(--secondary)]/90 text-white border-0 font-medium"
+              className="w-full sm:flex-1 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:from-[var(--primary)]/90 hover:to-[var(--secondary)]/90 text-white border-0 font-medium text-sm sm:text-base"
             >
               Comenzar tutorial
               <ArrowRight className="ml-2 h-4 w-4" />
