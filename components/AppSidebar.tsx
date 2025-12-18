@@ -143,7 +143,7 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
   }, [filteredSystemItems, role, accessibleModulesSet])
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="z-50">
       <SidebarHeader>
         <div className="border-b w-full mb-2 overflow-hidden">
           <div className="relative mx-auto mb-4 flex items-center justify-center transition-all duration-300 ease-in-out">

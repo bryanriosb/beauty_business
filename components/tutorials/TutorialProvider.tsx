@@ -9,12 +9,14 @@ import {
   type TutorialStep,
 } from '@/const/tutorials'
 import { WelcomeModal } from './WelcomeModal'
+import { MobileWelcomeModal } from './MobileWelcomeModal'
 import { useTutorial } from '@/hooks/use-tutorial'
 import { useActiveBusinessAccount } from '@/hooks/use-active-business-account'
 import { useTrialContext } from '../trial/TrialProviderClient'
 import { updateTutorialStartedAction } from '@/lib/actions/business-account'
 import { useSidebar } from '@/components/ui/sidebar'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { getClientCookie } from '@/lib/utils/cookies'
 
 export function TutorialProvider() {
   const pathname = usePathname()
@@ -50,10 +52,14 @@ export function TutorialProvider() {
   const [isReady, setIsReady] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [notShowWelcome, setNotShowWelcome] = useState(true) // Default true to prevent flash
+  const [isScrollingToTarget, setIsScrollingToTarget] = useState(false) // Estado para pausar Joyride durante scroll
 
-  // Cargar valor de sessionStorage solo en el cliente
+  // Cargar valor de sessionStorage y cookie solo en el cliente
   useEffect(() => {
-    setNotShowWelcome(sessionStorage.getItem('not_show_welcome') === 'true')
+    const fromSessionStorage = sessionStorage.getItem('not_show_welcome') === 'true'
+    const fromCookie = getClientCookie('welcome_modal_shown') === 'true'
+    // No mostrar si cualquiera de los dos está en true
+    setNotShowWelcome(fromSessionStorage || fromCookie)
   }, [])
 
   // Lista de targets que están en el sidebar/menú
@@ -95,6 +101,53 @@ export function TutorialProvider() {
       if (shouldCloseSidebar) {
         setOpenMobile(false)
       }
+    }
+
+    // Si el sidebar está abierto y el target es un menú, hacer scroll al elemento
+    if (targetIsSidebarMenu && openMobile) {
+      // Pausar Joyride mientras hacemos scroll
+      setIsScrollingToTarget(true)
+      setShouldRun(false)
+
+      // Esperar a que el sidebar se abra completamente
+      const scrollTimeout = setTimeout(() => {
+        const targetSelector = getTargetSelector(currentStep.target)
+        const targetElement = document.querySelector(targetSelector)
+
+        if (targetElement) {
+          // Buscar el contenedor scrollable del sidebar (dentro del Sheet móvil)
+          const sidebarContent = document.querySelector('[data-mobile="true"] [data-sidebar="content"]') ||
+                                  document.querySelector('[data-sidebar="content"]')
+
+          if (sidebarContent) {
+            // Primero, hacer scroll al final del sidebar para asegurar que Configuración sea visible
+            sidebarContent.scrollTop = sidebarContent.scrollHeight
+
+            // Luego, después de un pequeño delay, ajustar al elemento específico
+            setTimeout(() => {
+              const containerRect = sidebarContent.getBoundingClientRect()
+              const htmlElement = targetElement as HTMLElement
+
+              // Calcular la posición para que el elemento esté centrado o visible
+              const elementTop = htmlElement.offsetTop || 0
+              const scrollPosition = Math.max(0, elementTop - (containerRect.height / 3))
+
+              sidebarContent.scrollTo({
+                top: scrollPosition,
+                behavior: 'smooth'
+              })
+            }, 100)
+          }
+        }
+
+        // Reactivar Joyride después de completar el scroll
+        setTimeout(() => {
+          setIsScrollingToTarget(false)
+          setShouldRun(true)
+        }, 800) // Dar más tiempo para que el scroll se complete
+      }, 500) // Esperar a que el drawer termine de abrirse
+
+      return () => clearTimeout(scrollTimeout)
     }
   }, [isActive, isMobile, stepIndex, getCurrentStep, openMobile, setOpenMobile, isTargetInSidebar, pathname])
 
@@ -655,6 +708,14 @@ export function TutorialProvider() {
     setIsReady(true)
   }, [isActive, isPaused, pathname, getCurrentStep, router, stepIndex])
 
+  // En móvil, detener tutorial activo si existe
+  useEffect(() => {
+    if (isMobile && isActive) {
+      stopTutorial()
+      return
+    }
+  }, [isMobile, isActive, stopTutorial])
+
   // Efecto para mostrar modal de bienvenida a usuarios trial nuevos
   useEffect(() => {
     // Permitir mostrar modal en dashboard o services para usuarios trial que no han empezado
@@ -666,6 +727,7 @@ export function TutorialProvider() {
 
     // Usar datos del servidor si están disponibles, sino datos del hook
     const actualTutorialStarted = serverData ? serverData.tutorialStarted : tutorialStarted
+    
     // Solo mostrar modal si hay un business activo y tutorial_started es false
     if (
       isOnValidPage &&
@@ -691,12 +753,21 @@ export function TutorialProvider() {
     showModal,
     activeBusiness,
     notShowWelcome,
+    isMobile,
   ])
+
+  // En móvil, no iniciar el tutorial interactivo
+  useEffect(() => {
+    if (isMobile && isActive) {
+      stopTutorial()
+      return
+    }
+  }, [isMobile, isActive, stopTutorial])
 
   // Efecto para inyectar estilos CSS globales durante el tutorial
   // Esto permite que los botones de Joyride y los dropdowns funcionen correctamente
   useEffect(() => {
-    if (!isActive || !shouldRun) return
+    if (!isActive || !shouldRun || isMobile) return
 
     // Crear un estilo dinámico para el tutorial
     const styleId = 'joyride-tutorial-styles'
@@ -757,54 +828,101 @@ export function TutorialProvider() {
         max-height: 90vh !important;
       }
 
-      /* ========== ESTILOS RESPONSIVOS PARA MÓVIL ========== */
+       /* ========== ESTILOS RESPONSIVOS PARA MÓVIL ========== */
 
-      /* Tooltip más compacto en móvil */
-      @media (max-width: 767px) {
-        .react-joyride__tooltip {
-          max-width: calc(100vw - 32px) !important;
-          width: auto !important;
-          padding: 12px !important;
-          margin: 8px !important;
-          font-size: 13px !important;
-        }
+       /* Tooltip más compacto en móvil */
+       @media (max-width: 767px) {
+         .react-joyride__tooltip {
+           max-width: calc(100vw - 40px) !important;
+           width: auto !important;
+           min-width: 280px !important;
+           max-width: 320px !important;
+           padding: 10px !important;
+           margin: 6px !important;
+           font-size: 12px !important;
+           border-radius: 10px !important;
+           box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+         }
 
-        .react-joyride__tooltip__content {
-          padding: 0 !important;
-          font-size: 13px !important;
-          line-height: 1.4 !important;
-        }
+         .react-joyride__tooltip__content {
+           padding: 0 !important;
+           font-size: 12px !important;
+           line-height: 1.3 !important;
+           max-height: 60vh !important;
+           overflow-y: auto !important;
+         }
 
-        .react-joyride__tooltip__title {
-          font-size: 15px !important;
-          margin-bottom: 8px !important;
-        }
+         .react-joyride__tooltip__title {
+           font-size: 14px !important;
+           margin-bottom: 6px !important;
+           font-weight: 600 !important;
+         }
 
-        .react-joyride__tooltip__footer {
-          margin-top: 12px !important;
-          gap: 8px !important;
-        }
+         .react-joyride__tooltip__footer {
+           margin-top: 10px !important;
+           gap: 6px !important;
+           flex-wrap: wrap !important;
+         }
 
-        .react-joyride__tooltip button {
-          padding: 8px 12px !important;
-          font-size: 13px !important;
-          min-height: 36px !important;
-        }
+         .react-joyride__tooltip button {
+           padding: 6px 10px !important;
+           font-size: 12px !important;
+           min-height: 32px !important;
+           border-radius: 6px !important;
+           flex: 1 !important;
+           min-width: 70px !important;
+         }
 
-        /* Reducir tamaño del spotlight en móvil */
-        .react-joyride__spotlight {
-          border-radius: 4px !important;
-        }
+         /* Beacon más pequeño y menos intrusivo en móvil */
+         .react-joyride__beacon {
+           width: 24px !important;
+           height: 24px !important;
+           animation: joyride-beacon 1.2s ease-in-out infinite !important;
+         }
 
-        /* Ajustar floater positioning en móvil */
-        .__floater {
-          max-width: calc(100vw - 16px) !important;
-        }
+         @keyframes joyride-beacon {
+           0%, 100% { transform: scale(0.8); opacity: 0.8; }
+           50% { transform: scale(1.1); opacity: 1; }
+         }
 
-        .__floater__body {
-          max-width: calc(100vw - 24px) !important;
-        }
-      }
+         /* Reducir tamaño del spotlight en móvil */
+         .react-joyride__spotlight {
+           border-radius: 6px !important;
+         }
+
+         /* Ajustar floater positioning en móvil */
+         .__floater {
+           max-width: calc(100vw - 20px) !important;
+           padding: 0 !important;
+         }
+
+         .__floater__body {
+           max-width: calc(100vw - 30px) !important;
+         }
+
+         /* Específico para iPhone 11 y similares */
+         @media (max-width: 414px) {
+           .react-joyride__tooltip {
+             max-width: calc(100vw - 50px) !important;
+             min-width: 260px !important;
+             padding: 8px !important;
+           }
+
+           .react-joyride__tooltip__title {
+             font-size: 13px !important;
+           }
+
+           .react-joyride__tooltip__content {
+             font-size: 11px !important;
+           }
+
+           .react-joyride__tooltip button {
+             padding: 5px 8px !important;
+             font-size: 11px !important;
+             min-height: 30px !important;
+           }
+         }
+       }
 
       /* ========== SOPORTE PARA SIDEBAR DRAWER EN MÓVIL ========== */
 
@@ -818,38 +936,68 @@ export function TutorialProvider() {
         z-index: 10002 !important;
       }
 
-      /* ========== SOPORTE PARA MODALES ANIDADOS ========== */
+       /* ========== SOPORTE PARA MODALES ANIDADOS ========== */
 
-      /* Todos los modales durante el tutorial deben estar por encima del spotlight */
-      [data-slot="dialog-overlay"],
-      [data-radix-dialog-overlay] {
-        z-index: 10000 !important;
-      }
+       /* Todos los modales durante el tutorial deben estar por encima del spotlight */
+       [data-slot="dialog-overlay"],
+       [data-radix-dialog-overlay] {
+         z-index: 10000 !important;
+       }
 
-      [data-slot="dialog-content"],
-      [role="dialog"]:not([data-mobile="true"]):not([data-sidebar="sidebar"]) {
-        z-index: 10001 !important;
-      }
+       [data-slot="dialog-content"],
+       [role="dialog"]:not([data-mobile="true"]):not([data-sidebar="sidebar"]) {
+         z-index: 10001 !important;
+       }
 
-      /* El segundo overlay de modal (anidado) tiene mayor z-index */
-      body > [data-radix-portal]:nth-of-type(n+2) [data-radix-dialog-overlay],
-      body > [data-radix-portal]:nth-of-type(n+2) [data-slot="dialog-overlay"] {
-        z-index: 10002 !important;
-      }
+       /* El segundo overlay de modal (anidado) tiene mayor z-index */
+       body > [data-radix-portal]:nth-of-type(n+2) [data-radix-dialog-overlay],
+       body > [data-radix-portal]:nth-of-type(n+2) [data-slot="dialog-overlay"] {
+         z-index: 10002 !important;
+       }
 
-      /* El contenido del segundo modal (anidado) tiene mayor z-index */
-      body > [data-radix-portal]:nth-of-type(n+2) [role="dialog"],
-      body > [data-radix-portal]:nth-of-type(n+2) [data-slot="dialog-content"] {
-        z-index: 10003 !important;
-      }
+       /* El contenido del segundo modal (anidado) tiene mayor z-index */
+       body > [data-radix-portal]:nth-of-type(n+2) [role="dialog"],
+       body > [data-radix-portal]:nth-of-type(n+2) [data-slot="dialog-content"] {
+         z-index: 10003 !important;
+       }
 
-      /* Tercer modal anidado si existe */
-      body > [data-radix-portal]:nth-of-type(n+3) [data-radix-dialog-overlay] {
-        z-index: 10004 !important;
-      }
-      body > [data-radix-portal]:nth-of-type(n+3) [role="dialog"] {
-        z-index: 10005 !important;
-      }
+       /* Tercer modal anidado si existe */
+       body > [data-radix-portal]:nth-of-type(n+3) [data-radix-dialog-overlay] {
+         z-index: 10004 !important;
+       }
+       body > [data-radix-portal]:nth-of-type(n+3) [role="dialog"] {
+         z-index: 10005 !important;
+       }
+
+       /* ========== MEJORAR VISIBILIDAD DE MODALES EN MÓVIL ========== */
+
+       /* Asegurar que los modales se vean correctamente en móvil durante el tutorial */
+       @media (max-width: 767px) {
+         [role="dialog"] {
+           margin: 16px !important;
+           max-height: calc(100vh - 32px) !important;
+           overflow-y: auto !important;
+         }
+
+         [data-slot="dialog-content"] {
+           padding: 16px !important;
+           max-height: calc(100vh - 80px) !important;
+           overflow-y: auto !important;
+         }
+
+         /* Reducir padding en modales pequeños en móvil */
+         [data-slot="dialog-content"].max-w-sm {
+           padding: 12px !important;
+         }
+
+         /* Asegurar que los inputs en modales funcionen en móvil */
+         [role="dialog"] input,
+         [role="dialog"] select,
+         [role="dialog"] textarea {
+           font-size: 16px !important; /* Previene zoom en iOS */
+           min-height: 44px !important; /* Área de toque mínima */
+         }
+       }
 
       /* Asegurar que el tooltip de Joyride siempre esté visible */
       .react-joyride__tooltip {
@@ -877,6 +1025,115 @@ export function TutorialProvider() {
         position: relative;
         z-index: inherit;
       }
+
+      /* ========== SOPORTE PARA SCROLL EN SIDEBAR MÓVIL ========== */
+
+      /* Asegurar que el sidebar content permita scroll durante el tutorial */
+      [data-mobile="true"] [data-sidebar="content"] {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* Evitar que el spotlight de Joyride interfiera con el scroll del sidebar */
+      [data-mobile="true"] .react-joyride__spotlight {
+        pointer-events: none !important;
+      }
+
+      /* Asegurar que los elementos del menú sean clickeables */
+      [data-mobile="true"] [data-sidebar="menu-button"] {
+        pointer-events: auto !important;
+        position: relative;
+      }
+
+      /* El sidebar drawer debe estar por encima del overlay de Joyride */
+      [data-slot="sheet-content"][data-mobile="true"] {
+        z-index: 10002 !important;
+      }
+
+      /* El overlay del sidebar también debe estar por encima */
+      [data-slot="sheet-overlay"] {
+        z-index: 10001 !important;
+      }
+
+      /* ========== DESHABILITAR FOOTER DEL SIDEBAR DURANTE TUTORIAL ========== */
+
+      /* Deshabilitar interacción con el footer del sidebar durante el tutorial */
+      [data-sidebar="footer"] {
+        pointer-events: none !important;
+      }
+
+      /* Deshabilitar el trigger del dropdown del footer */
+      [data-sidebar="footer"] button,
+      [data-sidebar="footer"] [data-slot="dropdown-menu-trigger"] {
+        pointer-events: none !important;
+        cursor: default !important;
+      }
+
+      /* Asegurar que el contenido del dropdown del footer no aparezca */
+      [data-sidebar="footer"] [data-radix-popper-content-wrapper] {
+        display: none !important;
+      }
+
+      /* ========== EVITAR QUE EL BEACON ALTERE EL LAYOUT ========== */
+
+      /* Evitar que el beacon afecte el layout del sidebar - permitiendo clicks pero previniendo cierre */
+      .react-joyride__beacon {
+        position: absolute !important;
+        z-index: 9998 !important;
+        pointer-events: none !important;
+      }
+
+      /* Permitir clicks en elementos del menú del sidebar durante el tutorial */
+      [data-mobile="true"] [data-sidebar="menu-button"] {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 9999 !important;
+      }
+
+      /* Evitar que el clic en el beacon cierre el sidebar */
+      [data-mobile="true"] [data-sidebar="sidebar"] {
+        pointer-events: auto !important;
+      }
+
+      /* Overlay de Joyride no debe bloquear clicks en menú del sidebar */
+      .react-joyride__overlay {
+        pointer-events: none !important;
+      }
+
+      /* Asegurar que el spotlight no altere el layout ni bloquee clicks */
+      .react-joyride__spotlight {
+        position: fixed !important;
+        pointer-events: none !important;
+      }
+
+      /* Evitar que el overlay de Joyride altere el layout del sidebar */
+      .react-joyride__overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        pointer-events: none !important;
+        background: transparent !important;
+      }
+
+      /* En móvil, asegurar que el sidebar funcione correctamente */
+      @media (max-width: 767px) {
+        [data-mobile="true"] [data-sidebar="sidebar"] {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          height: 100vh !important;
+          z-index: 10002 !important;
+        }
+
+        /* El contenido del sidebar debe mantener su scroll */
+        [data-mobile="true"] [data-sidebar="content"] {
+          height: calc(100vh - 120px) !important;
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+      }
     `
 
     return () => {
@@ -897,6 +1154,9 @@ export function TutorialProvider() {
 
   // Efecto para iniciar/parar Joyride
   useEffect(() => {
+    // No iniciar si estamos haciendo scroll al target en móvil
+    if (isScrollingToTarget) return
+
     if (isActive && !isPaused && isReady) {
       // Pequeño delay para asegurar que el DOM esté listo
       const timer = setTimeout(() => {
@@ -912,7 +1172,7 @@ export function TutorialProvider() {
     } else {
       setShouldRun(false)
     }
-  }, [isActive, isPaused, isReady, tutorialId])
+  }, [isActive, isPaused, isReady, tutorialId, isScrollingToTarget])
 
   const handleStartTutorial = () => {
     startTutorialAfterWelcome()
@@ -995,7 +1255,7 @@ export function TutorialProvider() {
         disableScrolling={true}
         disableOverlayClose={true}
         disableOverlay={isInSubSteps}
-        spotlightClicks={true}
+        spotlightClicks={false}
         disableScrollParentFix={true}
         floaterProps={{
           disableAnimation: true,
@@ -1024,11 +1284,18 @@ export function TutorialProvider() {
   return (
     <>
       {tutorialComponent}
-      <WelcomeModal
-        isOpen={showModal}
-        onClose={handleCloseModal}
-        onStartTutorial={handleStartTutorial}
-      />
+      {isMobile ? (
+        <MobileWelcomeModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+        />
+      ) : (
+        <WelcomeModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          onStartTutorial={handleStartTutorial}
+        />
+      )}
     </>
   )
 }

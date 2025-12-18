@@ -18,6 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import SpecialistService from '@/lib/services/specialist/specialist-service'
 import type { Specialist } from '@/lib/models/specialist/specialist'
+import { useTutorialStore } from '@/lib/store/tutorial-store'
 
 export default function SidebarFooter() {
   const router = useRouter()
@@ -25,6 +26,24 @@ export default function SidebarFooter() {
   const isCollapsed = state === 'collapsed'
   const { user, role, specialistId } = useCurrentUser()
   const [specialist, setSpecialist] = useState<Specialist | null>(null)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
+  // Verificar si el tutorial está activo para deshabilitar el dropdown
+  const { isActive: isTutorialActive, getCurrentStep } = useTutorialStore()
+  const { isMobile } = useSidebar()
+
+  // Cerrar dropdown cuando el tutorial se activa
+  useEffect(() => {
+    if (isTutorialActive) {
+      setDropdownOpen(false)
+    }
+  }, [isTutorialActive])
+
+  // Determinar si debemos ocultar el footer durante el tutorial en móvil
+  // Lo ocultamos cuando el tutorial apunta a elementos del sidebar
+  const currentStep = getCurrentStep()
+  const shouldHideFooter =
+    isTutorialActive && isMobile && currentStep?.target?.includes('-menu')
 
   const isProfessional = role === USER_ROLES.PROFESSIONAL
 
@@ -69,14 +88,23 @@ export default function SidebarFooter() {
     .toUpperCase()
     .slice(0, 2)
 
+  // Handler para controlar apertura del dropdown
+  const handleOpenChange = (open: boolean) => {
+    // No permitir abrir el dropdown si el tutorial está activo
+    if (isTutorialActive && open) {
+      return
+    }
+    setDropdownOpen(open)
+  }
+
   if (isCollapsed) {
     return (
       <footer
         className="flex items-center justify-center p-2"
         data-darkreader-ignore
       >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <DropdownMenu open={dropdownOpen} onOpenChange={handleOpenChange}>
+          <DropdownMenuTrigger asChild disabled={isTutorialActive}>
             <Button variant="ghost" size="icon" title={displayName}>
               <Avatar className="h-8 w-8">
                 {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
@@ -118,9 +146,12 @@ export default function SidebarFooter() {
 
   return (
     <footer className="p-2 border-t">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center justify-between w-full p-2 rounded-md hover:bg-accent transition-colors">
+      <DropdownMenu open={dropdownOpen} onOpenChange={handleOpenChange}>
+        <DropdownMenuTrigger asChild disabled={isTutorialActive}>
+          <button
+            className="flex items-center justify-between w-full p-2 rounded-md hover:bg-accent transition-colors"
+            style={{ pointerEvents: isTutorialActive ? 'none' : 'auto' }}
+          >
             <div className="flex gap-2 items-center min-w-0">
               <Avatar className="h-8 w-8 flex-shrink-0">
                 {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}

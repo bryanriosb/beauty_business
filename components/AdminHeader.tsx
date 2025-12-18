@@ -11,6 +11,7 @@ import NotificationPanel from './notifications/NotificationPanel'
 import ChatSheet from './chat/ChatSheet'
 import { useUnreadMessages } from '@/hooks/use-unread-messages'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { FeedbackDialog } from './feedback/FeedbackDialog'
 import { TutorialDropdown } from './tutorials/TutorialDropdown'
 
@@ -20,6 +21,7 @@ export default function AdminHeader() {
   const { theme, setTheme } = useTheme()
   const unreadCount = useUnreadMessages()
   const { businessAccountId, user } = useCurrentUser()
+  const isMobile = useIsMobile()
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -42,13 +44,13 @@ export default function AdminHeader() {
                 <LifeBuoy className="!h-4.5 !w-4.5" />
                 <span className="hidden sm:inline">Feedback</span>
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Reportar problemas o enviar sugerencias</p>
-            </TooltipContent>
-          </Tooltip>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Reportar problemas o enviar sugerencias</p>
+          </TooltipContent>
+        </Tooltip>
 
-          <TutorialDropdown />
+        {!isMobile && <TutorialDropdown />}
 
           <Tooltip>
             <TooltipTrigger asChild>

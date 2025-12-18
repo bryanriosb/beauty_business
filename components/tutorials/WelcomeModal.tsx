@@ -70,6 +70,11 @@ export function WelcomeModal({
       }
     }
 
+    // Guardar cookie para no volver a mostrar (independientemente del checkbox)
+    setClientCookie(WELCOME_MODAL_COOKIE, 'true', {
+      maxAge: 365 * 24 * 60 * 60, // 1 year
+    })
+
     // Guardar en sessionStorage para prevenir reaparición en la misma sesión
     sessionStorage.setItem('not_show_welcome', 'true')
 
