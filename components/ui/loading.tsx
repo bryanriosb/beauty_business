@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react'
 
 export default function Loading({
-  className = 'w-4 h-4',
+  className = 'w-4 h-4 text-primary',
 }: {
   className?: string
 }) {

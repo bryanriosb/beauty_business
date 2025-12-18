@@ -59,6 +59,7 @@ import { createServiceCategoryAction } from '@/lib/actions/service'
 import { BusinessStorageService } from '@/lib/services/business/business-storage-service'
 import { toast } from 'sonner'
 import { NumericInput } from '../ui/numeric-input'
+import Loading from '../ui/loading'
 
 const SERVICE_TYPE_OPTIONS: { value: ServiceType; label: string }[] = [
   { value: 'REGULAR', label: 'Servicio Regular' },
@@ -253,7 +254,7 @@ export function ServiceModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-lg max-h-[90vh] overflow-y-auto"
+        className="max-w-lg max-h-screen sm:max-h-[90vh] overflow-hidden"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
@@ -267,301 +268,309 @@ export function ServiceModal({
               : 'Ingresa los datos del nuevo servicio'}
           </DialogDescription>
         </DialogHeader>
+        <div className="flex flex-col min-h-full">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col h-full"
+            >
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-4">
+                {isCompanyAdmin && (
+                  <FormField
+                    control={form.control}
+                    name="business_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Sucursal <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isSubmitting}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecciona una sucursal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {businesses.map((business) => (
+                              <SelectItem key={business.id} value={business.id}>
+                                {business.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {isCompanyAdmin && (
-              <FormField
-                control={form.control}
-                name="business_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Sucursal <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isSubmitting}
-                    >
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Nombre <span className="text-destructive">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona una sucursal" />
-                        </SelectTrigger>
+                        <Input
+                          placeholder="Corte de cabello"
+                          disabled={isSubmitting}
+                          data-tutorial="service-name-input"
+                          {...field}
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {businesses.map((business) => (
-                          <SelectItem key={business.id} value={business.id}>
-                            {business.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Nombre <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Corte de cabello"
-                      disabled={isSubmitting}
-                      data-tutorial="service-name-input"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="service_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Tipo de servicio <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isSubmitting}
-                  >
-                    <FormControl>
-                      <SelectTrigger
-                        className="w-full"
-                        data-tutorial="service-type-input"
-                      >
-                        <SelectValue placeholder="Selecciona el tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {SERVICE_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descripción del servicio..."
-                      rows={2}
-                      disabled={isSubmitting}
-                      data-tutorial="service-description-input"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoría</FormLabel>
-                  <FormControl>
-                    <CreatableCombobox
-                      options={categoryOptions}
-                      value={field.value || null}
-                      onChange={field.onChange}
-                      onCreateNew={handleCreateCategory}
-                      placeholder="Seleccionar categoría..."
-                      searchPlaceholder="Buscar o crear categoría..."
-                      emptyText="No hay categorías"
-                      createText="Crear categoría"
-                      disabled={isSubmitting}
-                      allowClear
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Precio (COP) <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <NumericInput
-                        className="w-full"
-                        placeholder="50000"
-                        disabled={isSubmitting}
-                        data-tutorial="service-price-input"
-                        value={field.value}
-                        onChange={(value) => field.onChange(value || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="duration_minutes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Duración (min) <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <NumericInput
-                        type="number"
-                        min={10}
-                        placeholder="30"
-                        disabled={isSubmitting}
-                        data-tutorial="service-duration-input"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="has_tax"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>
-                      Aplica IVA <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormDescription className="text-xs">
-                      {field.value
-                        ? 'Este servicio tiene IVA del 19%'
-                        : 'Este servicio está exento de IVA'}
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Imagen del servicio</FormLabel>
-                  <FormControl>
-                    <ImageUpload
-                      value={field.value || null}
-                      onChange={(url) => field.onChange(url || '')}
-                      onUpload={handleImageUpload}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="is_featured"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>Destacado</FormLabel>
-                    <FormDescription className="text-xs">
-                      Los servicios destacados aparecen primero
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {isEdit && (
-              <div className="pt-2 border-t">
-                <ServiceSuppliesSection
-                  businessId={businessId || currentBusinessId || ''}
-                  supplies={supplies}
-                  onChange={setSupplies}
-                  disabled={isSubmitting || loadingSupplies}
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {supplies.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    El precio base del servicio puede ser 0 si se cobra por
-                    insumos
+
+                <FormField
+                  control={form.control}
+                  name="service_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Tipo de servicio{' '}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger
+                            className="w-full"
+                            data-tutorial="service-type-input"
+                          >
+                            <SelectValue placeholder="Selecciona el tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {SERVICE_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descripción</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Descripción del servicio..."
+                          rows={2}
+                          disabled={isSubmitting}
+                          data-tutorial="service-description-input"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoría</FormLabel>
+                      <FormControl>
+                        <CreatableCombobox
+                          options={categoryOptions}
+                          value={field.value || null}
+                          onChange={field.onChange}
+                          onCreateNew={handleCreateCategory}
+                          placeholder="Seleccionar categoría..."
+                          searchPlaceholder="Buscar o crear categoría..."
+                          emptyText="No hay categorías"
+                          createText="Crear categoría"
+                          disabled={isSubmitting}
+                          allowClear
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Precio (COP){' '}
+                          <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <NumericInput
+                            className="w-full"
+                            placeholder="50000"
+                            disabled={isSubmitting}
+                            data-tutorial="service-price-input"
+                            value={field.value}
+                            onChange={(value) => field.onChange(value || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="duration_minutes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Duración (min){' '}
+                          <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <NumericInput
+                            type="number"
+                            min={10}
+                            placeholder="30"
+                            disabled={isSubmitting}
+                            data-tutorial="service-duration-input"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="has_tax"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>
+                          Aplica IVA <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormDescription className="text-xs">
+                          {field.value
+                            ? 'Este servicio tiene IVA del 19%'
+                            : 'Este servicio está exento de IVA'}
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="image_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Imagen del servicio</FormLabel>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value || null}
+                          onChange={(url) => field.onChange(url || '')}
+                          onUpload={handleImageUpload}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="is_featured"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Destacado</FormLabel>
+                        <FormDescription className="text-xs">
+                          Los servicios destacados aparecen primero
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {isEdit && (
+                  <div className="pt-2 border-t">
+                    <ServiceSuppliesSection
+                      businessId={businessId || currentBusinessId || ''}
+                      supplies={supplies}
+                      onChange={setSupplies}
+                      disabled={isSubmitting || loadingSupplies}
+                    />
+                    {supplies.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        El precio base del servicio puede ser 0 si se cobra por
+                        insumos
+                      </p>
+                    )}
+                  </div>
+                )}
+                {!isEdit && (
+                  <p className="text-xs text-muted-foreground pt-2 border-t">
+                    Guarda el servicio primero para poder agregar insumos
+                    asociados
                   </p>
                 )}
               </div>
-            )}
-            {!isEdit && (
-              <p className="text-xs text-muted-foreground pt-2 border-t">
-                Guarda el servicio primero para poder agregar insumos asociados
-              </p>
-            )}
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                data-tutorial="save-service-button"
-              >
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {isEdit ? 'Actualizar' : 'Crear'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <DialogFooter className="shrink-0 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  data-tutorial="save-service-button"
+                >
+                  {isSubmitting && <Loading />}
+                  {isEdit ? 'Actualizar' : 'Crear'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )

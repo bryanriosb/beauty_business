@@ -1,6 +1,10 @@
 'use client'
 
-import { SpecialistCard, type CurrentAppointment, type SpecialistGoalProgress } from './SpecialistCard'
+import {
+  SpecialistCard,
+  type CurrentAppointment,
+  type SpecialistGoalProgress,
+} from './SpecialistCard'
 import type { Specialist } from '@/lib/models/specialist/specialist'
 
 interface SpecialistGridProps {
@@ -30,7 +34,7 @@ export function SpecialistGrid({
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="h-[180px] w-[280px] rounded-lg bg-muted animate-pulse"
+            className="h-[180px] w-full sm:w-[280px] rounded-lg bg-muted animate-pulse"
           />
         ))}
       </div>
@@ -56,7 +60,7 @@ export function SpecialistGrid({
         const isOnline = !!appointment
 
         return (
-          <div key={specialist.id} className="w-[280px]">
+          <div key={specialist.id} className="w-full sm:w-[280px]">
             <SpecialistCard
               specialist={specialist}
               isSelected={selectedId === specialist.id}

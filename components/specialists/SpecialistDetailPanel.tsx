@@ -6,9 +6,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { X, Clock } from 'lucide-react'
 import type { SpecialistWithAvailability } from '@/lib/models/specialist/specialist'
 import SpecialistService from '@/lib/services/specialist/specialist-service'
+import { useIsMobile } from '@/hooks/use-mobile'
+import Loading from '../ui/loading'
 
 interface SpecialistDetailPanelProps {
   specialistId: string | null
@@ -78,6 +81,7 @@ export function SpecialistDetailPanel({
     useState<SpecialistWithAvailability | null>(null)
   const [todayAppointments, setTodayAppointments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (!specialistId) {
@@ -136,22 +140,11 @@ export function SpecialistDetailPanel({
     return now >= start && now <= end
   })
 
-  return (
-    <div className="w-[400px] border-l bg-card flex flex-col h-full">
-      <div className="flex items-center justify-end p-4 border-b">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-
+  const detailContent = (
+    <>
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <Loading className="w-8 h-8 text-primary" />
         </div>
       ) : specialist ? (
         <ScrollArea className="flex-1">
@@ -179,7 +172,9 @@ export function SpecialistDetailPanel({
                 </p>
                 <p className="text-sm text-muted-foreground/70">@{username}</p>
                 {specialist.phone && (
-                  <p className="text-sm text-muted-foreground">{specialist.phone}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {specialist.phone}
+                  </p>
                 )}
               </div>
             </div>
@@ -285,9 +280,14 @@ export function SpecialistDetailPanel({
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium">Horario de trabajo</h3>
-                <span className="text-xs text-primary font-medium">
-                  {formatDateRange()}
-                </span>
+                <div className="flex gap-2 items-center">
+                  <span className="text-sm text-primary font-medium">
+                    Semana:
+                  </span>
+                  <span className="text-sm text-primary font-medium">
+                    {formatDateRange()}
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -329,6 +329,32 @@ export function SpecialistDetailPanel({
           No se encontró el especialista
         </div>
       )}
+    </>
+  )
+
+  if (isMobile) {
+    return (
+      <Sheet open={!!specialistId} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent side="right" className="w-full sm:max-w-sm">
+          <div className="flex flex-col h-full">{detailContent}</div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <div className="w-[400px] border-l bg-card flex flex-col h-full">
+      <div className="flex items-center justify-end p-4 border-b">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      {detailContent}
     </div>
   )
 }

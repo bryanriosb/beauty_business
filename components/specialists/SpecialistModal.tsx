@@ -367,7 +367,7 @@ export function SpecialistModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-lg max-h-[90vh] overflow-y-auto"
+        className="max-w-lg max-h-screen sm:max-h-[90vh] overflow-hidden"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
@@ -381,189 +381,135 @@ export function SpecialistModal({
               : 'Completa la información del nuevo especialista'}
           </DialogDescription>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="first_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Nombre <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="María"
-                        disabled={isSubmitting}
-                        data-tutorial="specialist-name-input"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="last_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Apellido</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="García"
-                        disabled={isSubmitting}
-                        data-tutorial="specialist-last-name-input"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Email{' '}
-                    {!isEditing && <span className="text-destructive">*</span>}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="maria@ejemplo.com"
-                      disabled={isSubmitting}
-                      data-tutorial="specialist-email-input"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Teléfono</FormLabel>
-                  <FormControl>
-                    <PhoneInput
-                      defaultCountry="CO"
-                      countries={['CO']}
-                      international
-                      countryCallingCodeEditable={false}
-                      countrySelectProps={{ disabled: true }}
-                      placeholder="300 123 4567"
-                      limitMaxLength={true}
-                      value={field.value}
-                      onChange={field.onChange}
-                      data-tutorial="specialist-phone-input"
-                      className="phone-input"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {!isEditing ? (
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Contraseña <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <div className="flex gap-2">
-                      <FormControl>
-                        <div className="relative flex-1">
-                          <Input
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="••••••••"
-                            disabled={isSubmitting}
-                            data-tutorial="specialist-password-input"
-                            className="pr-20"
-                            {...field}
-                          />
-                          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => setShowPassword(!showPassword)}
-                            >
-                              {showPassword ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </FormControl>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          const newPass = generatePassword()
-                          form.setValue('password', newPass)
-                        }}
-                        disabled={isSubmitting}
-                        title="Generar nueva contraseña"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <FormDescription className="text-xs">
-                      Contraseña sugerida. Puedes modificarla o regenerar una
-                      nueva.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ) : (
-              specialist?.user_profile_id && (
-                <>
+        <div className="flex flex-col min-h-full">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col h-full"
+            >
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-4">
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="newPassword"
+                    name="first_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nueva Contraseña (opcional)</FormLabel>
+                        <FormLabel>
+                          Nombre <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="María"
+                            disabled={isSubmitting}
+                            data-tutorial="specialist-name-input"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="last_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Apellido</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="García"
+                            disabled={isSubmitting}
+                            data-tutorial="specialist-last-name-input"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Email{' '}
+                        {!isEditing && (
+                          <span className="text-destructive">*</span>
+                        )}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="maria@ejemplo.com"
+                          disabled={isSubmitting}
+                          data-tutorial="specialist-email-input"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Teléfono</FormLabel>
+                      <FormControl>
+                        <PhoneInput
+                          defaultCountry="CO"
+                          countries={['CO']}
+                          international
+                          countryCallingCodeEditable={false}
+                          countrySelectProps={{ disabled: true }}
+                          placeholder="300 123 4567"
+                          limitMaxLength={true}
+                          value={field.value}
+                          onChange={field.onChange}
+                          data-tutorial="specialist-phone-input"
+                          className="phone-input"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {!isEditing ? (
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Contraseña <span className="text-destructive">*</span>
+                        </FormLabel>
                         <div className="flex gap-2">
                           <FormControl>
                             <div className="relative flex-1">
                               <Input
-                                type={showNewPassword ? 'text' : 'password'}
-                                placeholder="Dejar vacío para no cambiar"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••"
                                 disabled={isSubmitting}
-                                className="pr-10"
+                                data-tutorial="specialist-password-input"
+                                className="pr-20"
                                 {...field}
                               />
-                              <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex">
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7"
-                                  onClick={() =>
-                                    setShowNewPassword(!showNewPassword)
-                                  }
+                                  onClick={() => setShowPassword(!showPassword)}
                                 >
-                                  {showNewPassword ? (
+                                  {showPassword ? (
                                     <EyeOff className="h-4 w-4" />
                                   ) : (
                                     <Eye className="h-4 w-4" />
@@ -572,220 +518,289 @@ export function SpecialistModal({
                               </div>
                             </div>
                           </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              const newPass = generatePassword()
+                              form.setValue('password', newPass)
+                            }}
+                            disabled={isSubmitting}
+                            title="Generar nueva contraseña"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
                         </div>
                         <FormDescription className="text-xs">
-                          Solo completa si deseas cambiar la contraseña actual.
+                          Contraseña sugerida. Puedes modificarla o regenerar
+                          una nueva.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </>
-              )
-            )}
-
-            {/* Service Categories - Collapsible */}
-            <div className="grid gap-4">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">
-                  Servicios que realiza
-                </span>
-                {selectedCategoryIds.length > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    ({selectedCategoryIds.length} seleccionados)
-                  </span>
+                ) : (
+                  specialist?.user_profile_id && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nueva Contraseña (opcional)</FormLabel>
+                            <div className="flex gap-2">
+                              <FormControl>
+                                <div className="relative flex-1">
+                                  <Input
+                                    type={showNewPassword ? 'text' : 'password'}
+                                    placeholder="Dejar vacío para no cambiar"
+                                    disabled={isSubmitting}
+                                    className="pr-10"
+                                    {...field}
+                                  />
+                                  <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() =>
+                                        setShowNewPassword(!showNewPassword)
+                                      }
+                                    >
+                                      {showNewPassword ? (
+                                        <EyeOff className="h-4 w-4" />
+                                      ) : (
+                                        <Eye className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </FormControl>
+                            </div>
+                            <FormDescription className="text-xs">
+                              Solo completa si deseas cambiar la contraseña
+                              actual.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )
                 )}
-              </div>
-              <ServiceCategorySelector
-                categories={serviceCategories}
-                selectedCategoryIds={selectedCategoryIds}
-                onChange={setSelectedCategoryIds}
-                disabled={isSubmitting}
-              />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="profile_picture_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Foto de perfil</FormLabel>
-                  <FormControl>
-                    <ImageUpload
-                      value={field.value || null}
-                      onChange={(url) => field.onChange(url || '')}
-                      onUpload={handleImageUpload}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Especialista de con alta experiencia en..."
-                      rows={2}
-                      disabled={isSubmitting}
-                      data-tutorial="specialist-bio"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="is_featured"
-              render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>Destacado</FormLabel>
-                    <FormDescription className="text-xs">
-                      Los especialistas destacados aparecen primero
-                    </FormDescription>
+                {/* Service Categories - Collapsible */}
+                <div className="grid gap-4">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      Servicios que realiza
+                    </span>
+                    {selectedCategoryIds.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        ({selectedCategoryIds.length} seleccionados)
+                      </span>
+                    )}
                   </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                  <ServiceCategorySelector
+                    categories={serviceCategories}
+                    selectedCategoryIds={selectedCategoryIds}
+                    onChange={setSelectedCategoryIds}
+                    disabled={isSubmitting}
+                  />
+                </div>
 
-            <Separator />
+                <FormField
+                  control={form.control}
+                  name="profile_picture_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Foto de perfil</FormLabel>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value || null}
+                          onChange={(url) => field.onChange(url || '')}
+                          onUpload={handleImageUpload}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {/* Schedule Section - Collapsible */}
-            <Collapsible open={scheduleOpen} onOpenChange={setScheduleOpen}>
-              <CollapsibleTrigger asChild>
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descripción</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Especialista de con alta experiencia en..."
+                          rows={2}
+                          disabled={isSubmitting}
+                          data-tutorial="specialist-bio"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="is_featured"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Destacado</FormLabel>
+                        <FormDescription className="text-xs">
+                          Los especialistas destacados aparecen primero
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <Separator />
+
+                {/* Schedule Section - Collapsible */}
+                <Collapsible open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                          Horario de trabajo
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          (
+                          {
+                            Object.values(schedule).filter((d) => d.enabled)
+                              .length
+                          }{' '}
+                          días activos)
+                        </span>
+                      </div>
+                      <ChevronDown
+                        className={`h-4 w-4 text-muted-foreground transition-transform ${
+                          scheduleOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2 space-y-2">
+                    {DAYS_CONFIG.map(({ key, label }) => {
+                      const businessDay = getBusinessHoursForDay(key)
+                      const businessIsOpen = isBusinessOpenOnDay(key)
+                      const businessOpenTime =
+                        businessDay?.open_time?.slice(0, 5) || '09:00'
+                      const businessCloseTime =
+                        businessDay?.close_time?.slice(0, 5) || '18:00'
+
+                      return (
+                        <div
+                          key={key}
+                          className={`flex items-center gap-3 rounded-lg border p-2 ${
+                            !businessIsOpen ? 'opacity-50 bg-muted/50' : ''
+                          }`}
+                        >
+                          <Switch
+                            checked={schedule[key].enabled && businessIsOpen}
+                            onCheckedChange={(checked) =>
+                              updateDaySchedule(key, { enabled: checked })
+                            }
+                            disabled={isSubmitting || !businessIsOpen}
+                          />
+                          <span className="w-24 text-sm font-medium">
+                            {label}
+                          </span>
+                          {!businessIsOpen ? (
+                            <span className="text-xs text-muted-foreground">
+                              Negocio cerrado
+                            </span>
+                          ) : schedule[key].enabled ? (
+                            <div className="flex items-center gap-2 flex-1">
+                              <Input
+                                type="time"
+                                value={schedule[key].start_time}
+                                min={businessOpenTime}
+                                max={businessCloseTime}
+                                onChange={(e) =>
+                                  updateDaySchedule(key, {
+                                    start_time: e.target.value,
+                                  })
+                                }
+                                disabled={isSubmitting}
+                                className="h-8 text-xs w-28"
+                              />
+                              <span className="text-muted-foreground text-xs">
+                                a
+                              </span>
+                              <Input
+                                type="time"
+                                value={schedule[key].end_time}
+                                min={businessOpenTime}
+                                max={businessCloseTime}
+                                onChange={(e) =>
+                                  updateDaySchedule(key, {
+                                    end_time: e.target.value,
+                                  })
+                                }
+                                disabled={isSubmitting}
+                                className="h-8 text-xs w-28"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              No trabaja
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+
+              <DialogFooter>
                 <Button
                   type="button"
-                  variant="ghost"
-                  className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
                 >
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      Horario de trabajo
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({Object.values(schedule).filter((d) => d.enabled).length}{' '}
-                      días activos)
-                    </span>
-                  </div>
-                  <ChevronDown
-                    className={`h-4 w-4 text-muted-foreground transition-transform ${
-                      scheduleOpen ? 'rotate-180' : ''
-                    }`}
-                  />
+                  Cancelar
                 </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-2 space-y-2">
-                {DAYS_CONFIG.map(({ key, label }) => {
-                  const businessDay = getBusinessHoursForDay(key)
-                  const businessIsOpen = isBusinessOpenOnDay(key)
-                  const businessOpenTime =
-                    businessDay?.open_time?.slice(0, 5) || '09:00'
-                  const businessCloseTime =
-                    businessDay?.close_time?.slice(0, 5) || '18:00'
-
-                  return (
-                    <div
-                      key={key}
-                      className={`flex items-center gap-3 rounded-lg border p-2 ${
-                        !businessIsOpen ? 'opacity-50 bg-muted/50' : ''
-                      }`}
-                    >
-                      <Switch
-                        checked={schedule[key].enabled && businessIsOpen}
-                        onCheckedChange={(checked) =>
-                          updateDaySchedule(key, { enabled: checked })
-                        }
-                        disabled={isSubmitting || !businessIsOpen}
-                      />
-                      <span className="w-24 text-sm font-medium">{label}</span>
-                      {!businessIsOpen ? (
-                        <span className="text-xs text-muted-foreground">
-                          Negocio cerrado
-                        </span>
-                      ) : schedule[key].enabled ? (
-                        <div className="flex items-center gap-2 flex-1">
-                          <Input
-                            type="time"
-                            value={schedule[key].start_time}
-                            min={businessOpenTime}
-                            max={businessCloseTime}
-                            onChange={(e) =>
-                              updateDaySchedule(key, {
-                                start_time: e.target.value,
-                              })
-                            }
-                            disabled={isSubmitting}
-                            className="h-8 text-xs w-28"
-                          />
-                          <span className="text-muted-foreground text-xs">
-                            a
-                          </span>
-                          <Input
-                            type="time"
-                            value={schedule[key].end_time}
-                            min={businessOpenTime}
-                            max={businessCloseTime}
-                            onChange={(e) =>
-                              updateDaySchedule(key, {
-                                end_time: e.target.value,
-                              })
-                            }
-                            disabled={isSubmitting}
-                            className="h-8 text-xs w-28"
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          No trabaja
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
-              </CollapsibleContent>
-            </Collapsible>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                data-tutorial="save-specialist-button"
-              >
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {specialist ? 'Actualizar' : 'Crear'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  data-tutorial="save-specialist-button"
+                >
+                  {isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {specialist ? 'Actualizar' : 'Crear'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )

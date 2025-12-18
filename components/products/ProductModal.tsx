@@ -279,7 +279,7 @@ export function ProductModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-screen sm:max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? 'Editar Producto' : 'Crear Producto'}
@@ -290,411 +290,423 @@ export function ProductModal({
               : 'Ingresa los datos del nuevo producto'}
           </DialogDescription>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Producto</FormLabel>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={field.value === 'RETAIL' ? 'default' : 'outline'}
-                      className="flex-1"
-                      onClick={() => field.onChange('RETAIL')}
-                    >
-                      <Package className="mr-2 h-4 w-4" />
-                      Venta
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={field.value === 'SUPPLY' ? 'default' : 'outline'}
-                      className="flex-1"
-                      onClick={() => field.onChange('SUPPLY')}
-                    >
-                      <Syringe className="mr-2 h-4 w-4" />
-                      Insumo
-                    </Button>
-                  </div>
-                  <FormDescription>
-                    {field.value === 'SUPPLY'
-                      ? 'Los insumos se usan en servicios y se cobran por cantidad'
-                      : 'Los productos de venta se venden directamente al cliente'}
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-
-            {isCompanyAdmin && (
-              <FormField
-                control={form.control}
-                name="business_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Sucursal <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isSubmitting}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona una sucursal" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {businesses.map((business) => (
-                          <SelectItem key={business.id} value={business.id}>
-                            {business.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="precios">Precios</TabsTrigger>
-                <TabsTrigger value="inventario">Inventario</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="general" className="space-y-4 mt-4">
+        <div className="flex flex-col min-h-full">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col h-full"
+            >
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-4">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Nombre <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Nombre del producto"
-                          disabled={isSubmitting}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
+                      <FormLabel>Tipo de Producto</FormLabel>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={
+                            field.value === 'RETAIL' ? 'default' : 'outline'
+                          }
+                          className="flex-1"
+                          onClick={() => field.onChange('RETAIL')}
+                        >
+                          <Package className="mr-2 h-4 w-4" />
+                          Venta
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={
+                            field.value === 'SUPPLY' ? 'default' : 'outline'
+                          }
+                          className="flex-1"
+                          onClick={() => field.onChange('SUPPLY')}
+                        >
+                          <Syringe className="mr-2 h-4 w-4" />
+                          Insumo
+                        </Button>
+                      </div>
+                      <FormDescription>
+                        {field.value === 'SUPPLY'
+                          ? 'Los insumos se usan en servicios y se cobran por cantidad'
+                          : 'Los productos de venta se venden directamente al cliente'}
+                      </FormDescription>
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descripción</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Descripción del producto..."
-                          rows={2}
-                          disabled={isSubmitting}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
+                {isCompanyAdmin && (
                   <FormField
                     control={form.control}
-                    name="category_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoría</FormLabel>
-                        <FormControl>
-                          <CreatableCombobox
-                            options={categoryOptions}
-                            value={field.value || null}
-                            onChange={field.onChange}
-                            onCreateNew={handleCreateCategory}
-                            placeholder="Sin categoría"
-                            searchPlaceholder="Crear o buscar categoría..."
-                            emptyText="No hay categorías"
-                            createText="Crear categoría"
-                            disabled={isSubmitting}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="unit_of_measure_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unidad de Medida</FormLabel>
-                        <FormControl>
-                          <CreatableCombobox
-                            options={unitOptions}
-                            value={field.value || null}
-                            onChange={field.onChange}
-                            onCreateNew={handleCreateUnit}
-                            placeholder="Sin unidad"
-                            searchPlaceholder="Crear o Buscar unidad..."
-                            emptyText="No hay unidades"
-                            createText="Crear unidad"
-                            disabled={isSubmitting}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="sku"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SKU</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Código único"
-                            disabled={isSubmitting}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="barcode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Código de Barras</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Código de barras"
-                            disabled={isSubmitting}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="image_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Imagen del producto</FormLabel>
-                      <FormControl>
-                        <ImageUpload
-                          value={field.value || null}
-                          onChange={(url) => field.onChange(url || '')}
-                          onUpload={handleImageUpload}
-                          disabled={isSubmitting}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-
-              <TabsContent value="precios" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="cost_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {productType === 'SUPPLY'
-                          ? 'Precio por Unidad (COP)'
-                          : 'Precio de Costo (COP)'}
-                        <span className="text-destructive"> *</span>
-                      </FormLabel>
-                      <FormControl>
-                        <NumericInput
-                          min={0}
-                          placeholder="0"
-                          disabled={isSubmitting}
-                          value={field.value}
-                          onChange={(val) => field.onChange(val ?? 0)}
-                          allowDecimals={false}
-                        />
-                      </FormControl>
-                      {productType === 'SUPPLY' && (
-                        <FormDescription>
-                          Este precio se usará para calcular el costo de los
-                          servicios que usen este insumo
-                        </FormDescription>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {productType === 'RETAIL' && (
-                  <FormField
-                    control={form.control}
-                    name="sale_price"
+                    name="business_id"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Precio de Venta (COP)
-                          <span className="text-destructive"> *</span>
+                          Sucursal <span className="text-destructive">*</span>
                         </FormLabel>
-                        <FormControl>
-                          <NumericInput
-                            min={0}
-                            placeholder="0"
-                            disabled={isSubmitting}
-                            value={field.value}
-                            onChange={(val) => field.onChange(val ?? 0)}
-                            allowDecimals={false}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </TabsContent>
-
-              <TabsContent value="inventario" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="current_stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stock Actual</FormLabel>
-                      <FormControl>
-                        <NumericInput
-                          min={0}
-                          placeholder="0"
-                          disabled={isSubmitting || isEdit}
+                        <Select
+                          onValueChange={field.onChange}
                           value={field.value}
-                          onChange={(val) => field.onChange(val ?? 0)}
-                          allowDecimals={true}
-                          decimalPlaces={2}
-                        />
-                      </FormControl>
-                      {isEdit && (
-                        <FormDescription>
-                          El stock se modifica desde movimientos de inventario
-                        </FormDescription>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="min_stock"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Stock Mínimo</FormLabel>
-                        <FormControl>
-                          <NumericInput
-                            min={0}
-                            placeholder="0"
-                            disabled={isSubmitting}
-                            value={field.value}
-                            onChange={(val) => field.onChange(val ?? 0)}
-                            allowDecimals={true}
-                            decimalPlaces={2}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Alerta cuando el stock esté bajo
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="max_stock"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Stock Máximo</FormLabel>
-                        <FormControl>
-                          <NumericInput
-                            min={0}
-                            placeholder="Sin límite"
-                            disabled={isSubmitting}
-                            value={field.value}
-                            onChange={(val) => field.onChange(val)}
-                            allowDecimals={true}
-                            decimalPlaces={2}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="is_active"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel>Producto Activo</FormLabel>
-                        <FormDescription className="text-xs">
-                          Los productos inactivos no aparecen en las búsquedas
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
                           disabled={isSubmitting}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-            </Tabs>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecciona una sucursal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {businesses.map((business) => (
+                              <SelectItem key={business.id} value={business.id}>
+                                {business.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-                {isEdit ? 'Actualizar' : 'Crear'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+
+                <Tabs defaultValue="general" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="precios">Precios</TabsTrigger>
+                    <TabsTrigger value="inventario">Inventario</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="general" className="space-y-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Nombre <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Nombre del producto"
+                              disabled={isSubmitting}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descripción</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Descripción del producto..."
+                              rows={2}
+                              disabled={isSubmitting}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="category_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Categoría</FormLabel>
+                            <FormControl>
+                              <CreatableCombobox
+                                options={categoryOptions}
+                                value={field.value || null}
+                                onChange={field.onChange}
+                                onCreateNew={handleCreateCategory}
+                                placeholder="Sin categoría"
+                                searchPlaceholder="Crear o buscar categoría..."
+                                emptyText="No hay categorías"
+                                createText="Crear categoría"
+                                disabled={isSubmitting}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="unit_of_measure_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Unidad de Medida</FormLabel>
+                            <FormControl>
+                              <CreatableCombobox
+                                options={unitOptions}
+                                value={field.value || null}
+                                onChange={field.onChange}
+                                onCreateNew={handleCreateUnit}
+                                placeholder="Sin unidad"
+                                searchPlaceholder="Crear o Buscar unidad..."
+                                emptyText="No hay unidades"
+                                createText="Crear unidad"
+                                disabled={isSubmitting}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="sku"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SKU</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Código único"
+                                disabled={isSubmitting}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="barcode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Código de Barras</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Código de barras"
+                                disabled={isSubmitting}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="image_url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Imagen del producto</FormLabel>
+                          <FormControl>
+                            <ImageUpload
+                              value={field.value || null}
+                              onChange={(url) => field.onChange(url || '')}
+                              onUpload={handleImageUpload}
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="precios" className="space-y-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="cost_price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {productType === 'SUPPLY'
+                              ? 'Precio por Unidad (COP)'
+                              : 'Precio de Costo (COP)'}
+                            <span className="text-destructive"> *</span>
+                          </FormLabel>
+                          <FormControl>
+                            <NumericInput
+                              min={0}
+                              placeholder="0"
+                              disabled={isSubmitting}
+                              value={field.value}
+                              onChange={(val) => field.onChange(val ?? 0)}
+                              allowDecimals={false}
+                            />
+                          </FormControl>
+                          {productType === 'SUPPLY' && (
+                            <FormDescription>
+                              Este precio se usará para calcular el costo de los
+                              servicios que usen este insumo
+                            </FormDescription>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {productType === 'RETAIL' && (
+                      <FormField
+                        control={form.control}
+                        name="sale_price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Precio de Venta (COP)
+                              <span className="text-destructive"> *</span>
+                            </FormLabel>
+                            <FormControl>
+                              <NumericInput
+                                min={0}
+                                placeholder="0"
+                                disabled={isSubmitting}
+                                value={field.value}
+                                onChange={(val) => field.onChange(val ?? 0)}
+                                allowDecimals={false}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="inventario" className="space-y-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="current_stock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock Actual</FormLabel>
+                          <FormControl>
+                            <NumericInput
+                              min={0}
+                              placeholder="0"
+                              disabled={isSubmitting || isEdit}
+                              value={field.value}
+                              onChange={(val) => field.onChange(val ?? 0)}
+                              allowDecimals={true}
+                              decimalPlaces={2}
+                            />
+                          </FormControl>
+                          {isEdit && (
+                            <FormDescription>
+                              El stock se modifica desde movimientos de
+                              inventario
+                            </FormDescription>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="min_stock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stock Mínimo</FormLabel>
+                            <FormControl>
+                              <NumericInput
+                                min={0}
+                                placeholder="0"
+                                disabled={isSubmitting}
+                                value={field.value}
+                                onChange={(val) => field.onChange(val ?? 0)}
+                                allowDecimals={true}
+                                decimalPlaces={2}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Alerta cuando el stock esté bajo
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="max_stock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stock Máximo</FormLabel>
+                            <FormControl>
+                              <NumericInput
+                                min={0}
+                                placeholder="Sin límite"
+                                disabled={isSubmitting}
+                                value={field.value}
+                                onChange={(val) => field.onChange(val)}
+                                allowDecimals={true}
+                                decimalPlaces={2}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="is_active"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>Producto Activo</FormLabel>
+                            <FormDescription className="text-xs">
+                              Los productos inactivos no aparecen en las
+                              búsquedas
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isEdit ? 'Actualizar' : 'Crear'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )
