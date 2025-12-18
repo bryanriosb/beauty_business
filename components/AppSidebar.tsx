@@ -30,7 +30,10 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
   const isCollapsed = state === 'collapsed'
 
   // Crear set de módulos accesibles para búsqueda rápida
-  const accessibleModulesSet = useMemo(() => new Set(accessibleModules), [accessibleModules])
+  const accessibleModulesSet = useMemo(
+    () => new Set(accessibleModules),
+    [accessibleModules]
+  )
 
   // Filtrar items del menú por rol y módulos accesibles
   const filteredAppItems = useMemo(() => {
@@ -95,7 +98,10 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
 
       const filteredSubItems = item.items.filter((subItem) => {
         // Verificar rol en sub-item
-        if (subItem.allowedRoles && (!role || !subItem.allowedRoles.includes(role))) {
+        if (
+          subItem.allowedRoles &&
+          (!role || !subItem.allowedRoles.includes(role))
+        ) {
           return false
         }
 
@@ -117,7 +123,10 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
 
       const filteredSubItems = item.items.filter((subItem) => {
         // Verificar rol en sub-item
-        if (subItem.allowedRoles && (!role || !subItem.allowedRoles.includes(role))) {
+        if (
+          subItem.allowedRoles &&
+          (!role || !subItem.allowedRoles.includes(role))
+        ) {
           return false
         }
 
@@ -140,8 +149,8 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
           <div className="relative mx-auto mb-4 flex items-center justify-center transition-all duration-300 ease-in-out">
             <Image
               className={`transition-all duration-300 ease-in-out dark:brightness-0 dark:invert ${
-                isCollapsed 
-                  ? 'scale-100 opacity-100 absolute' 
+                isCollapsed
+                  ? 'scale-100 opacity-100 absolute'
                   : 'scale-100 opacity-100'
               }`}
               alt="logo"
@@ -156,9 +165,7 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
             />
             <Image
               className={`transition-all duration-300 ease-in-out dark:brightness-0 dark:invert ${
-                isCollapsed 
-                  ? 'absolute' 
-                  : 'relative'
+                isCollapsed ? 'absolute' : 'relative'
               }`}
               alt="logo"
               src="/beluvio.svg"

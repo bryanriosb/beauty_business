@@ -91,7 +91,9 @@ export default function SidebarFooter() {
                 <AvatarFallback className="text-xs">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0">
-                <span className="font-medium text-sm truncate">{displayName}</span>
+                <span className="font-medium text-sm truncate">
+                  {displayName}
+                </span>
                 <span className="text-xs text-muted-foreground truncate">
                   {displayEmail}
                 </span>
@@ -125,7 +127,9 @@ export default function SidebarFooter() {
                 <AvatarFallback className="text-xs">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0 overflow-hidden text-left">
-                <span className="font-medium text-sm truncate">{displayName}</span>
+                <span className="font-medium text-sm truncate">
+                  {displayName}
+                </span>
                 <span className="text-xs text-muted-foreground truncate">
                   {displayEmail}
                 </span>
