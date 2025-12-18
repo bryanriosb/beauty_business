@@ -1,16 +1,32 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Plus, X } from 'lucide-react'
-import Loading from '@/components/ui/loading'
-import { Button } from '@/components/ui/button'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { ChevronDown, ChevronUp, Plus, X, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { DatePicker } from '@/components/ui/date-picker'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -18,23 +34,79 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { DatePicker } from '@/components/ui/date-picker'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import type {
   MedicalRecord,
   MedicalRecordInsert,
   MedicalRecordUpdate,
   MedicalRecordType,
-  MedicalRecordVitalSigns,
-  MedicalRecordAllergies,
-  MedicalRecordMedicalHistory,
-  MedicalRecordTreatmentPlan,
 } from '@/lib/models/medical-record/medical-record'
 import type { BusinessCustomer } from '@/lib/models/customer/business-customer'
 import CustomerSearchSelect from './CustomerSearchSelect'
+
+const RECORD_TYPE_OPTIONS: { value: MedicalRecordType; label: string }[] = [
+  { value: 'initial_assessment', label: 'Evaluación inicial' },
+  { value: 'follow_up', label: 'Seguimiento' },
+  { value: 'procedure', label: 'Procedimiento' },
+  { value: 'consultation', label: 'Consulta' },
+  { value: 'pre_operative', label: 'Pre-operatorio' },
+  { value: 'post_operative', label: 'Post-operatorio' },
+]
+
+const medicalRecordSchema = z.object({
+  customer_id: z.string().min(1, 'Seleccione un paciente'),
+  record_type: z.enum([
+    'initial_assessment',
+    'follow_up',
+    'procedure',
+    'consultation',
+    'pre_operative',
+    'post_operative',
+  ]),
+  record_date: z.string().min(1, 'La fecha es requerida'),
+  chief_complaint: z.string().optional(),
+  clinical_notes: z.string().optional(),
+  vital_signs: z
+    .object({
+      blood_pressure: z.string().optional(),
+      heart_rate: z.number().optional(),
+      temperature: z.number().optional(),
+      weight: z.number().optional(),
+      height: z.number().optional(),
+      bmi: z.number().optional(),
+    })
+    .optional(),
+  allergies: z
+    .object({
+      medications: z.array(z.string()),
+      products: z.array(z.string()),
+      other: z.array(z.string()),
+    })
+    .optional(),
+  medical_history: z
+    .object({
+      chronic_conditions: z.array(z.string()),
+      previous_surgeries: z.array(z.string()),
+      current_medications: z.array(z.string()),
+      family_history: z.array(z.string()),
+    })
+    .optional(),
+  treatment_plan: z
+    .object({
+      diagnosis: z.string().optional(),
+      treatment: z.string().optional(),
+      recommendations: z.array(z.string()),
+      next_appointment: z.string().optional(),
+      follow_up_notes: z.string().optional(),
+    })
+    .optional(),
+})
+
+type MedicalRecordFormValues = z.infer<typeof medicalRecordSchema>
 
 interface MedicalRecordModalProps {
   businessId: string
@@ -48,44 +120,6 @@ interface MedicalRecordModalProps {
   ) => Promise<void>
 }
 
-interface FormData {
-  customer_id: string
-  record_type: MedicalRecordType
-  record_date: string
-  chief_complaint: string
-  clinical_notes: string
-  vital_signs: MedicalRecordVitalSigns
-  allergies: MedicalRecordAllergies
-  medical_history: MedicalRecordMedicalHistory
-  treatment_plan: MedicalRecordTreatmentPlan
-}
-
-const RECORD_TYPE_OPTIONS: { value: MedicalRecordType; label: string }[] = [
-  { value: 'initial_assessment', label: 'Evaluación inicial' },
-  { value: 'follow_up', label: 'Seguimiento' },
-  { value: 'procedure', label: 'Procedimiento' },
-  { value: 'consultation', label: 'Consulta' },
-  { value: 'pre_operative', label: 'Pre-operatorio' },
-  { value: 'post_operative', label: 'Post-operatorio' },
-]
-
-const getDefaultFormData = (record?: MedicalRecord | null): FormData => ({
-  customer_id: record?.customer_id || '',
-  record_type: record?.record_type || 'consultation',
-  record_date: record?.record_date?.split('T')[0] || new Date().toISOString().split('T')[0],
-  chief_complaint: record?.chief_complaint || '',
-  clinical_notes: record?.clinical_notes || '',
-  vital_signs: record?.vital_signs || {},
-  allergies: record?.allergies || { medications: [], products: [], other: [] },
-  medical_history: record?.medical_history || {
-    chronic_conditions: [],
-    previous_surgeries: [],
-    current_medications: [],
-    family_history: [],
-  },
-  treatment_plan: record?.treatment_plan || {},
-})
-
 export default function MedicalRecordModal({
   businessId,
   open,
@@ -98,22 +132,85 @@ export default function MedicalRecordModal({
   const [showAllergies, setShowAllergies] = useState(false)
   const [showMedicalHistory, setShowMedicalHistory] = useState(false)
   const [showTreatmentPlan, setShowTreatmentPlan] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [formData, setFormData] = useState<FormData>(getDefaultFormData(record))
-  const [selectedCustomer, setSelectedCustomer] = useState<BusinessCustomer | null>(
-    preselectedCustomer || null
-  )
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<BusinessCustomer | null>(preselectedCustomer || null)
 
   const isEditing = !!record
 
+  const form = useForm<MedicalRecordFormValues>({
+    resolver: zodResolver(medicalRecordSchema),
+    defaultValues: {
+      customer_id: record?.customer_id || '',
+      record_type: record?.record_type || 'consultation',
+      record_date:
+        record?.record_date?.split('T')[0] ||
+        new Date().toISOString().split('T')[0],
+      chief_complaint: record?.chief_complaint || '',
+      clinical_notes: record?.clinical_notes || '',
+      vital_signs: record?.vital_signs || {},
+      allergies: record?.allergies || {
+        medications: [],
+        products: [],
+        other: [],
+      },
+      medical_history: record?.medical_history || {
+        chronic_conditions: [],
+        previous_surgeries: [],
+        current_medications: [],
+        family_history: [],
+      },
+      treatment_plan: record?.treatment_plan || {},
+    },
+  })
+
   useEffect(() => {
     if (open) {
-      setFormData(getDefaultFormData(record))
-      setSelectedCustomer(preselectedCustomer || null)
-      if (preselectedCustomer) {
-        setFormData((prev) => ({ ...prev, customer_id: preselectedCustomer.id }))
+      if (record) {
+        form.reset({
+          customer_id: record.customer_id,
+          record_type: record.record_type,
+          record_date:
+            record.record_date?.split('T')[0] ||
+            new Date().toISOString().split('T')[0],
+          chief_complaint: record.chief_complaint || '',
+          clinical_notes: record.clinical_notes || '',
+          vital_signs: record.vital_signs || {},
+          allergies: record.allergies || {
+            medications: [],
+            products: [],
+            other: [],
+          },
+          medical_history: record.medical_history || {
+            chronic_conditions: [],
+            previous_surgeries: [],
+            current_medications: [],
+            family_history: [],
+          },
+          treatment_plan: record.treatment_plan || {},
+        })
+      } else {
+        form.reset({
+          customer_id: preselectedCustomer?.id || '',
+          record_type: 'consultation',
+          record_date: new Date().toISOString().split('T')[0],
+          chief_complaint: '',
+          clinical_notes: '',
+          vital_signs: {},
+          allergies: { medications: [], products: [], other: [] },
+          medical_history: {
+            chronic_conditions: [],
+            previous_surgeries: [],
+            current_medications: [],
+            family_history: [],
+          },
+          treatment_plan: {},
+        })
       }
-      setShowVitalSigns(!!record?.vital_signs?.blood_pressure || !!record?.vital_signs?.weight)
+      setSelectedCustomer(preselectedCustomer || null)
+      setShowVitalSigns(
+        !!record?.vital_signs?.blood_pressure || !!record?.vital_signs?.weight
+      )
       setShowAllergies(
         (record?.allergies?.medications?.length ?? 0) > 0 ||
           (record?.allergies?.products?.length ?? 0) > 0
@@ -122,405 +219,669 @@ export default function MedicalRecordModal({
         (record?.medical_history?.chronic_conditions?.length ?? 0) > 0 ||
           (record?.medical_history?.current_medications?.length ?? 0) > 0
       )
-      setShowTreatmentPlan(!!record?.treatment_plan?.diagnosis || !!record?.treatment_plan?.treatment)
+      setShowTreatmentPlan(
+        !!record?.treatment_plan?.diagnosis ||
+          !!record?.treatment_plan?.treatment
+      )
     }
-  }, [open, record, preselectedCustomer])
-
-  const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+  }, [open, record, preselectedCustomer, form])
 
   const handleCustomerSelect = (customer: BusinessCustomer | null) => {
     setSelectedCustomer(customer)
-    updateField('customer_id', customer?.id || '')
+    form.setValue('customer_id', customer?.id || '')
   }
 
-  const handleSubmit = async () => {
-    if (!formData.customer_id) return
-
-    setIsSaving(true)
+  const onSubmit = async (data: MedicalRecordFormValues) => {
+    setIsSubmitting(true)
     try {
-      if (isEditing) {
+      if (isEditing && record) {
         const updateData: MedicalRecordUpdate = {
-          record_type: formData.record_type,
-          record_date: formData.record_date,
-          chief_complaint: formData.chief_complaint || null,
-          clinical_notes: formData.clinical_notes || null,
-          vital_signs: Object.keys(formData.vital_signs).length > 0 ? formData.vital_signs : null,
-          allergies: formData.allergies,
-          medical_history: formData.medical_history,
-          treatment_plan:
-            Object.keys(formData.treatment_plan).length > 0 ? formData.treatment_plan : null,
+          record_type: data.record_type,
+          record_date: data.record_date,
+          chief_complaint: data.chief_complaint || null,
+          clinical_notes: data.clinical_notes || null,
+          vital_signs: data.vital_signs || null,
+          allergies: data.allergies || null,
+          medical_history: data.medical_history || null,
+          treatment_plan: data.treatment_plan || null,
         }
         await onSave(updateData, record.id)
       } else {
         const createData: MedicalRecordInsert = {
           business_id: businessId,
-          customer_id: formData.customer_id,
-          record_type: formData.record_type,
-          record_date: formData.record_date,
-          chief_complaint: formData.chief_complaint || null,
-          clinical_notes: formData.clinical_notes || null,
-          vital_signs: Object.keys(formData.vital_signs).length > 0 ? formData.vital_signs : null,
-          allergies: formData.allergies,
-          medical_history: formData.medical_history,
-          treatment_plan:
-            Object.keys(formData.treatment_plan).length > 0 ? formData.treatment_plan : null,
+          customer_id: data.customer_id,
+          record_type: data.record_type,
+          record_date: data.record_date,
+          chief_complaint: data.chief_complaint || null,
+          clinical_notes: data.clinical_notes || null,
+          vital_signs: data.vital_signs || null,
+          allergies: data.allergies || null,
+          medical_history: data.medical_history || null,
+          treatment_plan: data.treatment_plan || null,
           status: 'active',
         }
         await onSave(createData)
       }
       onOpenChange(false)
+    } catch (error: any) {
+      const errorMessage =
+        error?.message || 'Error al guardar la historia clínica'
+      console.error('Error saving medical record:', error)
     } finally {
-      setIsSaving(false)
+      setIsSubmitting(false)
     }
   }
 
-  const isValid = formData.customer_id && formData.record_date
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-lg max-h-screen sm:max-h-[90vh] overflow-hidden"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Editar Historia Clínica' : 'Nueva Historia Clínica'}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Modifica la información de la historia clínica'
+              : 'Ingresa los datos de la nueva historia clínica'}
+          </DialogDescription>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Paciente *</Label>
-              <CustomerSearchSelect
-                businessId={businessId}
-                value={selectedCustomer}
-                onChange={handleCustomerSelect}
-                disabled={isEditing}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Fecha *</Label>
-              <DatePicker
-                value={formData.record_date ? new Date(formData.record_date + 'T00:00:00') : undefined}
-                onChange={(date) => updateField('record_date', date ? date.toISOString().split('T')[0] : '')}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="record_type">Tipo de registro</Label>
-            <Select
-              value={formData.record_type}
-              onValueChange={(value) => updateField('record_type', value as MedicalRecordType)}
+        <div className="flex flex-col min-h-full">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col h-full"
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seleccionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {RECORD_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-4">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label>Paciente *</Label>
+                    <CustomerSearchSelect
+                      businessId={businessId}
+                      value={selectedCustomer}
+                      onChange={handleCustomerSelect}
+                      disabled={isEditing}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="record_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fecha *</FormLabel>
+                        <FormControl>
+                          <DatePicker
+                            value={
+                              field.value
+                                ? new Date(field.value + 'T00:00:00')
+                                : undefined
+                            }
+                            onChange={(date) =>
+                              field.onChange(
+                                date ? date.toISOString().split('T')[0] : ''
+                              )
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="chief_complaint">Motivo de consulta</Label>
-            <Textarea
-              id="chief_complaint"
-              value={formData.chief_complaint}
-              onChange={(e) => updateField('chief_complaint', e.target.value)}
-              placeholder="Describa el motivo principal de la consulta..."
-              rows={2}
-            />
-          </div>
+                <FormField
+                  control={form.control}
+                  name="record_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de registro</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Seleccionar..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {RECORD_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <div className="space-y-2">
-            <Label htmlFor="clinical_notes">Notas clínicas</Label>
-            <Textarea
-              id="clinical_notes"
-              value={formData.clinical_notes}
-              onChange={(e) => updateField('clinical_notes', e.target.value)}
-              placeholder="Observaciones, hallazgos y notas del especialista..."
-              rows={4}
-            />
-          </div>
+                <FormField
+                  control={form.control}
+                  name="chief_complaint"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Motivo de consulta</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describa el motivo principal de la consulta..."
+                          rows={2}
+                          disabled={isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <CollapsibleSection
-            title="Signos vitales"
-            isOpen={showVitalSigns}
-            onToggle={() => setShowVitalSigns(!showVitalSigns)}
-          >
-            <VitalSignsForm
-              value={formData.vital_signs}
-              onChange={(v) => updateField('vital_signs', v)}
-            />
-          </CollapsibleSection>
+                <FormField
+                  control={form.control}
+                  name="clinical_notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notas clínicas</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Observaciones, hallazgos y notas del especialista..."
+                          rows={4}
+                          disabled={isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <CollapsibleSection
-            title="Alergias"
-            isOpen={showAllergies}
-            onToggle={() => setShowAllergies(!showAllergies)}
-          >
-            <AllergiesForm
-              value={formData.allergies}
-              onChange={(v) => updateField('allergies', v)}
-            />
-          </CollapsibleSection>
+                <Collapsible
+                  open={showVitalSigns}
+                  onOpenChange={setShowVitalSigns}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                    >
+                      <span className="text-sm font-medium">
+                        Signos vitales
+                      </span>
+                      {showVitalSigns ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 space-y-4 border-t">
+                    <VitalSignsForm control={form.control} />
+                  </CollapsibleContent>
+                </Collapsible>
 
-          <CollapsibleSection
-            title="Antecedentes médicos"
-            isOpen={showMedicalHistory}
-            onToggle={() => setShowMedicalHistory(!showMedicalHistory)}
-          >
-            <MedicalHistoryForm
-              value={formData.medical_history}
-              onChange={(v) => updateField('medical_history', v)}
-            />
-          </CollapsibleSection>
+                <Collapsible
+                  open={showAllergies}
+                  onOpenChange={setShowAllergies}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                    >
+                      <span className="text-sm font-medium">Alergias</span>
+                      {showAllergies ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 space-y-4 border-t">
+                    <AllergiesForm control={form.control} />
+                  </CollapsibleContent>
+                </Collapsible>
 
-          <CollapsibleSection
-            title="Plan de tratamiento"
-            isOpen={showTreatmentPlan}
-            onToggle={() => setShowTreatmentPlan(!showTreatmentPlan)}
-          >
-            <TreatmentPlanForm
-              value={formData.treatment_plan}
-              onChange={(v) => updateField('treatment_plan', v)}
-            />
-          </CollapsibleSection>
+                <Collapsible
+                  open={showMedicalHistory}
+                  onOpenChange={setShowMedicalHistory}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                    >
+                      <span className="text-sm font-medium">
+                        Antecedentes médicos
+                      </span>
+                      {showMedicalHistory ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 space-y-4 border-t">
+                    <MedicalHistoryForm control={form.control} />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible
+                  open={showTreatmentPlan}
+                  onOpenChange={setShowTreatmentPlan}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                    >
+                      <span className="text-sm font-medium">
+                        Plan de tratamiento
+                      </span>
+                      {showTreatmentPlan ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 space-y-4 border-t">
+                    <TreatmentPlanForm control={form.control} />
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+
+              <DialogFooter className="shrink-0 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isSubmitting
+                    ? 'Guardando'
+                    : isEditing
+                    ? 'Actualizar'
+                    : 'Crear'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSaving || !isValid}>
-            {isSaving && <Loading className="mr-2 h-4 w-4" />}
-            {isSaving ? 'Guardando' : isEditing ? 'Actualizar' : 'Crear'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function CollapsibleSection({
-  title,
-  isOpen,
-  onToggle,
-  children,
-}: {
-  title: string
-  isOpen: boolean
-  onToggle: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <div className="border rounded-lg">
-      <Button
-        type="button"
-        variant="ghost"
-        className="w-full justify-between px-4 py-2"
-        onClick={onToggle}
-      >
-        <span className="font-medium">{title}</span>
-        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </Button>
-      {isOpen && <div className="px-4 pb-4 space-y-4">{children}</div>}
-    </div>
-  )
-}
-
-function VitalSignsForm({
-  value,
-  onChange,
-}: {
-  value: MedicalRecordVitalSigns
-  onChange: (v: MedicalRecordVitalSigns) => void
-}) {
-  const update = (field: keyof MedicalRecordVitalSigns, val: string) => {
-    const numVal = val ? parseFloat(val) : undefined
-    onChange({ ...value, [field]: field === 'blood_pressure' ? val : numVal })
-  }
-
+function VitalSignsForm({ control }: { control: any }) {
   return (
     <div className="grid grid-cols-3 gap-4">
-      <div className="space-y-2">
-        <Label>Presión arterial</Label>
-        <Input
-          placeholder="120/80"
-          value={value.blood_pressure || ''}
-          onChange={(e) => update('blood_pressure', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Frecuencia cardíaca</Label>
-        <Input
-          type="number"
-          placeholder="bpm"
-          value={value.heart_rate || ''}
-          onChange={(e) => update('heart_rate', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Temperatura (°C)</Label>
-        <Input
-          type="number"
-          step="0.1"
-          placeholder="36.5"
-          value={value.temperature || ''}
-          onChange={(e) => update('temperature', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Peso (kg)</Label>
-        <Input
-          type="number"
-          step="0.1"
-          value={value.weight || ''}
-          onChange={(e) => update('weight', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Altura (cm)</Label>
-        <Input
-          type="number"
-          value={value.height || ''}
-          onChange={(e) => update('height', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>IMC</Label>
-        <Input type="number" step="0.1" value={value.bmi || ''} disabled className="bg-muted" />
-      </div>
+      <FormField
+        control={control}
+        name="vital_signs.blood_pressure"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Presión arterial</FormLabel>
+            <FormControl>
+              <Input
+                placeholder="120/80"
+                disabled={false}
+                {...field}
+                value={field.value || ''}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="vital_signs.heart_rate"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Frecuencia cardíaca</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                placeholder="bpm"
+                disabled={false}
+                value={field.value || ''}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? parseFloat(e.target.value) : undefined
+                  )
+                }
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="vital_signs.temperature"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Temperatura (°C)</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                step="0.1"
+                placeholder="36.5"
+                disabled={false}
+                value={field.value || ''}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? parseFloat(e.target.value) : undefined
+                  )
+                }
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="vital_signs.weight"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Peso (kg)</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                step="0.1"
+                disabled={false}
+                value={field.value || ''}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? parseFloat(e.target.value) : undefined
+                  )
+                }
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="vital_signs.height"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Altura (cm)</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                disabled={false}
+                value={field.value || ''}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? parseFloat(e.target.value) : undefined
+                  )
+                }
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="vital_signs.bmi"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>IMC</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                step="0.1"
+                value={field.value || ''}
+                disabled={true}
+                className="bg-muted"
+                readOnly
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   )
 }
 
-function AllergiesForm({
-  value,
-  onChange,
-}: {
-  value: MedicalRecordAllergies
-  onChange: (v: MedicalRecordAllergies) => void
-}) {
+function AllergiesForm({ control }: { control: any }) {
   return (
     <div className="space-y-4">
-      <TagInput
-        label="Medicamentos"
-        value={value.medications || []}
-        onChange={(v) => onChange({ ...value, medications: v })}
-        placeholder="Agregar medicamento..."
+      <FormField
+        control={control}
+        name="allergies.medications"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Medicamentos</FormLabel>
+            <FormControl>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                placeholder="Agregar medicamento..."
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
-      <TagInput
-        label="Productos"
-        value={value.products || []}
-        onChange={(v) => onChange({ ...value, products: v })}
-        placeholder="Agregar producto..."
+      <FormField
+        control={control}
+        name="allergies.products"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Productos</FormLabel>
+            <FormControl>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                placeholder="Agregar producto..."
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
-      <TagInput
-        label="Otros"
-        value={value.other || []}
-        onChange={(v) => onChange({ ...value, other: v })}
-        placeholder="Agregar alergia..."
+      <FormField
+        control={control}
+        name="allergies.other"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Otros</FormLabel>
+            <FormControl>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                placeholder="Agregar alergia..."
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
     </div>
   )
 }
 
-function MedicalHistoryForm({
-  value,
-  onChange,
-}: {
-  value: MedicalRecordMedicalHistory
-  onChange: (v: MedicalRecordMedicalHistory) => void
-}) {
+function MedicalHistoryForm({ control }: { control: any }) {
   return (
     <div className="space-y-4">
-      <TagInput
-        label="Condiciones crónicas"
-        value={value.chronic_conditions || []}
-        onChange={(v) => onChange({ ...value, chronic_conditions: v })}
-        placeholder="Diabetes, hipertensión..."
+      <FormField
+        control={control}
+        name="medical_history.chronic_conditions"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Condiciones crónicas</FormLabel>
+            <FormControl>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                placeholder="Diabetes, hipertensión..."
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
-      <TagInput
-        label="Cirugías previas"
-        value={value.previous_surgeries || []}
-        onChange={(v) => onChange({ ...value, previous_surgeries: v })}
-        placeholder="Agregar cirugía..."
+      <FormField
+        control={control}
+        name="medical_history.previous_surgeries"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Cirugías previas</FormLabel>
+            <FormControl>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                placeholder="Agregar cirugía..."
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
-      <TagInput
-        label="Medicamentos actuales"
-        value={value.current_medications || []}
-        onChange={(v) => onChange({ ...value, current_medications: v })}
-        placeholder="Agregar medicamento..."
+      <FormField
+        control={control}
+        name="medical_history.current_medications"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Medicamentos actuales</FormLabel>
+            <FormControl>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                placeholder="Agregar medicamento..."
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
-      <TagInput
-        label="Antecedentes familiares"
-        value={value.family_history || []}
-        onChange={(v) => onChange({ ...value, family_history: v })}
-        placeholder="Agregar antecedente..."
+      <FormField
+        control={control}
+        name="medical_history.family_history"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Antecedentes familiares</FormLabel>
+            <FormControl>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                placeholder="Agregar antecedente..."
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
     </div>
   )
 }
 
-function TreatmentPlanForm({
-  value,
-  onChange,
-}: {
-  value: MedicalRecordTreatmentPlan
-  onChange: (v: MedicalRecordTreatmentPlan) => void
-}) {
+function TreatmentPlanForm({ control }: { control: any }) {
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Diagnóstico</Label>
-        <Textarea
-          value={value.diagnosis || ''}
-          onChange={(e) => onChange({ ...value, diagnosis: e.target.value })}
-          placeholder="Diagnóstico del paciente..."
-          rows={2}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Tratamiento</Label>
-        <Textarea
-          value={value.treatment || ''}
-          onChange={(e) => onChange({ ...value, treatment: e.target.value })}
-          placeholder="Plan de tratamiento recomendado..."
-          rows={3}
-        />
-      </div>
-      <TagInput
-        label="Recomendaciones"
-        value={value.recommendations || []}
-        onChange={(v) => onChange({ ...value, recommendations: v })}
-        placeholder="Agregar recomendación..."
+      <FormField
+        control={control}
+        name="treatment_plan.diagnosis"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Diagnóstico</FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Diagnóstico del paciente..."
+                rows={2}
+                disabled={false}
+                {...field}
+                value={field.value || ''}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
-      <div className="space-y-2">
-        <Label>Notas de seguimiento</Label>
-        <Textarea
-          value={value.follow_up_notes || ''}
-          onChange={(e) => onChange({ ...value, follow_up_notes: e.target.value })}
-          placeholder="Notas adicionales para seguimiento..."
-          rows={2}
-        />
-      </div>
+      <FormField
+        control={control}
+        name="treatment_plan.treatment"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Tratamiento</FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Plan de tratamiento recomendado..."
+                rows={3}
+                disabled={false}
+                {...field}
+                value={field.value || ''}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="treatment_plan.recommendations"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Recomendaciones</FormLabel>
+            <FormControl>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                placeholder="Agregar recomendación..."
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="treatment_plan.follow_up_notes"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Notas de seguimiento</FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Notas adicionales para seguimiento..."
+                rows={2}
+                disabled={false}
+                {...field}
+                value={field.value || ''}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   )
 }
 
 function TagInput({
-  label,
   value,
   onChange,
   placeholder,
 }: {
-  label: string
   value: string[]
   onChange: (v: string[]) => void
   placeholder: string
@@ -548,7 +909,6 @@ function TagInput({
 
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
       <div className="flex gap-2">
         <Input
           value={inputValue}
@@ -565,7 +925,11 @@ function TagInput({
           {value.map((item, index) => (
             <Badge key={index} variant="secondary" className="gap-1">
               {item}
-              <button type="button" onClick={() => handleRemove(item)} className="ml-1">
+              <button
+                type="button"
+                onClick={() => handleRemove(item)}
+                className="ml-1"
+              >
                 <X className="h-3 w-3" />
               </button>
             </Badge>
