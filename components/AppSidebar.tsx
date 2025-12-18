@@ -155,8 +155,8 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
               }`}
               alt="logo"
               src="/beluvio-small.svg"
-              width={32}
-              height={32}
+              width={28}
+              height={28}
               style={{
                 position: isCollapsed ? 'relative' : 'absolute',
                 transform: isCollapsed ? 'scale(1)' : 'scale(0)',
@@ -169,8 +169,8 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
               }`}
               alt="logo"
               src="/beluvio.svg"
-              width={150}
-              height={40}
+              width={120}
+              height={20}
               style={{
                 position: isCollapsed ? 'absolute' : 'relative',
                 transform: isCollapsed ? 'scale(0)' : 'scale(1)',
