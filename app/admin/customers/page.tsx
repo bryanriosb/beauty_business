@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import BusinessCustomerService from '@/lib/services/customer/business-customer-service'
 import { CUSTOMERS_COLUMNS } from '@/lib/models/customer/const/data-table/customers-columns'
-import CustomerModal from '@/components/customers/CustomerModal'
+import { CustomerModal } from '@/components/customers/CustomerModal'
 import { useRef, useMemo, useState } from 'react'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'

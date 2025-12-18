@@ -1,16 +1,29 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
-import Loading from '@/components/ui/loading'
-import { Button } from '@/components/ui/button'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -18,9 +31,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import type {
   BusinessCustomer,
   BusinessCustomerUpdate,
@@ -29,34 +44,7 @@ import type {
   CustomerSource,
 } from '@/lib/models/customer/business-customer'
 import type { UserGender } from '@/lib/models/user/users-profile'
-
-interface CustomerModalProps {
-  businessId: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  customer?: BusinessCustomer | null
-  onSave: (
-    data: CreateCustomerInput | BusinessCustomerUpdate,
-    customerId?: string
-  ) => Promise<void>
-}
-
-interface CustomerFormData {
-  first_name: string
-  last_name: string
-  email: string
-  phone: string
-  status: CustomerStatus
-  source: CustomerSource | ''
-  notes: string
-  city: string
-  state: string
-  country: string
-  date_of_birth: string
-  gender: UserGender | ''
-  identification_type: string
-  identification_number: string
-}
+import PhoneInput from 'react-phone-number-input'
 
 const IDENTIFICATION_TYPES = [
   { value: 'CC', label: 'Cédula de Ciudadanía' },
@@ -86,365 +74,561 @@ const SOURCE_OPTIONS: { value: CustomerSource; label: string }[] = [
   { value: 'social_media', label: 'Redes sociales' },
   { value: 'website', label: 'Sitio web' },
   { value: 'other', label: 'Otro' },
+  { value: 'ai_agent', label: 'Agente IA' },
 ]
 
-const getDefaultFormData = (
-  customer?: BusinessCustomer | null
-): CustomerFormData => ({
-  first_name: customer?.first_name || '',
-  last_name: customer?.last_name || '',
-  email: customer?.email || '',
-  phone: customer?.phone?.replace('+57', '') || '',
-  status: customer?.status || 'active',
-  source: customer?.source || '',
-  notes: customer?.notes || '',
-  city: 'Cali',
-  state: 'Valle del Cauca',
-  country: 'CO',
-  date_of_birth: '',
-  gender: '',
-  identification_type: '',
-  identification_number: '',
+const formSchema = z.object({
+  first_name: z.string().min(1, 'El nombre es requerido'),
+  last_name: z.string().optional(),
+  email: z.string().email('Email inválido'),
+  phone: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'vip', 'blocked']).optional(),
+  source: z.enum(['walk_in', 'referral', 'social_media', 'website', 'other', 'ai_agent']).optional(),
+  notes: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  date_of_birth: z.string().optional(),
+  gender: z.enum(['FEMALE', 'MALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
+  identification_type: z.string().optional(),
+  identification_number: z.string().optional(),
 })
 
-export default function CustomerModal({
+type CustomerFormValues = z.infer<typeof formSchema>
+
+interface CustomerModalProps {
+  businessId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  customer?: BusinessCustomer | null
+  onSave: (
+    data: CreateCustomerInput | BusinessCustomerUpdate,
+    customerId?: string
+  ) => Promise<void>
+}
+
+function CustomerModal({
   businessId,
   open,
   onOpenChange,
   customer,
   onSave,
 }: CustomerModalProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [showOptionalFields, setShowOptionalFields] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [formData, setFormData] = useState<CustomerFormData>(
-    getDefaultFormData(customer)
-  )
 
   const isEditing = !!customer
 
+  const form = useForm<CustomerFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      status: 'active',
+      source: 'walk_in',
+      notes: '',
+      city: 'Cali',
+      state: 'Valle del Cauca',
+      country: 'CO',
+      date_of_birth: '',
+      gender: undefined,
+      identification_type: '',
+      identification_number: '',
+    },
+  })
+
   useEffect(() => {
     if (open) {
-      setFormData(getDefaultFormData(customer))
+      if (customer) {
+        // Normalizar teléfono para PhoneInput (debe tener prefijo +)
+        let normalizedPhone = customer.phone || ''
+        if (normalizedPhone && !normalizedPhone.startsWith('+')) {
+          normalizedPhone = '+' + normalizedPhone
+        }
+
+        form.reset({
+          first_name: customer.first_name,
+          last_name: customer.last_name || '',
+          email: customer.email || '',
+          phone: normalizedPhone,
+          status: customer.status,
+          source: customer.source || 'walk_in',
+          notes: customer.notes || '',
+          city: 'Cali',
+          state: 'Valle del Cauca',
+          country: 'CO',
+          date_of_birth: customer.birthday || '',
+          gender: undefined,
+          identification_type: '',
+          identification_number: '',
+        })
+      } else {
+        form.reset({
+          first_name: '',
+          last_name: '',
+          email: '',
+          phone: '',
+          status: 'active',
+          source: 'walk_in',
+          notes: '',
+          city: 'Cali',
+          state: 'Valle del Cauca',
+          country: 'CO',
+          date_of_birth: '',
+          gender: undefined,
+          identification_type: '',
+          identification_number: '',
+        })
+      }
       setShowOptionalFields(false)
     }
-  }, [open, customer])
+  }, [open, customer, form])
 
-  const updateField = <K extends keyof CustomerFormData>(
-    field: K,
-    value: CustomerFormData[K]
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleSubmit = async () => {
-    if (!formData.first_name.trim()) return
-    if (!isEditing && !formData.email.trim()) return
-
-    setIsSaving(true)
+  const onSubmit = async (data: CustomerFormValues) => {
+    setIsSubmitting(true)
     try {
-      const phoneNumber = formData.phone.trim()
-        ? `+57${formData.phone.trim().replace(/\s/g, '')}`
-        : undefined
-
-      if (isEditing) {
+      if (isEditing && customer) {
         const updateData: BusinessCustomerUpdate = {
-          first_name: formData.first_name.trim(),
-          last_name: formData.last_name.trim() || null,
-          email: formData.email.trim() || null,
-          phone: phoneNumber || null,
-          status: formData.status,
-          source: formData.source || null,
-          notes: formData.notes.trim() || null,
+          first_name: data.first_name.trim(),
+          last_name: data.last_name?.trim() || null,
+          email: data.email?.trim() || null,
+          phone: data.phone?.trim() || null,
+          status: data.status,
+          source: data.source || null,
+          notes: data.notes?.trim() || null,
+          birthday: data.date_of_birth || null,
+          // Los campos de ubicación (city, state, country) van en user_profile
+          // Los campos de identificación (gender, identification_type, identification_number) van en user_profile
         }
         await onSave(updateData, customer.id)
       } else {
         const createData: CreateCustomerInput = {
           business_id: businessId,
-          first_name: formData.first_name.trim(),
-          last_name: formData.last_name.trim() || undefined,
-          email: formData.email.trim(),
-          phone: phoneNumber,
-          city: formData.city || 'Cali',
-          state: formData.state || 'Valle del Cauca',
-          country: formData.country || 'CO',
-          date_of_birth: formData.date_of_birth || undefined,
-          gender: formData.gender || undefined,
-          identification_type: formData.identification_type || undefined,
-          identification_number: formData.identification_number || undefined,
-          source: (formData.source as CustomerSource) || 'walk_in',
-          notes: formData.notes.trim() || undefined,
+          first_name: data.first_name.trim(),
+          last_name: data.last_name?.trim() || undefined,
+          email: data.email.trim(),
+          phone: data.phone?.trim() || undefined,
+          city: data.city || 'Cali',
+          state: data.state || 'Valle del Cauca',
+          country: data.country || 'CO',
+          date_of_birth: data.date_of_birth || undefined,
+          gender: data.gender || undefined,
+          identification_type: data.identification_type || undefined,
+          identification_number: data.identification_number || undefined,
+          source: data.source,
+          notes: data.notes?.trim() || undefined,
         }
         await onSave(createData)
       }
       onOpenChange(false)
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error al guardar el cliente'
+      console.error('Error saving customer:', error)
+      // Aquí podrías mostrar un toast o notificación de error
+      // Por ejemplo: toast.error(errorMessage)
     } finally {
-      setIsSaving(false)
+      setIsSubmitting(false)
     }
   }
 
-  const isValid =
-    formData.first_name.trim() && (isEditing || formData.email.trim())
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-lg max-h-screen sm:max-h-[90vh] overflow-hidden"
+        // Permitir cierre del modal para evitar trampas de usuario
+        // onInteractOutside={(e) => e.preventDefault()}
+        // onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Modifica la información del cliente'
+              : 'Ingresa los datos del nuevo cliente'}
+          </DialogDescription>
         </DialogHeader>
+        <div className="flex flex-col min-h-full">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col h-full"
+            >
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="first_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Nombre <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="María"
+                            disabled={isSubmitting}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">Nombre *</Label>
-              <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => updateField('first_name', e.target.value)}
-                placeholder="Nombre"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Apellido</Label>
-              <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => updateField('last_name', e.target.value)}
-                placeholder="Apellido"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">
-              Correo electrónico {!isEditing && '*'}
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => updateField('email', e.target.value)}
-              placeholder="correo@ejemplo.com"
-              disabled={isEditing}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Teléfono</Label>
-            <div className="flex">
-              <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                +57
-              </span>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => updateField('phone', e.target.value)}
-                placeholder="315 218 1292"
-                className="rounded-l-none"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Estado</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) =>
-                  updateField('status', value as CustomerStatus)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleccionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="source">Origen</Label>
-              <Select
-                value={formData.source}
-                onValueChange={(value) =>
-                  updateField('source', value as CustomerSource)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleccionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOURCE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => updateField('notes', e.target.value)}
-              placeholder="Notas adicionales sobre el cliente..."
-              rows={3}
-            />
-          </div>
-
-          {!isEditing && (
-            <>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="city">Ciudad</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    disabled
-                    className="bg-muted"
+                  <FormField
+                    control={form.control}
+                    name="last_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Apellido</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="García"
+                            disabled={isSubmitting}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">Departamento</Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    disabled
-                    className="bg-muted"
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Correo electrónico{' '}
+                        {!isEditing && (
+                          <span className="text-destructive">*</span>
+                        )}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="maria@ejemplo.com"
+                          disabled={isSubmitting || isEditing}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Teléfono</FormLabel>
+                      <FormControl>
+                        <PhoneInput
+                          defaultCountry="CO"
+                          countries={['CO']}
+                          international
+                          countryCallingCodeEditable={false}
+                          countrySelectProps={{ disabled: true }}
+                          placeholder="300 123 4567"
+                          limitMaxLength={true}
+                          value={field.value}
+                          onChange={field.onChange}
+                          className="phone-input"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isSubmitting}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {STATUS_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="source"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Origen</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isSubmitting}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {SOURCE_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">País</Label>
-                  <Input
-                    id="country"
-                    value={formData.country}
-                    disabled
-                    className="bg-muted"
-                  />
-                </div>
+
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notas</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Notas adicionales sobre el cliente..."
+                          rows={3}
+                          disabled={isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {!isEditing && (
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ciudad</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                disabled
+                                className="bg-muted"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="state"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Departamento</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                disabled
+                                className="bg-muted"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>País</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                disabled
+                                className="bg-muted"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <Collapsible open={showOptionalFields} onOpenChange={setShowOptionalFields}>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                        >
+                          <span className="text-sm font-medium">
+                            Datos adicionales (facturación)
+                          </span>
+                          {showOptionalFields ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-4 space-y-4 border-t">
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="identification_type"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Tipo de documento</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  value={field.value}
+                                  disabled={isSubmitting}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Seleccionar..." />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {IDENTIFICATION_TYPES.map((type) => (
+                                      <SelectItem key={type.value} value={type.value}>
+                                        {type.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="identification_number"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Número de documento</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="123456789"
+                                    disabled={isSubmitting}
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="date_of_birth"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Fecha de nacimiento</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="date"
+                                    disabled={isSubmitting}
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="gender"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Género</FormLabel>
+                                <Select
+                                  onValueChange={(value) =>
+                                    field.onChange(value as 'FEMALE' | 'MALE' | 'OTHER' | 'PREFER_NOT_TO_SAY')
+                                  }
+                                  value={field.value}
+                                  disabled={isSubmitting}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Seleccionar..." />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {GENDER_OPTIONS.map((option) => (
+                                      <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </>
+                )}
               </div>
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-full justify-between text-muted-foreground"
-                onClick={() => setShowOptionalFields(!showOptionalFields)}
-              >
-                <span>Datos adicionales (facturación)</span>
-                {showOptionalFields ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-
-              {showOptionalFields && (
-                <div className="space-y-4 border-t pt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="identification_type">
-                        Tipo de documento
-                      </Label>
-                      <Select
-                        value={formData.identification_type}
-                        onValueChange={(value) =>
-                          updateField('identification_type', value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {IDENTIFICATION_TYPES.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="identification_number">
-                        Número de documento
-                      </Label>
-                      <Input
-                        id="identification_number"
-                        value={formData.identification_number}
-                        onChange={(e) =>
-                          updateField('identification_number', e.target.value)
-                        }
-                        placeholder="123456789"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date_of_birth">Fecha de nacimiento</Label>
-                      <Input
-                        id="date_of_birth"
-                        type="date"
-                        value={formData.date_of_birth}
-                        onChange={(e) =>
-                          updateField('date_of_birth', e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="gender">Género</Label>
-                      <Select
-                        value={formData.gender}
-                        onValueChange={(value) =>
-                          updateField('gender', value as UserGender)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GENDER_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+              <DialogFooter className="shrink-0 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting
+                    ? 'Guardando'
+                    : isEditing
+                    ? 'Actualizar'
+                    : 'Crear Cliente'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSaving}
-          >
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSaving || !isValid}>
-            {isSaving && <Loading className="mr-2 h-4 w-4" />}
-            {isSaving
-              ? 'Guardando'
-              : isEditing
-              ? 'Actualizar'
-              : 'Crear Cliente'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
+
+export { CustomerModal }

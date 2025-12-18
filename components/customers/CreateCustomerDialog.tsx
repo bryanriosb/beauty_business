@@ -1,16 +1,28 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
-import Loading from '@/components/ui/loading'
-import { Button } from '@/components/ui/button'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -18,38 +30,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { toast } from 'sonner'
 import BusinessCustomerService from '@/lib/services/customer/business-customer-service'
 import type { BusinessCustomer } from '@/lib/models/customer/business-customer'
-import type { UserGender } from '@/lib/models/user/users-profile'
 import PhoneInput from 'react-phone-number-input'
-
-interface CreateCustomerDialogProps {
-  businessId: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSuccess?: (
-    customer: BusinessCustomer,
-    userProfileId: string,
-    isNew: boolean
-  ) => void
-}
-
-interface CustomerFormData {
-  first_name: string
-  last_name: string
-  email: string
-  phone: string
-  city: string
-  state: string
-  country: string
-  date_of_birth: string
-  gender: UserGender | ''
-  identification_type: string
-  identification_number: string
-}
+import Loading from '../ui/loading'
 
 const IDENTIFICATION_TYPES = [
   { value: 'CC', label: 'Cédula de Ciudadanía' },
@@ -66,75 +56,87 @@ const GENDER_OPTIONS = [
   { value: 'PREFER_NOT_TO_SAY', label: 'Prefiero no decir' },
 ]
 
-const DEFAULT_FORM_DATA: CustomerFormData = {
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone: '',
-  city: 'Cali',
-  state: 'Valle del Cauca',
-  country: 'CO',
-  date_of_birth: '',
-  gender: '',
-  identification_type: '',
-  identification_number: '',
+const formSchema = z.object({
+  first_name: z.string().min(1, 'El nombre es requerido'),
+  last_name: z.string().optional(),
+  email: z
+    .string()
+    .email('Email inválido')
+    .min(1, 'El correo electrónico es requerido'),
+  phone: z.string().optional(),
+  city: z.string(),
+  state: z.string(),
+  country: z.string(),
+  date_of_birth: z.string().optional(),
+  gender: z.enum(['FEMALE', 'MALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
+  identification_type: z.string().optional(),
+  identification_number: z.string().optional(),
+})
+
+type CustomerFormValues = z.infer<typeof formSchema>
+
+interface CreateCustomerDialogProps {
+  businessId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess?: (
+    customer: BusinessCustomer,
+    userProfileId: string,
+    isNew: boolean
+  ) => void
 }
 
-export default function CreateCustomerDialog({
+export function CreateCustomerDialog({
   businessId,
   open,
   onOpenChange,
   onSuccess,
 }: CreateCustomerDialogProps) {
-  const [showOptionalFields, setShowOptionalFields] = useState(true)
-  const [isCreating, setIsCreating] = useState(false)
-  const [formData, setFormData] = useState<CustomerFormData>(DEFAULT_FORM_DATA)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showOptionalFields, setShowOptionalFields] = useState(false)
+
+  const form = useForm<CustomerFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      city: 'Cali',
+      state: 'Valle del Cauca',
+      country: 'CO',
+      date_of_birth: '',
+      identification_type: '',
+      identification_number: '',
+    },
+  })
 
   const customerService = new BusinessCustomerService()
 
-  const resetForm = () => {
-    setFormData(DEFAULT_FORM_DATA)
-    setShowOptionalFields(false)
-  }
-
   const handleOpenChange = (open: boolean) => {
     onOpenChange(open)
-    if (!open) resetForm()
+    if (!open) {
+      form.reset()
+      setShowOptionalFields(false)
+    }
   }
 
-  const updateField = <K extends keyof CustomerFormData>(
-    field: K,
-    value: CustomerFormData[K]
-  ) => {
-    console.log(`🔄 Update ${field}:`, value, 'prev:', formData[field])
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleSubmit = async () => {
-    if (!formData.first_name.trim()) {
-      toast.error('El nombre es requerido')
-      return
-    }
-    if (!formData.email.trim()) {
-      toast.error('El correo electrónico es requerido')
-      return
-    }
-
-    setIsCreating(true)
+  const onSubmit = async (data: CustomerFormValues) => {
+    setIsSubmitting(true)
     try {
       const result = await customerService.createFullCustomer({
         business_id: businessId,
-        first_name: formData.first_name.trim(),
-        last_name: formData.last_name.trim() || undefined,
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        city: formData.city || 'Cali',
-        state: formData.state || 'Valle del Cauca',
-        country: formData.country || 'CO',
-        date_of_birth: formData.date_of_birth || undefined,
-        gender: formData.gender || undefined,
-        identification_type: formData.identification_type || undefined,
-        identification_number: formData.identification_number || undefined,
+        first_name: data.first_name.trim(),
+        last_name: data.last_name?.trim() || undefined,
+        email: data.email.trim(),
+        phone: data.phone?.trim() || '',
+        city: data.city || 'Cali',
+        state: data.state || 'Valle del Cauca',
+        country: data.country || 'CO',
+        date_of_birth: data.date_of_birth || undefined,
+        gender: data.gender || undefined,
+        identification_type: data.identification_type || undefined,
+        identification_number: data.identification_number || undefined,
         source: 'walk_in',
       })
 
@@ -153,213 +155,320 @@ export default function CreateCustomerDialog({
       console.error('Error creating customer:', error)
       toast.error('Error al crear el cliente')
     } finally {
-      setIsCreating(false)
+      setIsSubmitting(false)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto"
+        className="max-w-lg max-h-screen sm:max-h-[90vh] overflow-hidden"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle>Nuevo Cliente</DialogTitle>
+          <DialogDescription>
+            Ingresa los datos del nuevo cliente para registrarlo en el sistema
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">Nombres *</Label>
-              <Input
-                id="first_name"
-                data-tutorial="customer-first-name"
-                value={formData.first_name}
-                onChange={(e) => updateField('first_name', e.target.value)}
-                placeholder="Nombre"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Apellidos *</Label>
-              <Input
-                id="last_name"
-                data-tutorial="customer-last-name"
-                value={formData.last_name}
-                onChange={(e) => updateField('last_name', e.target.value)}
-                placeholder="Apellido"
-              />
-            </div>
-          </div>
+        <div className="flex flex-col min-h-full">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col h-full"
+            >
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="first_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Nombres <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="María"
+                            disabled={isSubmitting}
+                            data-tutorial="customer-first-name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Correo electrónico *</Label>
-            <Input
-              id="email"
-              data-tutorial="customer-email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => updateField('email', e.target.value)}
-              placeholder="correo@ejemplo.com"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Teléfono</Label>
-            <div className="flex">
-              <PhoneInput
-                defaultCountry="CO"
-                international
-                countryCallingCodeEditable={false}
-                placeholder="300 123 4567"
-                limitMaxLength={true}
-                value={formData.phone}
-                onChange={(e) => updateField('phone', e?.toString() ?? '')}
-                data-tutorial="customer-phone"
-                className="phone-input"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="city">Ciudad</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="state">Departamento</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="country">País</Label>
-              <Input
-                id="country"
-                value={formData.country}
-                disabled
-                className="bg-muted"
-              />
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="w-full justify-between text-muted-foreground"
-            onClick={() => setShowOptionalFields(!showOptionalFields)}
-          >
-            <span>Datos adicionales (facturación)</span>
-            {showOptionalFields ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
-
-          {showOptionalFields && (
-            <div className="space-y-4 border-t pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="identification_type">Tipo de documento</Label>
-                  <Select
-                    value={formData.identification_type}
-                    onValueChange={(value) =>
-                      updateField('identification_type', value)
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleccionar..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {IDENTIFICATION_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="identification_number">
-                    Número de documento
-                  </Label>
-                  <Input
-                    id="identification_number"
-                    value={formData.identification_number}
-                    onChange={(e) =>
-                      updateField('identification_number', e.target.value)
-                    }
-                    placeholder="123456789"
+                  <FormField
+                    control={form.control}
+                    name="last_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Apellidos</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="García"
+                            disabled={isSubmitting}
+                            data-tutorial="customer-last-name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date_of_birth">Fecha de nacimiento</Label>
-                  <Input
-                    id="date_of_birth"
-                    type="date"
-                    value={formData.date_of_birth}
-                    onChange={(e) =>
-                      updateField('date_of_birth', e.target.value)
-                    }
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Correo electrónico{' '}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="maria@ejemplo.com"
+                          disabled={isSubmitting}
+                          data-tutorial="customer-email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Teléfono</FormLabel>
+                      <FormControl>
+                        <PhoneInput
+                          defaultCountry="CO"
+                          countries={['CO']}
+                          international
+                          countryCallingCodeEditable={false}
+                          countrySelectProps={{ disabled: true }}
+                          placeholder="300 123 4567"
+                          limitMaxLength={true}
+                          value={field.value}
+                          onChange={field.onChange}
+                          data-tutorial="customer-phone"
+                          className="phone-input"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ciudad</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled className="bg-muted" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Departamento</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled className="bg-muted" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>País</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled className="bg-muted" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender">Género</Label>
-                  <Select
-                    value={formData.gender}
-                    onValueChange={(value) =>
-                      updateField('gender', value as UserGender)
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleccionar..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GENDER_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                <Collapsible
+                  open={showOptionalFields}
+                  onOpenChange={setShowOptionalFields}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex w-full items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                    >
+                      <span className="text-sm font-medium">
+                        Datos adicionales (facturación)
+                      </span>
+                      {showOptionalFields ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 space-y-4 border-t">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="identification_type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipo de documento</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isSubmitting}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Seleccionar..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {IDENTIFICATION_TYPES.map((type) => (
+                                  <SelectItem
+                                    key={type.value}
+                                    value={type.value}
+                                  >
+                                    {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="identification_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Número de documento</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="123456789"
+                                disabled={isSubmitting}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="date_of_birth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Fecha de nacimiento</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                disabled={isSubmitting}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="gender"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Género</FormLabel>
+                            <Select
+                              onValueChange={(value) =>
+                                field.onChange(
+                                  value as
+                                    | 'FEMALE'
+                                    | 'MALE'
+                                    | 'OTHER'
+                                    | 'PREFER_NOT_TO_SAY'
+                                )
+                              }
+                              value={field.value}
+                              disabled={isSubmitting}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Seleccionar..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {GENDER_OPTIONS.map((option) => (
+                                  <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                  >
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
-            </div>
-          )}
+
+              <DialogFooter className="shrink-0 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  data-tutorial="customer-create-button"
+                >
+                  {isSubmitting && <Loading />}
+                  {isSubmitting ? 'Creando' : 'Crear Cliente'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={isCreating}
-          >
-            Cancelar
-          </Button>
-          <Button
-            data-tutorial="customer-create-button"
-            onClick={handleSubmit}
-            disabled={
-              isCreating ||
-              !formData.first_name.trim() ||
-              !formData.email.trim()
-            }
-          >
-            {isCreating && <Loading className="mr-2 h-4 w-4" />}
-            {isCreating ? 'Creando' : 'Crear Cliente'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

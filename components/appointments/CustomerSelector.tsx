@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/popover'
 import BusinessCustomerService from '@/lib/services/customer/business-customer-service'
 import type { BusinessCustomer } from '@/lib/models/customer/business-customer'
-import CreateCustomerDialog from '@/components/customers/CreateCustomerDialog'
+import { CreateCustomerDialog } from '@/components/customers/CreateCustomerDialog'
 
 interface CustomerSelectorProps {
   businessId: string
