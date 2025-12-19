@@ -1,6 +1,11 @@
 'use client'
 
-import { DataTable, DataTableRef, SearchConfig, FilterConfig } from '@/components/DataTable'
+import {
+  DataTable,
+  DataTableRef,
+  SearchConfig,
+  FilterConfig,
+} from '@/components/DataTable'
 import { Button } from '@/components/ui/button'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
@@ -9,6 +14,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu'
 import {
   MoreHorizontal,
@@ -25,6 +34,12 @@ import {
   FileX,
   CheckCircle,
   XCircle,
+  Send,
+  MessageCircle,
+  Mail,
+  Smartphone,
+  Loader2,
+  QrCode,
 } from 'lucide-react'
 import MedicalRecordService from '@/lib/services/medical-record/medical-record-service'
 import { MEDICAL_RECORD_COLUMNS } from '@/lib/models/medical-record/const/data-table/medical-record-columns'
@@ -33,6 +48,7 @@ import MedicalRecordDetailModal from '@/components/medical-records/MedicalRecord
 import { useRef, useMemo, useState } from 'react'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
+import { useUnifiedPermissionsStore } from '@/lib/store/unified-permissions-store'
 import { toast } from 'sonner'
 import type {
   MedicalRecord,
@@ -40,21 +56,29 @@ import type {
   MedicalRecordUpdate,
   MedicalRecordWithCustomer,
 } from '@/lib/models/medical-record/medical-record'
+import type { SignatureRequestChannel } from '@/lib/models/signature-request/signature-request'
+import SignatureRequestService from '@/lib/services/signature-request/signature-request-service'
+import { SignatureLinkShare } from '@/components/medical-records/SignatureLinkShare'
 
 export default function MedicalRecordsPage() {
   const { role, isLoading } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
+  const { businessAccountId } = useUnifiedPermissionsStore()
   const recordService = useMemo(() => new MedicalRecordService(), [])
+  const signatureService = useMemo(() => new SignatureRequestService(), [])
   const dataTableRef = useRef<DataTableRef>(null)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null)
+  const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(
+    null
+  )
   const [recordToView, setRecordToView] = useState<string | null>(null)
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null)
   const [recordsToDelete, setRecordsToDelete] = useState<string[]>([])
+  const [sendingSignature, setSendingSignature] = useState<string | null>(null)
 
   const searchConfig: SearchConfig = useMemo(
     () => ({
@@ -71,7 +95,11 @@ export default function MedicalRecordsPage() {
         column: 'record_type',
         title: 'Tipo',
         options: [
-          { label: 'Evaluación inicial', value: 'initial_assessment', icon: ClipboardList },
+          {
+            label: 'Evaluación inicial',
+            value: 'initial_assessment',
+            icon: ClipboardList,
+          },
           { label: 'Seguimiento', value: 'follow_up', icon: FileClock },
           { label: 'Procedimiento', value: 'procedure', icon: Activity },
           { label: 'Consulta', value: 'consultation', icon: Stethoscope },
@@ -165,17 +193,77 @@ export default function MedicalRecordsPage() {
     try {
       const result = await recordService.destroyMany(recordsToDelete)
       if (result.success) {
-        toast.success(`${result.deletedCount} historia(s) clínica(s) eliminada(s)`)
+        toast.success(
+          `${result.deletedCount} historia(s) clínica(s) eliminada(s)`
+        )
         dataTableRef.current?.refreshData()
         dataTableRef.current?.clearSelection()
       } else {
         throw new Error(result.error)
       }
     } catch (error: any) {
-      toast.error(error.message || 'No se pudieron eliminar las historias clínicas')
+      toast.error(
+        error.message || 'No se pudieron eliminar las historias clínicas'
+      )
     } finally {
       setBatchDeleteDialogOpen(false)
       setRecordsToDelete([])
+    }
+  }
+
+  const handleSendSignature = async (
+    record: MedicalRecordWithCustomer,
+    channel: SignatureRequestChannel
+  ) => {
+    if (!activeBusiness || !businessAccountId) {
+      toast.error('No se pudo obtener información del negocio')
+      return
+    }
+
+    const customerName = `${record.customer?.first_name || ''} ${
+      record.customer?.last_name || ''
+    }`.trim()
+    const customerContact =
+      channel === 'email' ? record.customer?.email : record.customer?.phone
+
+    if (!customerContact) {
+      const contactType =
+        channel === 'email' ? 'correo electrónico' : 'número de teléfono'
+      toast.error(`El cliente no tiene ${contactType} registrado`)
+      return
+    }
+
+    setSendingSignature(record.id)
+
+    try {
+      const result = await signatureService.sendSignatureRequest({
+        medicalRecordId: record.id,
+        channel,
+        businessAccountId,
+        businessId: activeBusiness.id,
+        businessName: activeBusiness.name,
+        customerName,
+        customerContact,
+        recordDate: record.record_date,
+      })
+
+      if (result.success) {
+        const channelLabels = {
+          whatsapp: 'WhatsApp',
+          email: 'correo electrónico',
+          sms: 'SMS',
+        }
+        toast.success(
+          `Solicitud de firma enviada por ${channelLabels[channel]}`
+        )
+        dataTableRef.current?.refreshData()
+      } else {
+        toast.error(result.error || 'Error al enviar la solicitud')
+      }
+    } catch {
+      toast.error('Error al enviar la solicitud de firma')
+    } finally {
+      setSendingSignature(null)
     }
   }
 
@@ -185,11 +273,16 @@ export default function MedicalRecordsPage() {
   ) => {
     try {
       if (recordId) {
-        const result = await recordService.updateItem(recordId, data as MedicalRecordUpdate)
+        const result = await recordService.updateItem(
+          recordId,
+          data as MedicalRecordUpdate
+        )
         if (!result.success) throw new Error(result.error)
         toast.success('Historia clínica actualizada')
       } else {
-        const result = await recordService.createItem(data as MedicalRecordInsert)
+        const result = await recordService.createItem(
+          data as MedicalRecordInsert
+        )
         if (!result.success) throw new Error(result.error)
         toast.success('Historia clínica creada')
       }
@@ -204,7 +297,9 @@ export default function MedicalRecordsPage() {
     return (
       <div className="flex flex-col gap-6 w-full overflow-auto">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Historias Clínicas</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Historias Clínicas
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Selecciona una sucursal para ver las historias clínicas
           </p>
@@ -217,7 +312,9 @@ export default function MedicalRecordsPage() {
     <div className="flex flex-col gap-6 w-full overflow-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Historias Clínicas</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Historias Clínicas
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Gestiona las historias clínicas de tus pacientes
           </p>
@@ -240,28 +337,119 @@ export default function MedicalRecordsPage() {
                 ...col,
                 cell: ({ row }: any) => {
                   const record = row.original as MedicalRecordWithCustomer
+                  const isSigned = !!record.signature_data
+                  const isSending = sendingSignature === record.id
 
                   return (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
                           <span className="sr-only">Abrir menú</span>
-                          <MoreHorizontal className="h-4 w-4" />
+                          {isSending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewRecord(record)}>
+                        <DropdownMenuItem
+                          onClick={() => handleViewRecord(record)}
+                        >
                           <Eye className="mr-2 h-4 w-4" />
                           Ver detalle
                         </DropdownMenuItem>
                         {canEdit && (
-                          <DropdownMenuItem onClick={() => handleEditRecord(record)}>
+                          <DropdownMenuItem
+                            onClick={() => handleEditRecord(record)}
+                          >
                             <Pencil className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>
                         )}
-                        {canEdit && record.status === 'active' && (
-                          <DropdownMenuItem onClick={() => handleArchiveRecord(record.id)}>
+
+                        {/* Menú principal de firma */}
+                        {!isSigned && businessAccountId && (
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <Send className="mr-4 !h-4 !w-4 text-muted-foreground" />
+                              Firmar
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent>
+                                {/* Opciones directas */}
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleSendSignature(record, 'whatsapp')
+                                  }
+                                  disabled={!record.customer?.phone}
+                                >
+                                  <MessageCircle className="mr-2 h-4 w-4" />
+                                  WhatsApp
+                                  {!record.customer?.phone && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      (sin tel.)
+                                    </span>
+                                  )}
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleSendSignature(record, 'email')
+                                  }
+                                  disabled={!record.customer?.email}
+                                >
+                                  <Mail className="mr-2 h-4 w-4" />
+                                  Email
+                                  {!record.customer?.email && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      (sin email)
+                                    </span>
+                                  )}
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleSendSignature(record, 'sms')
+                                  }
+                                  disabled={!record.customer?.phone}
+                                >
+                                  <Smartphone className="mr-2 h-4 w-4" />
+                                  SMS
+                                  {!record.customer?.phone && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      (sin tel.)
+                                    </span>
+                                  )}
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuSeparator />
+                                
+                                {/* Opción de generar enlace */}
+                                <DropdownMenuItem asChild>
+                                  <SignatureLinkShare 
+                                    medicalRecordId={record.id}
+                                    onLinkGenerated={() => {
+                                      // No recargar la tabla inmediatamente
+                                      // Dejar que el usuario cierre el modal primero
+                                      console.log('Link generated, waiting for user to close modal')
+                                    }}
+                                  >
+                                    <div className="flex items-center w-full">
+                                      <QrCode className="mr-2 h-4 w-4" />
+                                      Generar enlace
+                                    </div>
+                                  </SignatureLinkShare>
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+                        )}
+
+                         {canEdit && record.status === 'active' && (
+                          <DropdownMenuItem
+                            onClick={() => handleArchiveRecord(record.id)}
+                          >
                             <Archive className="mr-2 h-4 w-4" />
                             Archivar
                           </DropdownMenuItem>
@@ -307,6 +495,7 @@ export default function MedicalRecordsPage() {
         recordId={recordToView}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
+        onRefresh={() => dataTableRef.current?.refreshData()}
       />
 
       <ConfirmDeleteDialog

@@ -159,6 +159,26 @@ export const SIDE_APP_MENU_ITEMS: MenuItem[] = [
       USER_ROLES.BUSINESS_ADMIN,
       USER_ROLES.PROFESSIONAL,
     ],
+    items: [
+      {
+        title: 'Historias',
+        url: '/admin/medical-records',
+        allowedRoles: [
+          USER_ROLES.COMPANY_ADMIN,
+          USER_ROLES.BUSINESS_ADMIN,
+          USER_ROLES.PROFESSIONAL,
+        ],
+      },
+      {
+        title: 'Templates',
+        url: '/admin/medical-records/templates',
+        allowedRoles: [
+          USER_ROLES.COMPANY_ADMIN,
+          USER_ROLES.BUSINESS_ADMIN,
+          USER_ROLES.PROFESSIONAL,
+        ],
+      },
+    ],
   },
   {
     title: 'Comisiones',

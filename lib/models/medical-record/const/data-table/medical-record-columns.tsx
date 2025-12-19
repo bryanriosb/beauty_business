@@ -134,6 +134,18 @@ export const MEDICAL_RECORD_COLUMNS: ColumnDef<MedicalRecordWithCustomer>[] = [
   {
     id: 'actions',
     header: 'Acciones',
+    cell: ({ row, table }) => {
+      const record = row.original
+      // Las acciones se manejarán desde el componente padre
+      return (
+        <div 
+          className="flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* El componente padre inyectará las acciones aquí */}
+        </div>
+      )
+    },
   },
 ]
 

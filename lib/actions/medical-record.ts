@@ -50,7 +50,8 @@ export async function fetchMedicalRecordsAction(params?: {
           first_name,
           last_name,
           email,
-          phone
+          phone,
+          status
         )
       `,
         { count: 'exact' }
@@ -126,6 +127,7 @@ export async function getMedicalRecordByIdAction(
           last_name,
           email,
           phone,
+          status,
           birthday,
           metadata
         ),

@@ -48,6 +48,14 @@ export interface MedicalRecordAttachment {
   uploaded_at: string
 }
 
+export interface MedicalRecordSignature {
+  signature_data: string | null
+  signature_date: string | null
+  signed_by_name: string | null
+  signed_by_document: string | null
+  signature_ip: string | null
+}
+
 export interface IMedicalRecord {
   id: string
   business_id: string
@@ -66,6 +74,18 @@ export interface IMedicalRecord {
   created_by: string | null
   created_at: string
   updated_at: string
+  // Campos extendidos para formularios dinámicos y firma
+  extended_data: Record<string, unknown> | null
+  form_template_id: string | null
+  // Firma del paciente
+  signature_data: string | null
+  signature_date: string | null
+  signed_by_name: string | null
+  signed_by_document: string | null
+  signature_ip: string | null
+  // Firma del especialista
+  specialist_signature_data: string | null
+  specialist_signature_date: string | null
 }
 
 export type MedicalRecord = IMedicalRecord
@@ -88,6 +108,15 @@ export class MedicalRecordModel implements IMedicalRecord {
   created_by: string | null
   created_at: string
   updated_at: string
+  extended_data: Record<string, unknown> | null
+  form_template_id: string | null
+  signature_data: string | null
+  signature_date: string | null
+  signed_by_name: string | null
+  signed_by_document: string | null
+  signature_ip: string | null
+  specialist_signature_data: string | null
+  specialist_signature_date: string | null
 
   constructor(data: IMedicalRecord) {
     this.id = data.id
@@ -107,6 +136,15 @@ export class MedicalRecordModel implements IMedicalRecord {
     this.created_by = data.created_by
     this.created_at = data.created_at
     this.updated_at = data.updated_at
+    this.extended_data = data.extended_data
+    this.form_template_id = data.form_template_id
+    this.signature_data = data.signature_data
+    this.signature_date = data.signature_date
+    this.signed_by_name = data.signed_by_name
+    this.signed_by_document = data.signed_by_document
+    this.signature_ip = data.signature_ip
+    this.specialist_signature_data = data.specialist_signature_data
+    this.specialist_signature_date = data.specialist_signature_date
   }
 
   get isActive(): boolean {
@@ -134,6 +172,14 @@ export class MedicalRecordModel implements IMedicalRecord {
   get attachmentCount(): number {
     return this.attachments?.length ?? 0
   }
+
+  get isSigned(): boolean {
+    return !!this.signature_data
+  }
+
+  get hasExtendedData(): boolean {
+    return !!this.extended_data && Object.keys(this.extended_data).length > 0
+  }
 }
 
 export interface MedicalRecordInsert {
@@ -151,6 +197,8 @@ export interface MedicalRecordInsert {
   attachments?: MedicalRecordAttachment[] | null
   status?: MedicalRecordStatus
   created_by?: string | null
+  extended_data?: Record<string, unknown> | null
+  form_template_id?: string | null
 }
 
 export interface MedicalRecordUpdate {
@@ -165,6 +213,15 @@ export interface MedicalRecordUpdate {
   treatment_plan?: MedicalRecordTreatmentPlan | null
   attachments?: MedicalRecordAttachment[] | null
   status?: MedicalRecordStatus
+  extended_data?: Record<string, unknown> | null
+  form_template_id?: string | null
+  signature_data?: string | null
+  signature_date?: string | null
+  signed_by_name?: string | null
+  signed_by_document?: string | null
+  signature_ip?: string | null
+  specialist_signature_data?: string | null
+  specialist_signature_date?: string | null
 }
 
 export interface MedicalRecordWithCustomer extends MedicalRecord {

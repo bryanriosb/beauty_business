@@ -50,6 +50,15 @@ const createMockMedicalRecord = (
   created_by: 'user-1',
   created_at: '2024-01-15T10:00:00Z',
   updated_at: '2024-01-15T10:00:00Z',
+  extended_data: null,
+  form_template_id: null,
+  signature_data: null,
+  signature_date: null,
+  signed_by_name: null,
+  signed_by_document: null,
+  signature_ip: null,
+  specialist_signature_data: null,
+  specialist_signature_date: null,
   ...overrides,
 })
 

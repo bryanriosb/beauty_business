@@ -709,4 +709,75 @@ _¡Gracias por su preferencia!_ ✨`
 
     return { success: result.success, error: result.error }
   }
+
+  /**
+   * Envia solicitud de firma de historia clínica por WhatsApp
+   */
+  async sendSignatureRequest(params: {
+    business_account_id: string
+    business_id: string
+    customer_phone: string
+    customer_name: string
+    business_name: string
+    record_date: Date
+    signature_url: string
+    expires_days?: number
+  }): Promise<{ success: boolean; error?: string }> {
+    const formattedDate = formatDateSpanish(new Date(params.record_date))
+    const expiresDays = params.expires_days || 7
+
+    // Intentar con plantilla aprobada primero
+    const templateResult = await this.sendTemplateMessage({
+      business_account_id: params.business_account_id,
+      business_id: params.business_id,
+      to: params.customer_phone,
+      template_name: 'medical_record_signature_request',
+      language_code: 'es_CO',
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: params.customer_name },
+            { type: 'text', text: params.business_name },
+            { type: 'text', text: formattedDate },
+            { type: 'text', text: params.signature_url },
+            { type: 'text', text: String(expiresDays) },
+          ],
+        },
+      ],
+      customer_name: params.customer_name,
+    })
+
+    if (templateResult.success) {
+      return { success: true }
+    }
+
+    console.log('Signature template failed, trying text message:', templateResult.error)
+
+    // Fallback: mensaje de texto
+    const message = `Hola *${params.customer_name}*,
+
+*${params.business_name}* te ha enviado tu historia clínica para firmar digitalmente.
+
+📋 *Documento:* Historia Clínica
+📅 *Fecha:* ${formattedDate}
+
+✍️ *Firma aquí:* ${params.signature_url}
+
+⚠️ Este enlace expira en *${expiresDays} días*.
+
+Si tienes dudas, contacta directamente a ${params.business_name}.
+
+_Este enlace es personal e intransferible._`
+
+    const result = await this.sendTextMessage({
+      business_account_id: params.business_account_id,
+      business_id: params.business_id,
+      to: params.customer_phone,
+      message,
+      customer_name: params.customer_name,
+    })
+
+    return { success: result.success, error: result.error }
+  }
 }
