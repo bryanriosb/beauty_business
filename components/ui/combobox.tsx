@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -33,6 +33,7 @@ interface ComboboxProps {
   emptyText?: string
   disabled?: boolean
   className?: string
+  isLoading?: boolean
 }
 
 export function Combobox({
@@ -44,6 +45,7 @@ export function Combobox({
   emptyText = 'No se encontraron resultados',
   disabled = false,
   className,
+  isLoading = false,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -84,10 +86,14 @@ export function Combobox({
           )}
           disabled={disabled}
         >
-          <span className="truncate">
+          <span className="truncate flex-1 text-left">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          {isLoading ? (
+            <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin" />
+          ) : (
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -98,9 +104,16 @@ export function Combobox({
             onValueChange={setSearch}
           />
           <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
-            <CommandGroup>
-              {filteredOptions.map((option) => (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span className="text-sm text-muted-foreground">Cargando...</span>
+              </div>
+            ) : (
+              <>
+                <CommandEmpty>{emptyText}</CommandEmpty>
+                <CommandGroup>
+                  {filteredOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
@@ -122,7 +135,9 @@ export function Combobox({
                   </div>
                 </CommandItem>
               ))}
-            </CommandGroup>
+                </CommandGroup>
+              </>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

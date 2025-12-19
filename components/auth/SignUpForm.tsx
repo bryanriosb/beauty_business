@@ -44,6 +44,8 @@ import {
 import { VerificationCodeDialog } from './VerificationCodeDialog'
 import { ShieldCheck, CheckCircle2 } from 'lucide-react'
 import Loading from '../ui/loading'
+import { StateComboBox } from '@/components/ui/state-combobox'
+import { CityComboBox } from '@/components/ui/city-combobox'
 
 const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: 'BEAUTY_SALON', label: 'Salón de Belleza' },
@@ -78,8 +80,8 @@ const businessSchema = z.object({
   businessName: z.string().min(2, 'El nombre del negocio es requerido'),
   businessType: z.string().min(1, 'Selecciona el tipo de negocio'),
   professionalCount: z.string().min(1, 'Indica cuántos profesionales'),
-  city: z.string().min(2, 'La ciudad es requerida'),
-  state: z.string().min(2, 'El departamento es requerido'),
+  city: z.string().min(1, 'La ciudad es requerida'),
+  state: z.string().min(1, 'El departamento es requerido'),
   address: z.string().min(5, 'La dirección es requerida'),
 })
 
@@ -107,12 +109,6 @@ export function SignUpForm() {
   const [storedEmail, setStoredEmail] = useState<string | null>(null)
   const [storedPhone, setStoredPhone] = useState<string | null>(null)
 
-  // Cargar valores de sessionStorage solo en el cliente
-  useEffect(() => {
-    setStoredEmail(sessionStorage.getItem('email'))
-    setStoredPhone(sessionStorage.getItem('phone'))
-  }, [])
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -130,12 +126,37 @@ export function SignUpForm() {
     },
   })
 
+  // Cargar valores de sessionStorage solo en el cliente
+  useEffect(() => {
+    const email = sessionStorage.getItem('email')
+    const phone = sessionStorage.getItem('phone')
+
+    setStoredEmail(email)
+    setStoredPhone(phone)
+
+    // Si hay datos verificados en sessionStorage, establecer las verificaciones como true
+    // y cargar los valores en el formulario
+    if (email) {
+      setEmailVerified(true)
+      form.setValue('email', email)
+    }
+    if (phone) {
+      setPhoneVerified(true)
+      setLastVerifiedPhone(phone)
+      form.setValue('phone', phone)
+    }
+  }, [form])
+
   // Observar cambios en el campo de teléfono
   const phoneValue = form.watch('phone')
 
   // Resetear verificación si el teléfono cambia
   useEffect(() => {
     if (phoneValue && phoneValue !== lastVerifiedPhone && phoneVerified) {
+      setPhoneVerified(false)
+    }
+    // Si no hay teléfono en el formulario, resetear verificación
+    if (!phoneValue && phoneVerified) {
       setPhoneVerified(false)
     }
   }, [phoneValue, lastVerifiedPhone, phoneVerified])
@@ -259,8 +280,8 @@ export function SignUpForm() {
         businessName: toCamelCase(values.businessName),
         businessType: values.businessType as BusinessType,
         professionalCount: parseInt(values.professionalCount),
-        city: toCamelCase(values.city),
-        state: toCamelCase(values.state),
+        city: values.city,
+        state: values.state,
         address: toCamelCase(values.address),
       })
 
@@ -347,8 +368,7 @@ export function SignUpForm() {
                         }
                         title="Verificar email"
                       >
-                        {emailVerified ||
-                        storedEmail === field.value ? (
+                        {emailVerified || storedEmail === field.value ? (
                           <span className="flex gap-2 text-xs">
                             Verificado
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -380,7 +400,7 @@ export function SignUpForm() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Teléfono (opcional)</FormLabel>
+                  <FormLabel>Teléfono</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <div className="[&_.PhoneInput]:outline-none [&_.PhoneInput]:ring-0 [&_.PhoneInputInput]:outline-none [&_.PhoneInputInput]:ring-0 [&_.PhoneInputInput:focus]:outline-none [&_.PhoneInputInput:focus]:ring-0 [&_.PhoneInputInput:focus-visible]:outline-none [&_.PhoneInputInput:focus-visible]:ring-0">
@@ -410,8 +430,7 @@ export function SignUpForm() {
                         }
                         title="Verificar teléfono"
                       >
-                        {phoneVerified ||
-                        storedPhone === field.value ? (
+                        {phoneVerified || storedPhone === field.value ? (
                           <span className="flex gap-2 text-xs">
                             Verificado
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -515,7 +534,14 @@ export function SignUpForm() {
             <Button
               type="button"
               className="w-full gap-2"
-              onClick={validateStep1}
+              onClick={() => {
+                console.log('Botón Continuar clickeado', {
+                  emailVerified,
+                  phoneVerified,
+                  isLoading,
+                })
+                validateStep1()
+              }}
               disabled={isLoading || !emailVerified || !phoneVerified}
             >
               Continuar
@@ -612,18 +638,22 @@ export function SignUpForm() {
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4">
               <FormField
                 control={form.control}
-                name="city"
+                name="state"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ciudad</FormLabel>
+                    <FormLabel>Departamento</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Cali"
+                      <StateComboBox
+                        value={field.value}
+                        onChange={(value, selectedState) => {
+                          field.onChange(value)
+                          // Reset city when state changes
+                          form.setValue('city', '')
+                        }}
                         disabled={isLoading}
-                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -633,15 +663,15 @@ export function SignUpForm() {
 
               <FormField
                 control={form.control}
-                name="state"
+                name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Departamento</FormLabel>
+                    <FormLabel>Ciudad</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Valle del Cauca"
+                      <CityComboBox
+                        value={field.value}
+                        onChange={field.onChange}
                         disabled={isLoading}
-                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
