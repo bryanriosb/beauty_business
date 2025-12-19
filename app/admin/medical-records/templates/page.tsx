@@ -56,11 +56,12 @@ const FORM_TEMPLATE_COLUMNS: ColumnDef<FormTemplate>[] = [
     header: 'Campos',
     cell: ({ row }: any) => {
       const template = row.original
-      const fieldCount = template.toon_schema?.sections?.reduce(
-        (acc: number, section: any) => acc + (section.fields?.length || 0),
-        0
-      ) || 0
-      
+      const fieldCount =
+        template.toon_schema?.sections?.reduce(
+          (acc: number, section: any) => acc + (section.fields?.length || 0),
+          0
+        ) || 0
+
       return (
         <Badge variant="outline">
           {fieldCount} campo{fieldCount !== 1 ? 's' : ''}
@@ -107,12 +108,16 @@ const FORM_TEMPLATE_COLUMNS: ColumnDef<FormTemplate>[] = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => window.handleEditTemplate?.(template)}>
+            <DropdownMenuItem
+              onClick={() => window.handleEditTemplate?.(template)}
+            >
               <Edit className="mr-2 h-4 w-4" />
               Editar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => window.handleToggleDefault?.(template)}>
+            <DropdownMenuItem
+              onClick={() => window.handleToggleDefault?.(template)}
+            >
               {template.is_default ? (
                 <>
                   <Star className="mr-2 h-4 w-4" />
@@ -147,7 +152,9 @@ export default function FormTemplatesPage() {
   const dataTableRef = useRef<DataTableRef>(null)
 
   const [modalOpen, setModalOpen] = useState(false)
-  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
+    null
+  )
 
   const activeBusinessId = activeBusiness?.id
 
@@ -176,10 +183,10 @@ export default function FormTemplatesPage() {
   const handleToggleDefault = async (template: FormTemplate) => {
     try {
       const result = await templateService.updateItem(template.id, {
-        is_default: !template.is_default
+        is_default: !template.is_default,
       })
       if (!result.success) throw new Error(result.error)
-      
+
       const action = template.is_default ? 'quitado' : 'establecido'
       toast.success(`Template ${action} como por defecto`)
       dataTableRef.current?.refreshData()
@@ -192,7 +199,7 @@ export default function FormTemplatesPage() {
     try {
       const result = await templateService.deleteItem(template.id)
       if (!result.success) throw new Error(result.error)
-      
+
       const action = template.is_active ? 'desactivado' : 'eliminado'
       toast.success(`Template ${action}`)
       dataTableRef.current?.refreshData()
@@ -201,10 +208,7 @@ export default function FormTemplatesPage() {
     }
   }
 
-  const handleSaveTemplate = async (
-    data: any,
-    templateId?: string
-  ) => {
+  const handleSaveTemplate = async (data: any, templateId?: string) => {
     try {
       if (templateId) {
         const result = await templateService.updateItem(templateId, data)
@@ -234,7 +238,9 @@ export default function FormTemplatesPage() {
     return (
       <div className="flex flex-col gap-6 w-full overflow-auto">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Templates de Historia Clínica</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Templates de Historia Clínica
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Selecciona una sucursal para ver los templates
           </p>
@@ -247,7 +253,9 @@ export default function FormTemplatesPage() {
     <div className="flex flex-col gap-6 w-full overflow-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Templates de Historia Clínica</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Templates de Historia Clínica
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Gestiona las plantillas para tus historias clínicas
           </p>
@@ -259,6 +267,11 @@ export default function FormTemplatesPage() {
           </Button>
         )}
       </div>
+
+      <p className="text-sm text-muted-foreground">
+        Estas plantillas te permitirá extender el formulario base con campos
+        personalizado según requerimientos del negocio.
+      </p>
 
       {isReady && (
         <DataTable

@@ -55,6 +55,20 @@ export interface SearchConfig {
   serverField?: string // Campo que se enviará al servidor
 }
 
+export interface ExportConfig {
+  enabled?: boolean
+  tableName?: string // Si no se proporciona, intenta inferirlo del service
+  businessId?: string
+  dateRange?: {
+    start_date: string
+    end_date: string
+  }
+  // Columnas excluidas de la exportación
+  excludedColumns?: string[]
+  // Formatters personalizados para columnas específicas
+  columnFormatters?: Record<string, (value: any) => string | number>
+}
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   service?: {
@@ -63,6 +77,7 @@ interface DataTableProps<TData, TValue> {
   defaultQueryParams?: Record<string, any>
   filters?: FilterConfig[]
   searchConfig?: SearchConfig
+  exportConfig?: ExportConfig
   data?: TData[]
   pagination?: {
     pageIndex: number
@@ -93,6 +108,7 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
       defaultQueryParams,
       filters,
       searchConfig,
+      exportConfig,
       data: externalData,
       pagination: externalPagination,
       onPageChange: externalOnPageChange,
@@ -193,6 +209,139 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
       () => JSON.stringify(internalFilters),
       [internalFilters]
     )
+
+    // Función de exportación que reutiliza el service del DataTable
+    const createExportFunction = React.useCallback(({
+      service,
+      table,
+      columns,
+      searchConfig,
+      stableDefaultQueryParams,
+      internalFilters,
+      exportConfig
+    }: any) => {
+      return async ({ format, selectedColumns, dateRange, filters }: {
+        format: 'csv' | 'excel'
+        selectedColumns: string[]
+        dateRange?: { start_date: string; end_date: string }
+        filters?: Record<string, string[]>
+      }) => {
+        try {
+          if (!service) {
+            throw new Error('No hay servicio disponible para exportar')
+          }
+
+          // Construir parámetros para obtener todos los datos (hasta 10,000 registros)
+          const fetchParams: any = {
+            page_size: 10000,
+            ...stableDefaultQueryParams,
+            ...internalFilters
+          }
+
+          // Agregar rango de fechas si se seleccionó
+          if (dateRange) {
+            fetchParams.date_from = dateRange.start_date
+            fetchParams.date_to = dateRange.end_date
+          }
+
+          // Agregar filtros seleccionados en el modal de exportación
+          if (filters && Object.keys(filters).length > 0) {
+            Object.entries(filters).forEach(([key, values]) => {
+              if (values.length > 0) {
+                fetchParams[key] = values
+              }
+            })
+          }
+
+          // Agregar búsqueda si existe
+          if (searchConfig) {
+            const searchValue = table.getColumn(searchConfig.column)?.getFilterValue() as string
+            if (searchValue) {
+              fetchParams.search = searchValue
+            }
+          }
+
+          // Usar el mismo service del DataTable
+          const response = await service.fetchItems(fetchParams)
+          const exportData = response.data || []
+
+          // Debug: Ver qué datos estamos obteniendo
+          console.log('🔍 Export Debug - Datos obtenidos:', exportData.length, 'filas')
+          console.log('🔍 Export Debug - Muestra de datos:', exportData.slice(0, 2))
+          console.log('🔍 Export Debug - Params enviados:', fetchParams)
+
+          // Construir columnas para exportación basadas en las seleccionadas
+          const exportColumns = columns
+            .filter((col: any) => selectedColumns.includes(col.id || col.accessorKey))
+            .map((col: any) => {
+              const key = col.accessorKey || col.id
+              return {
+                key,
+                label: typeof col.header === 'string' ? col.header : key
+              }
+            })
+
+          // Debug: Ver qué columnas estamos exportando
+          console.log('🔍 Export Debug - Columnas seleccionadas:', selectedColumns)
+          console.log('🔍 Export Debug - Columnas para exportar:', exportColumns)
+
+          // Aplicar formatters del cliente a cada fila
+          const processedData = exportData.map((row: any) => {
+            return exportColumns.map((col: any) => {
+              // Los datos vienen directamente del service, no tienen row.original
+              const value = row[col.key]
+              const formatter = exportConfig.columnFormatters?.[col.key]
+              return formatter ? formatter(value) : (value ?? '')
+            })
+          })
+
+          // Generar contenido CSV/Excel
+          const headers = exportColumns.map((col: any) => col.label)
+          const content = format === 'csv' 
+            ? arrayToCSV(headers, processedData)
+            : arrayToExcel(headers, processedData)
+
+          // Generar nombre de archivo
+          const timestamp = new Date().toISOString().split('T')[0]
+          const filename = `export-${exportConfig.tableName}-${timestamp}.${format === 'csv' ? 'csv' : 'xls'}`
+
+          return {
+            success: true,
+            data: content,
+            filename
+          }
+        } catch (error) {
+          console.error('Export error:', error)
+          return {
+            success: false,
+            error: 'Error al exportar los datos'
+          }
+        }
+      }
+    }, [])
+
+    // Funciones auxiliares para generación de CSV/Excel
+    const arrayToCSV = React.useCallback((headers: string[], rows: (string | number)[][]): string => {
+      const BOM = '\uFEFF'
+      const escapeCSV = (value: string | number | null | undefined): string => {
+        if (value === null || value === undefined) return ''
+        const str = String(value)
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`
+        }
+        return str
+      }
+      const headerLine = headers.map(escapeCSV).join(',')
+      const dataLines = rows.map(row => row.map(escapeCSV).join(','))
+      return BOM + [headerLine, ...dataLines].join('\n')
+    }, [])
+
+    const arrayToExcel = React.useCallback((headers: string[], rows: (string | number)[][]): string => {
+      const BOM = '\uFEFF'
+      const headerLine = headers.join('\t')
+      const dataLines = rows.map(row => row.map(v => v ?? '').join('\t'))
+      return BOM + [headerLine, ...dataLines].join('\n')
+    }, [])
 
     // Función para fetch de datos
     const fetchData = useCallback(async () => {
@@ -419,6 +568,20 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
           filters={filters}
           searchConfig={searchConfig}
           selectedCount={selectedCount}
+          exportConfig={exportConfig && exportConfig.enabled ? {
+            enabled: true,
+            tableName: exportConfig.tableName!,
+            businessId: exportConfig.businessId,
+            onExport: createExportFunction({
+              service,
+              table,
+              columns,
+              searchConfig,
+              stableDefaultQueryParams,
+              internalFilters,
+              exportConfig
+            })
+          } : undefined}
           onDeleteSelected={
             enableRowSelection && onDeleteSelected
               ? async () => {

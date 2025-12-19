@@ -5,7 +5,10 @@ import {
   DataTableRef,
   SearchConfig,
   FilterConfig,
+  ExportConfig,
 } from '@/components/DataTable'
+// Los formatters ahora están inline en el DataTable
+// No necesitan import externo
 import { Button } from '@/components/ui/button'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
@@ -136,12 +139,64 @@ export default function MedicalRecordsPage() {
 
   const isReady = !isLoading && serviceParams !== null
 
+  const exportConfig: ExportConfig | null = useMemo(() => {
+    if (!activeBusinessId) return null
+    
+    return {
+      enabled: true,
+      tableName: 'medical-records',
+      businessId: activeBusinessId,
+    columnFormatters: {
+      customer: (value: any) => {
+        if (!value) return ''
+        return `${value.first_name} ${value.last_name || ''}`.trim()
+      },
+      record_date: (dateString: string) => {
+        if (!dateString) return ''
+        return new Date(dateString).toLocaleDateString('es-CO')
+      },
+      record_type: (value: string) => {
+        const typeLabels: Record<string, string> = {
+          initial_assessment: 'Evaluación inicial',
+          follow_up: 'Seguimiento',
+          procedure: 'Procedimiento',
+          consultation: 'Consulta',
+          pre_operative: 'Pre-operatorio',
+          post_operative: 'Post-operatorio',
+        }
+        return typeLabels[value] || value
+      },
+      status: (value: string) => {
+        const statusLabels: Record<string, string> = {
+          active: 'Activo',
+          archived: 'Archivado',
+          deleted: 'Eliminado',
+        }
+        return statusLabels[value] || value
+      },
+      signature_data: (value: any) => value ? 'Firmado' : 'Pendiente',
+      specialist_signature_data: (value: any) => value ? 'Firmado' : 'Pendiente',
+      attachments: (attachments: any[]) => attachments ? attachments.length.toString() : '0',
+      created_at: (dateString: string) => {
+        if (!dateString) return ''
+        const date = new Date(dateString)
+        return date.toLocaleDateString('es-CO') + ' ' + date.toLocaleTimeString('es-CO', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      }
+    },
+      excludedColumns: ['actions'] // Excluir columna de acciones
+    }
+  }, [activeBusinessId])
+
   const isCompanyAdmin = role === 'company_admin'
   const isBusinessAdmin = role === 'business_admin'
   const isProfessional = role === 'professional'
   const canCreate = isCompanyAdmin || isBusinessAdmin || isProfessional
   const canEdit = isCompanyAdmin || isBusinessAdmin || isProfessional
   const canDelete = isCompanyAdmin || isBusinessAdmin
+  const canExport = isCompanyAdmin || isBusinessAdmin || isProfessional
 
   const handleCreateRecord = () => {
     setSelectedRecord(null)
@@ -516,6 +571,7 @@ export default function MedicalRecordsPage() {
           service={recordService}
           searchConfig={searchConfig}
           filters={filterConfigs}
+          exportConfig={exportConfig || undefined}
           defaultQueryParams={serviceParams || {}}
           enableRowSelection={canDelete}
           onDeleteSelected={handleBatchDelete}

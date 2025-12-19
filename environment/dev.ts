@@ -1,5 +1,5 @@
 export const environment = {
-  ENV: 'dev',
-  BASE_URL: 'http://localhost:9090/api/v1',
-  LLM_WT_URL: 'https://localhost:4433',
+   ENV: 'dev',
+   BASE_URL: 'http://localhost:3000',
+   API_BASE_URL: 'http://localhost:3000/api', // API routes de Next.js
 }

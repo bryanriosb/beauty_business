@@ -6,6 +6,7 @@ import { Input } from './ui/input'
 import { DataTableFacetedFilter } from './DataTableFacetedFilter'
 import { Button } from './ui/button'
 import { DataTableViewOptions } from './DataTableViewOptions'
+import { SimpleExportButton } from './SimpleExportButton'
 import React, { useState, useEffect } from 'react'
 
 interface FilterConfig {
@@ -29,6 +30,16 @@ interface DataTableToolbarProps<TData> {
   searchConfig?: SearchConfig
   selectedCount?: number
   onDeleteSelected?: () => Promise<void>
+  exportConfig?: {
+    enabled: boolean
+    tableName: string
+    businessId?: string
+    onExport: (params: {
+      format: 'csv' | 'excel'
+      selectedColumns: string[]
+      dateRange?: { start_date: string; end_date: string }
+    }) => Promise<{ success: boolean; data?: string; filename?: string; error?: string }>
+  }
 }
 
 // Hook personalizado para debounce
@@ -54,6 +65,7 @@ export function DataTableToolbar<TData>({
   searchConfig,
   selectedCount = 0,
   onDeleteSelected,
+  exportConfig,
 }: DataTableToolbarProps<TData>) {
   const [isDeleting, setIsDeleting] = useState(false)
   // Obtener el valor actual del filtro de la tabla
@@ -134,26 +146,39 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <div className="flex items-center gap-2">
-        {selectedCount > 0 && onDeleteSelected && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {selectedCount} seleccionado{selectedCount > 1 ? 's' : ''}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDeleteSelected}
-              disabled={isDeleting}
-              className="h-8 border-destructive text-destructive hover:bg-destructive hover:text-white"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              {isDeleting ? 'Eliminando...' : 'Eliminar'}
-            </Button>
-          </div>
-        )}
-        <DataTableViewOptions table={table} />
-      </div>
+       <div className="flex items-center gap-2">
+         {selectedCount > 0 && onDeleteSelected && (
+           <div className="flex items-center gap-2">
+             <span className="text-sm text-muted-foreground">
+               {selectedCount} seleccionado{selectedCount > 1 ? 's' : ''}
+             </span>
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={handleDeleteSelected}
+               disabled={isDeleting}
+               className="h-8 border-destructive text-destructive hover:bg-destructive hover:text-white"
+             >
+               <Trash2 className="mr-2 h-4 w-4" />
+               {isDeleting ? 'Eliminando...' : 'Eliminar'}
+             </Button>
+           </div>
+         )}
+         {exportConfig?.enabled && (
+           <SimpleExportButton
+             tableName={exportConfig.tableName}
+             columns={table.getAllColumns().filter(col => typeof col.accessorFn !== 'undefined' && col.getCanHide())}
+             businessId={exportConfig.businessId}
+             currentFilters={Object.fromEntries(
+               table.getState().columnFilters.map(filter => [filter.id, filter.value])
+             )}
+             searchQuery={searchConfig ? (table.getColumn(searchConfig.column)?.getFilterValue() as string) || '' : ''}
+             filterConfigs={filters}
+             onExport={exportConfig.onExport}
+           />
+         )}
+         <DataTableViewOptions table={table} />
+       </div>
     </div>
   )
 }
