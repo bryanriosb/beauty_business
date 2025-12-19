@@ -74,7 +74,9 @@ export function ClinicalDataTab({ record }: ClinicalDataTabProps) {
                 </div>
                 <div>
                   <span className="font-medium">Tipo de registro:</span>
-                  <p>{recordTypeLabels[record.record_type]}</p>
+                  <p className="text-muted-foreground">
+                    {recordTypeLabels[record.record_type]}
+                  </p>
                 </div>
                 <div>
                   <span className="font-medium">Fecha del registro:</span>
@@ -112,15 +114,20 @@ export function ClinicalDataTab({ record }: ClinicalDataTabProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Información del Profesional</CardTitle>
+              <CardTitle className="text-base">
+                Información del Profesional
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {record.specialist ? (
                 <div className="grid gap-3 text-sm">
                   <div>
-                    <span className="font-medium">Nombre del especialista:</span>
+                    <span className="font-medium">
+                      Nombre del especialista:
+                    </span>
                     <p>
-                      {record.specialist.first_name} {record.specialist.last_name}
+                      {record.specialist.first_name}{' '}
+                      {record.specialist.last_name}
                     </p>
                   </div>
                   <div>
@@ -221,19 +228,18 @@ export function ClinicalDataTab({ record }: ClinicalDataTabProps) {
                   </div>
                 </div>
               )}
-            {record.allergies?.other &&
-              record.allergies.other.length > 0 && (
-                <div>
-                  <span className="text-sm font-medium">Otros:</span>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {record.allergies.other.map((item, i) => (
-                      <Badge key={i} variant="destructive">
-                        {item}
-                      </Badge>
-                    ))}
-                  </div>
+            {record.allergies?.other && record.allergies.other.length > 0 && (
+              <div>
+                <span className="text-sm font-medium">Otros:</span>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {record.allergies.other.map((item, i) => (
+                    <Badge key={i} variant="destructive">
+                      {item}
+                    </Badge>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
           </div>
         </Section>
       )}
@@ -245,11 +251,15 @@ export function ClinicalDataTab({ record }: ClinicalDataTabProps) {
             {record.medical_history?.chronic_conditions &&
               record.medical_history.chronic_conditions.length > 0 && (
                 <div>
-                  <span className="text-sm font-medium">Condiciones crónicas:</span>
+                  <span className="text-sm font-medium">
+                    Condiciones crónicas:
+                  </span>
                   <ul className="list-disc list-inside mt-1 text-sm">
-                    {record.medical_history.chronic_conditions.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
+                    {record.medical_history.chronic_conditions.map(
+                      (item, i) => (
+                        <li key={i}>{item}</li>
+                      )
+                    )}
                   </ul>
                 </div>
               )}
@@ -258,27 +268,35 @@ export function ClinicalDataTab({ record }: ClinicalDataTabProps) {
                 <div>
                   <span className="text-sm font-medium">Cirugías previas:</span>
                   <ul className="list-disc list-inside mt-1 text-sm">
-                    {record.medical_history.previous_surgeries.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
+                    {record.medical_history.previous_surgeries.map(
+                      (item, i) => (
+                        <li key={i}>{item}</li>
+                      )
+                    )}
                   </ul>
                 </div>
               )}
             {record.medical_history?.current_medications &&
               record.medical_history.current_medications.length > 0 && (
                 <div>
-                  <span className="text-sm font-medium">Medicamentos actuales:</span>
+                  <span className="text-sm font-medium">
+                    Medicamentos actuales:
+                  </span>
                   <ul className="list-disc list-inside mt-1 text-sm">
-                    {record.medical_history.current_medications.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
+                    {record.medical_history.current_medications.map(
+                      (item, i) => (
+                        <li key={i}>{item}</li>
+                      )
+                    )}
                   </ul>
                 </div>
               )}
             {record.medical_history?.family_history &&
               record.medical_history.family_history.length > 0 && (
                 <div>
-                  <span className="text-sm font-medium">Antecedentes familiares:</span>
+                  <span className="text-sm font-medium">
+                    Antecedentes familiares:
+                  </span>
                   <ul className="list-disc list-inside mt-1 text-sm">
                     {record.medical_history.family_history.map((item, i) => (
                       <li key={i}>{item}</li>
@@ -304,7 +322,9 @@ export function ClinicalDataTab({ record }: ClinicalDataTabProps) {
             {record.treatment_plan?.diagnosis && (
               <div>
                 <span className="text-sm font-medium">Diagnóstico:</span>
-                <p className="text-sm mt-1">{record.treatment_plan.diagnosis}</p>
+                <p className="text-sm mt-1">
+                  {record.treatment_plan.diagnosis}
+                </p>
               </div>
             )}
             {record.treatment_plan?.treatment && (
@@ -328,8 +348,12 @@ export function ClinicalDataTab({ record }: ClinicalDataTabProps) {
               )}
             {record.treatment_plan?.follow_up_notes && (
               <div>
-                <span className="text-sm font-medium">Notas de seguimiento:</span>
-                <p className="text-sm mt-1">{record.treatment_plan.follow_up_notes}</p>
+                <span className="text-sm font-medium">
+                  Notas de seguimiento:
+                </span>
+                <p className="text-sm mt-1">
+                  {record.treatment_plan.follow_up_notes}
+                </p>
               </div>
             )}
           </div>
