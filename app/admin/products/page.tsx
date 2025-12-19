@@ -44,6 +44,8 @@ import { toast } from 'sonner'
 import { hasPermission, USER_ROLES } from '@/const/roles'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { GenericImportExportButtons } from '@/components/GenericImportExportButtons'
+import { importProductsWithProgress } from '@/lib/actions/product-import-export'
 
 export default function ProductsPage() {
   const productService = useMemo(() => new ProductService(), [])
@@ -335,12 +337,26 @@ export default function ProductsPage() {
             Gestiona los productos e insumos
           </p>
         </div>
-        {canCreateProduct && (
-          <Button onClick={handleCreateProduct} className="w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Crear Producto
-          </Button>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {canCreateProduct && (
+            <Button onClick={handleCreateProduct} className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Crear Producto
+            </Button>
+          )}
+          {activeBusiness?.id && (
+            <GenericImportExportButtons
+              config={{
+                entityType: 'products',
+                displayName: 'Productos',
+                templateDownloadUrl: '/api/products/download-template',
+                importAction: importProductsWithProgress,
+              }}
+              additionalFormData={{ businessId: activeBusiness.id }}
+              onImportComplete={() => dataTableRef.current?.refreshData()}
+            />
+          )}
+        </div>
       </div>
 
       <Tabs

@@ -117,10 +117,9 @@ export async function findOrCreateServiceCategory(
 }
 
 /**
- * Buscar o crear categoría de producto
+ * Buscar o crear categoría de producto (global, no por business)
  */
 export async function findOrCreateProductCategory(
-  businessId: string,
   categoryName: string
 ): Promise<string> {
   const supabase = await getSupabaseAdminClient()
@@ -129,7 +128,6 @@ export async function findOrCreateProductCategory(
   const { data: existing } = await supabase
     .from('product_categories')
     .select('id')
-    .eq('business_id', businessId)
     .ilike('name', categoryName.trim())
     .single()
 
@@ -141,7 +139,6 @@ export async function findOrCreateProductCategory(
   const { data: newCategory, error } = await supabase
     .from('product_categories')
     .insert({
-      business_id: businessId,
       name: categoryName.trim(),
       description: null,
     })
