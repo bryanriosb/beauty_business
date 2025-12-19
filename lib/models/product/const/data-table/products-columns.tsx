@@ -69,7 +69,10 @@ export const PRODUCTS_COLUMNS: ColumnDef<ProductWithDetails>[] = [
       const type = row.getValue('type') as string
       const isSupply = type === 'SUPPLY'
       return (
-        <Badge variant={isSupply ? 'secondary' : 'default'} className="block w-full text-center gap-1">
+        <Badge
+          variant={isSupply ? 'secondary' : 'default'}
+          className="block w-full text-center gap-1"
+        >
           {isSupply ? (
             <>
               <Syringe className="h-3 w-3 inline mr-1" />
@@ -116,9 +119,7 @@ export const PRODUCTS_COLUMNS: ColumnDef<ProductWithDetails>[] = [
 
       return (
         <div className="flex items-center gap-1">
-          {isLow && (
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-          )}
+          {isLow && <AlertTriangle className="h-4 w-4 text-amber-500" />}
           <span className={isLow ? 'text-amber-600 font-medium' : ''}>
             {currentStock} {unit}
           </span>
@@ -127,7 +128,7 @@ export const PRODUCTS_COLUMNS: ColumnDef<ProductWithDetails>[] = [
     },
   },
   {
-    accessorKey: 'category',
+    accessorKey: 'category_id',
     header: 'Categoría',
     cell: ({ row }) => {
       const category = row.original.category
@@ -144,7 +145,10 @@ export const PRODUCTS_COLUMNS: ColumnDef<ProductWithDetails>[] = [
     cell: ({ row }) => {
       const isActive = row.getValue('is_active') as boolean
       return (
-        <Badge variant={isActive ? 'default' : 'secondary'} className="block w-full text-center">
+        <Badge
+          variant={isActive ? 'default' : 'secondary'}
+          className="block w-full text-center"
+        >
           {isActive ? 'Activo' : 'Inactivo'}
         </Badge>
       )

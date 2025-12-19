@@ -153,6 +153,17 @@ export async function findOrCreateProductCategory(
 }
 
 /**
+ * Convertir texto a CamelCase
+ */
+function toCamelCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+/**
  * Buscar o crear unidad de medida
  */
 export async function findOrCreateUnitOfMeasure(
@@ -164,11 +175,15 @@ export async function findOrCreateUnitOfMeasure(
   const trimmedName = name.trim()
   const trimmedAbbr = abbreviation?.trim() || trimmedName.substring(0, 3).toUpperCase()
 
+  // Convertir name a CamelCase y abbreviation a minúsculas
+  const camelCaseName = toCamelCase(trimmedName)
+  const lowercaseAbbr = trimmedAbbr.toLowerCase()
+
   // Buscar unidad existente por nombre o abreviación
   const { data: existing } = await supabase
-    .from('units_of_measure')
+    .from('unit_of_measures')
     .select('id')
-    .or(`name.ilike.${trimmedName},abbreviation.ilike.${trimmedAbbr}`)
+    .or(`name.ilike.${camelCaseName},abbreviation.ilike.${lowercaseAbbr}`)
     .single()
 
   if (existing) {
@@ -177,10 +192,10 @@ export async function findOrCreateUnitOfMeasure(
 
   // Crear nueva unidad de medida
   const { data: newUnit, error } = await supabase
-    .from('units_of_measure')
+    .from('unit_of_measures')
     .insert({
-      name: trimmedName,
-      abbreviation: trimmedAbbr,
+      name: camelCaseName,
+      abbreviation: lowercaseAbbr,
     })
     .select('id')
     .single()
