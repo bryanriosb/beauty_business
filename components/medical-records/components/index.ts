@@ -9,3 +9,6 @@ export { ClinicalDataTab } from './ClinicalDataTab'
 export { TemplateFormTab } from './TemplateFormTab'
 export { SignaturesTab } from './SignaturesTab'
 export { AttachmentsTab } from './AttachmentsTab'
+
+// Modales
+export { default as SpecialistSignatureModal } from '../SpecialistSignatureModal'

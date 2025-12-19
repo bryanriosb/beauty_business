@@ -40,11 +40,13 @@ import {
   Smartphone,
   Loader2,
   QrCode,
+  PenTool,
 } from 'lucide-react'
 import MedicalRecordService from '@/lib/services/medical-record/medical-record-service'
 import { MEDICAL_RECORD_COLUMNS } from '@/lib/models/medical-record/const/data-table/medical-record-columns'
 import MedicalRecordModal from '@/components/medical-records/MedicalRecordModal'
 import MedicalRecordDetailModal from '@/components/medical-records/MedicalRecordDetailModal'
+import SpecialistSignatureModal from '@/components/medical-records/SpecialistSignatureModal'
 import { useRef, useMemo, useState } from 'react'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
@@ -59,6 +61,7 @@ import type {
 import type { SignatureRequestChannel } from '@/lib/models/signature-request/signature-request'
 import SignatureRequestService from '@/lib/services/signature-request/signature-request-service'
 import { SignatureLinkShare } from '@/components/medical-records/SignatureLinkShare'
+import Loading from '@/components/ui/loading'
 
 export default function MedicalRecordsPage() {
   const { role, isLoading } = useCurrentUser()
@@ -79,6 +82,11 @@ export default function MedicalRecordsPage() {
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null)
   const [recordsToDelete, setRecordsToDelete] = useState<string[]>([])
   const [sendingSignature, setSendingSignature] = useState<string | null>(null)
+  const [specialistSignatureModalOpen, setSpecialistSignatureModalOpen] =
+    useState(false)
+  const [selectedRecordForSignature, setSelectedRecordForSignature] = useState<
+    string | null
+  >(null)
 
   const searchConfig: SearchConfig = useMemo(
     () => ({
@@ -293,6 +301,17 @@ export default function MedicalRecordsPage() {
     }
   }
 
+  const handleSpecialistSignature = (recordId: string) => {
+    setSelectedRecordForSignature(recordId)
+    setSpecialistSignatureModalOpen(true)
+  }
+
+  const handleSpecialistSignatureComplete = () => {
+    setSpecialistSignatureModalOpen(false)
+    setSelectedRecordForSignature(null)
+    dataTableRef.current?.refreshData()
+  }
+
   if (!activeBusinessId) {
     return (
       <div className="flex flex-col gap-6 w-full overflow-auto">
@@ -346,7 +365,7 @@ export default function MedicalRecordsPage() {
                         <Button variant="ghost" className="h-8 w-8 p-0">
                           <span className="sr-only">Abrir menú</span>
                           {isSending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loading />
                           ) : (
                             <MoreHorizontal className="h-4 w-4" />
                           )}
@@ -373,7 +392,7 @@ export default function MedicalRecordsPage() {
                           <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
                               <Send className="mr-4 !h-4 !w-4 text-muted-foreground" />
-                              Firmar
+                              Firmar como cliente
                             </DropdownMenuSubTrigger>
                             <DropdownMenuPortal>
                               <DropdownMenuSubContent>
@@ -392,7 +411,7 @@ export default function MedicalRecordsPage() {
                                     </span>
                                   )}
                                 </DropdownMenuItem>
-                                
+
                                 <DropdownMenuItem
                                   onClick={() =>
                                     handleSendSignature(record, 'email')
@@ -407,7 +426,7 @@ export default function MedicalRecordsPage() {
                                     </span>
                                   )}
                                 </DropdownMenuItem>
-                                
+
                                 <DropdownMenuItem
                                   onClick={() =>
                                     handleSendSignature(record, 'sms')
@@ -422,17 +441,19 @@ export default function MedicalRecordsPage() {
                                     </span>
                                   )}
                                 </DropdownMenuItem>
-                                
+
                                 <DropdownMenuSeparator />
-                                
+
                                 {/* Opción de generar enlace */}
                                 <DropdownMenuItem asChild>
-                                  <SignatureLinkShare 
+                                  <SignatureLinkShare
                                     medicalRecordId={record.id}
                                     onLinkGenerated={() => {
                                       // No recargar la tabla inmediatamente
                                       // Dejar que el usuario cierre el modal primero
-                                      console.log('Link generated, waiting for user to close modal')
+                                      console.log(
+                                        'Link generated, waiting for user to close modal'
+                                      )
                                     }}
                                   >
                                     <div className="flex items-center w-full">
@@ -446,7 +467,25 @@ export default function MedicalRecordsPage() {
                           </DropdownMenuSub>
                         )}
 
-                         {canEdit && record.status === 'active' && (
+                        {/* Firma del especialista */}
+                        {!record.specialist_signature_data &&
+                          (isCompanyAdmin ||
+                            isBusinessAdmin ||
+                            isProfessional) && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleSpecialistSignature(record.id)
+                                }
+                              >
+                                <PenTool className="mr-2 h-4 w-4" />
+                                Firmar
+                              </DropdownMenuItem>
+                            </>
+                          )}
+
+                        {canEdit && record.status === 'active' && (
                           <DropdownMenuItem
                             onClick={() => handleArchiveRecord(record.id)}
                           >
@@ -512,6 +551,13 @@ export default function MedicalRecordsPage() {
         itemName="historia clínica"
         count={recordsToDelete.length}
         variant="outline"
+      />
+
+      <SpecialistSignatureModal
+        open={specialistSignatureModalOpen}
+        onOpenChange={setSpecialistSignatureModalOpen}
+        medicalRecordId={selectedRecordForSignature || ''}
+        onSuccess={handleSpecialistSignatureComplete}
       />
     </div>
   )

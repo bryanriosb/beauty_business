@@ -254,6 +254,32 @@ export async function deleteMedicalRecordsAction(
   }
 }
 
+export async function signMedicalRecordAsSpecialistAction(
+  medicalRecordId: string,
+  signatureData: string,
+  specialistId?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await getSupabaseAdminClient()
+
+    const { error } = await supabase
+      .from('medical_records')
+      .update({
+        specialist_signature_data: signatureData,
+        specialist_signature_date: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', medicalRecordId)
+
+    if (error) throw error
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error signing medical record as specialist:', error)
+    return { success: false, error: error.message || 'Error al firmar el registro' }
+  }
+}
+
 export async function getLatestMedicalRecordAction(
   businessId: string,
   customerId: string

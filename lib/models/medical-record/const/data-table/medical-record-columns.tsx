@@ -7,7 +7,15 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { FileText, Paperclip, AlertTriangle } from 'lucide-react'
+import { 
+  FileText, 
+  Paperclip, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
+  User,
+  PenTool 
+} from 'lucide-react'
 
 const statusLabels: Record<MedicalRecordStatus, string> = {
   active: 'Activo',
@@ -112,6 +120,70 @@ export const MEDICAL_RECORD_COLUMNS: ColumnDef<MedicalRecordWithCustomer>[] = [
         <div className="flex items-center gap-1 text-muted-foreground">
           <Paperclip className="h-4 w-4" />
           <span>{count}</span>
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: 'patient_signature',
+    header: 'Firma Paciente',
+    cell: ({ row }) => {
+      const isSigned = !!row.original.signature_data
+      return (
+        <div className="flex items-center gap-2">
+          <Badge 
+            variant={isSigned ? "default" : "secondary"} 
+            className="gap-1"
+          >
+            {isSigned ? (
+              <>
+                <CheckCircle className="h-3 w-3" />
+                Firmado
+              </>
+            ) : (
+              <>
+                <Clock className="h-3 w-3" />
+                Pendiente
+              </>
+            )}
+          </Badge>
+          {isSigned && row.original.signed_by_name && (
+            <span className="text-xs text-muted-foreground max-w-24 truncate" title={row.original.signed_by_name}>
+              {row.original.signed_by_name}
+            </span>
+          )}
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: 'specialist_signature',
+    header: 'Firma Profesional',
+    cell: ({ row }) => {
+      const hasSpecialistSignature = !!row.original.specialist_signature_data
+      return (
+        <div className="flex items-center gap-2">
+          <Badge 
+            variant={hasSpecialistSignature ? "default" : "secondary"} 
+            className="gap-1"
+          >
+            {hasSpecialistSignature ? (
+              <>
+                <CheckCircle className="h-3 w-3" />
+                Firmado
+              </>
+            ) : (
+              <>
+                <Clock className="h-3 w-3" />
+                Pendiente
+              </>
+            )}
+          </Badge>
+          {hasSpecialistSignature && row.original.specialist_signature_date && (
+            <span className="text-xs text-muted-foreground">
+              {format(new Date(row.original.specialist_signature_date), 'dd/MM/yy', { locale: es })}
+            </span>
+          )}
         </div>
       )
     },

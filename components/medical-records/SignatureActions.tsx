@@ -13,9 +13,10 @@ import {
   DropdownMenuSubContent,
   DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu'
-import { Send, QrCode, MoreHorizontal, MessageCircle, Mail, FileText, Smartphone } from 'lucide-react'
+import { Send, QrCode, MoreHorizontal, MessageCircle, Mail, FileText, Smartphone, PenTool } from 'lucide-react'
 import { SignatureLinkShare } from './SignatureLinkShare'
 import SendSignatureModal from './SendSignatureModal'
+import SpecialistSignatureModal from './SpecialistSignatureModal'
 
 interface SignatureActionsProps {
   medicalRecordId: string
@@ -26,6 +27,7 @@ interface SignatureActionsProps {
   customerPhone?: string
   customerEmail?: string
   recordDate: string
+  specialistSignatureData?: string | null
   onActionComplete?: () => void
 }
 
@@ -38,9 +40,11 @@ export function SignatureActions({
   customerPhone,
   customerEmail,
   recordDate,
+  specialistSignatureData,
   onActionComplete
 }: SignatureActionsProps) {
   const [isSendModalOpen, setIsSendModalOpen] = useState(false)
+  const [isSpecialistSignatureOpen, setIsSpecialistSignatureOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
 
   const handleSendSignature = () => {
@@ -50,6 +54,15 @@ export function SignatureActions({
   const handleActionComplete = () => {
     onActionComplete?.()
     setIsSendModalOpen(false)
+  }
+
+  const handleSpecialistSignatureComplete = () => {
+    onActionComplete?.()
+    setIsSpecialistSignatureOpen(false)
+  }
+
+  const handleSpecialistSignature = () => {
+    setIsSpecialistSignatureOpen(true)
   }
 
   // Si tiene teléfono y email, mostrar botón principal de enviar y dropdown con más opciones
@@ -117,6 +130,22 @@ export function SignatureActions({
             
             <DropdownMenuSeparator />
             
+            {/* Firma del especialista */}
+            <DropdownMenuItem
+              onClick={handleSpecialistSignature}
+              disabled={!!specialistSignatureData}
+            >
+              <PenTool className="mr-2 h-4 w-4" />
+              Firma de especialista
+              {specialistSignatureData && (
+                <span className="ml-2 text-xs text-green-600">
+                  ✓ Firmado
+                </span>
+              )}
+            </DropdownMenuItem>
+            
+            <DropdownMenuSeparator />
+            
             {/* Opción de generar enlace */}
             <DropdownMenuItem asChild>
               <SignatureLinkShare 
@@ -144,6 +173,13 @@ export function SignatureActions({
           customerEmail={customerEmail}
           recordDate={recordDate}
           onSuccess={handleActionComplete}
+        />
+
+        <SpecialistSignatureModal
+          open={isSpecialistSignatureOpen}
+          onOpenChange={setIsSpecialistSignatureOpen}
+          medicalRecordId={medicalRecordId}
+          onSuccess={handleSpecialistSignatureComplete}
         />
       </>
     )
@@ -174,6 +210,17 @@ export function SignatureActions({
         </Button>
       )}
       
+      {/* Botón de firma del especialista */}
+      <Button
+        variant={specialistSignatureData ? "secondary" : "default"}
+        size="sm"
+        onClick={handleSpecialistSignature}
+        disabled={!!specialistSignatureData}
+      >
+        <PenTool className="w-4 h-4 mr-2" />
+        {specialistSignatureData ? "Firmado" : "Firmar como especialista"}
+      </Button>
+      
       <SignatureLinkShare 
         medicalRecordId={medicalRecordId}
         onLinkGenerated={handleActionComplete}
@@ -191,6 +238,13 @@ export function SignatureActions({
         customerEmail={customerEmail}
         recordDate={recordDate}
         onSuccess={handleActionComplete}
+      />
+
+      <SpecialistSignatureModal
+        open={isSpecialistSignatureOpen}
+        onOpenChange={setIsSpecialistSignatureOpen}
+        medicalRecordId={medicalRecordId}
+        onSuccess={handleSpecialistSignatureComplete}
       />
     </div>
   )

@@ -8,6 +8,7 @@ import {
   archiveMedicalRecordAction,
   getCustomerMedicalHistoryAction,
   getLatestMedicalRecordAction,
+  signMedicalRecordAsSpecialistAction,
   type MedicalRecordListResponse,
 } from '@/lib/actions/medical-record'
 import type {
@@ -76,5 +77,12 @@ export default class MedicalRecordService {
     customerId: string
   ): Promise<MedicalRecord | null> {
     return getLatestMedicalRecordAction(businessId, customerId)
+  }
+
+  async signAsSpecialist(
+    medicalRecordId: string,
+    signatureData: string
+  ): Promise<{ success: boolean; error?: string }> {
+    return signMedicalRecordAsSpecialistAction(medicalRecordId, signatureData)
   }
 }
