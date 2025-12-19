@@ -33,6 +33,8 @@ import { useCurrentUser } from '@/hooks/use-current-user'
 import { toast } from 'sonner'
 import { hasPermission, USER_ROLES } from '@/const/roles'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
+import { GenericImportExportButtons } from '@/components/GenericImportExportButtons'
+import { importServicesWithProgress } from '@/lib/actions/service-import-export'
 
 export default function ServicesPage() {
   const serviceService = useMemo(() => new ServiceService(), [])
@@ -268,16 +270,30 @@ export default function ServicesPage() {
             Gestiona los servicios ofrecidos
           </p>
         </div>
-        {canCreateService && (
-          <Button
-            onClick={handleCreateService}
-            className="w-full sm:w-auto"
-            data-tutorial="add-service-button"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Crear Servicio
-          </Button>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {canCreateService && (
+            <Button
+              onClick={handleCreateService}
+              className="w-full sm:w-auto"
+              data-tutorial="add-service-button"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Crear Servicio
+            </Button>
+          )}
+          {activeBusiness?.id && (
+            <GenericImportExportButtons
+              config={{
+                entityType: 'services',
+                displayName: 'Servicios',
+                templateDownloadUrl: '/api/services/download-template',
+                importAction: importServicesWithProgress,
+              }}
+              additionalFormData={{ businessId: activeBusiness.id }}
+              onImportComplete={() => dataTableRef.current?.refreshData()}
+            />
+          )}
+        </div>
       </div>
 
       <DataTable

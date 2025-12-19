@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useMemo, useState, useEffect } from 'react'
-import { DataTable, DataTableRef, SearchConfig, FilterConfig } from '@/components/DataTable'
+import { DataTable, DataTableRef, SearchConfig, FilterConfig, ExportConfig } from '@/components/DataTable'
 import { Button } from '@/components/ui/button'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import {
@@ -72,6 +72,62 @@ export default function InvoicesPage() {
   }, [activeBusinessId])
 
   const isReady = !isLoading && serviceParams !== null
+
+  const exportConfig: ExportConfig | null = useMemo(() => {
+    if (!activeBusinessId) return null
+
+    return {
+      enabled: true,
+      tableName: 'facturas',
+      businessId: activeBusinessId,
+      excludedColumns: ['actions'],
+      columnFormatters: {
+        status: (value: string) => {
+          const statusLabels: Record<string, string> = {
+            DRAFT: 'Borrador',
+            ISSUED: 'Emitida',
+            PAID: 'Pagada',
+            CANCELLED: 'Anulada',
+          }
+          return statusLabels[value] || value
+        },
+        subtotal_cents: (value: number) => {
+          if (!value) return '$0'
+          return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+          }).format(value / 100)
+        },
+        tax_cents: (value: number) => {
+          if (!value) return '$0'
+          return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+          }).format(value / 100)
+        },
+        total_cents: (value: number) => {
+          if (!value) return '$0'
+          return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+          }).format(value / 100)
+        },
+        created_at: (value: string) => {
+          if (!value) return '-'
+          return new Date(value).toLocaleDateString('es-CO', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })
+        },
+        customer_name: (value: string) => value || '-',
+        customer_email: (value: string) => value || '-',
+      },
+    }
+  }, [activeBusinessId])
 
   const isCompanyAdmin = role === 'company_admin'
   const isBusinessAdmin = role === 'business_admin'
@@ -232,6 +288,7 @@ export default function InvoicesPage() {
           service={invoiceService}
           searchConfig={searchConfig}
           filters={filters}
+          exportConfig={exportConfig || undefined}
           defaultQueryParams={serviceParams || {}}
         />
       )}

@@ -265,11 +265,6 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
           const response = await service.fetchItems(fetchParams)
           const exportData = response.data || []
 
-          // Debug: Ver qué datos estamos obteniendo
-          console.log('🔍 Export Debug - Datos obtenidos:', exportData.length, 'filas')
-          console.log('🔍 Export Debug - Muestra de datos:', exportData.slice(0, 2))
-          console.log('🔍 Export Debug - Params enviados:', fetchParams)
-
           // Construir columnas para exportación basadas en las seleccionadas
           const exportColumns = columns
             .filter((col: any) => selectedColumns.includes(col.id || col.accessorKey))
@@ -280,10 +275,6 @@ export const DataTable = forwardRef<DataTableRef, DataTableProps<any, any>>(
                 label: typeof col.header === 'string' ? col.header : key
               }
             })
-
-          // Debug: Ver qué columnas estamos exportando
-          console.log('🔍 Export Debug - Columnas seleccionadas:', selectedColumns)
-          console.log('🔍 Export Debug - Columnas para exportar:', exportColumns)
 
           // Aplicar formatters del cliente a cada fila
           const processedData = exportData.map((row: any) => {

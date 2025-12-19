@@ -5,6 +5,7 @@ import {
   DataTableRef,
   SearchConfig,
   FilterConfig,
+  ExportConfig,
 } from '@/components/DataTable'
 import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -263,6 +264,55 @@ export default function ProductsPage() {
   const canCreateProduct = role && hasPermission(role, 'canCreateProduct')
   const canDeleteProduct = role && hasPermission(role, 'canDeleteProduct')
 
+  const exportConfig: ExportConfig = useMemo(() => {
+    return {
+      enabled: true,
+      tableName: 'productos',
+      businessId: activeBusiness?.id,
+      excludedColumns: ['actions', 'image_url'],
+      columnFormatters: {
+        type: (value: string) => {
+          const typeLabels: Record<string, string> = {
+            SUPPLY: 'Insumo',
+            RETAIL: 'Venta',
+          }
+          return typeLabels[value] || value
+        },
+        is_active: (value: boolean) => (value ? 'Activo' : 'Inactivo'),
+        cost_price_cents: (value: number) => {
+          if (!value) return '$0'
+          return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+          }).format(value / 100)
+        },
+        sale_price_cents: (value: number) => {
+          if (!value) return '-'
+          return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+          }).format(value / 100)
+        },
+        category: (value: any) => {
+          if (!value) return 'Sin categoría'
+          return value.name || 'Sin categoría'
+        },
+        unit_of_measure: (value: any) => {
+          if (!value) return '-'
+          return value.abbreviation || value.name || '-'
+        },
+        created_at: (value: string) => {
+          if (!value) return '-'
+          return new Date(value).toLocaleDateString('es-CO')
+        },
+        description: (value: string) => value || '-',
+        sku: (value: string) => value || '-',
+      },
+    }
+  }, [activeBusiness?.id])
+
   const queryParams = useMemo(() => {
     const params: Record<string, any> = {}
     if (!isCompanyAdmin && activeBusiness?.id) {
@@ -314,6 +364,7 @@ export default function ProductsPage() {
         defaultQueryParams={queryParams}
         searchConfig={searchConfig}
         filters={filterConfigs}
+        exportConfig={exportConfig}
         enableRowSelection={!!canDeleteProduct}
         onDeleteSelected={handleBatchDelete}
       />

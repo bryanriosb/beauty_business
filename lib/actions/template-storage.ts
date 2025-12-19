@@ -2,7 +2,7 @@
 
 import { getSupabaseAdminClient } from '@/lib/actions/supabase'
 
-export type TemplateType = 'plans'
+export type TemplateType = 'plans' | 'customers' | 'services' | 'specialists' | 'products'
 
 export async function uploadTemplateAction(
   formData: FormData

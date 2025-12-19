@@ -220,15 +220,19 @@ export default function InvoiceModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-lg max-h-screen sm:max-h-[90vh] overflow-hidden"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditing ? `Factura ${invoice.invoice_number}` : 'Nueva Factura'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4 min-h-full overflow-y-auto">
+          <div className="flex-1  space-y-6 pr-2 pb-4">
             <div className="space-y-2">
               <Label>N° Factura</Label>
               <Input
@@ -426,7 +430,7 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0 pt-4 border-t">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
