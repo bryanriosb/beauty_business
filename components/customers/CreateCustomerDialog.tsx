@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { StateComboBox } from '@/components/ui/state-combobox'
+import { CityComboBox } from '@/components/ui/city-combobox'
 import {
   Form,
   FormControl,
@@ -270,20 +272,7 @@ export function CreateCustomerDialog({
                   )}
                 />
 
-                <div className="grid grid-cols-3 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ciudad</FormLabel>
-                        <FormControl>
-                          <Input {...field} disabled className="bg-muted" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="grid gap-3">
                   <FormField
                     control={form.control}
                     name="state"
@@ -291,13 +280,41 @@ export function CreateCustomerDialog({
                       <FormItem>
                         <FormLabel>Departamento</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled className="bg-muted" />
+                          <StateComboBox
+                            value={field.value}
+                            onChange={(value, selectedState) => {
+                              field.onChange(value)
+                              // Reset city when state changes
+                              form.setValue('city', '')
+                            }}
+                            disabled={isSubmitting}
+                            className="bg-muted"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ciudad</FormLabel>
+                        <FormControl>
+                          <CityComboBox
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={isSubmitting}
+                            className="bg-muted"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* <FormField
                     control={form.control}
                     name="country"
                     render={({ field }) => (
@@ -309,7 +326,7 @@ export function CreateCustomerDialog({
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
+                  /> */}
                 </div>
 
                 <Collapsible

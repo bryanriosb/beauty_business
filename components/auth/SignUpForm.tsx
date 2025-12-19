@@ -534,14 +534,7 @@ export function SignUpForm() {
             <Button
               type="button"
               className="w-full gap-2"
-              onClick={() => {
-                console.log('Botón Continuar clickeado', {
-                  emailVerified,
-                  phoneVerified,
-                  isLoading,
-                })
-                validateStep1()
-              }}
+              onClick={validateStep1}
               disabled={isLoading || !emailVerified || !phoneVerified}
             >
               Continuar

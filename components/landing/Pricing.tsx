@@ -5,7 +5,14 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Sparkles, ArrowRight, Zap } from 'lucide-react'
 import { LANDING_PLANS, type LandingPlan } from './const/landing-plans'
-import { LANDING_FEATURES, formatCurrency, isPlanPopular, getCTAText, getCTAHref, shouldShowPrice } from './const/landing-features'
+import {
+  LANDING_FEATURES,
+  formatCurrency,
+  isPlanPopular,
+  getCTAText,
+  getCTAHref,
+  shouldShowPrice,
+} from './const/landing-features'
 
 export function Pricing() {
   return (
@@ -46,29 +53,12 @@ export function Pricing() {
 
         {/* Pricing cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {LANDING_PLANS.sort((a, b) => a.sort_order - b.sort_order).map((plan, index) => (
-            <PricingCard key={plan.id} plan={plan} index={index} />
-          ))}
+          {LANDING_PLANS.sort((a, b) => a.sort_order - b.sort_order).map(
+            (plan, index) => (
+              <PricingCard key={plan.id} plan={plan} index={index} />
+            )
+          )}
         </div>
-
-        {/* Bottom guarantee */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-16 text-center"
-        >
-          <div className="inline-flex items-center gap-4 p-4 rounded-2xl bg-card border">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-              <CheckCircle2 className="h-6 w-6 text-white" />
-            </div>
-            <div className="text-left">
-              <p className="font-semibold">Garantia de 30 dias</p>
-              <p className="text-sm text-muted-foreground">Si no estas satisfecho, te devolvemos tu dinero</p>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </section>
   )
@@ -105,11 +95,15 @@ function PricingCard({ plan, index }: PricingCardProps) {
         </div>
       )}
 
-      <div className={`relative h-full p-8 rounded-3xl ${
-        isPopular
-          ? 'bg-gradient-to-b from-secondary/10 to-accent/10 border-2 border-secondary/50'
-          : 'bg-card border border-border/50'
-      } transition-all duration-300 hover:shadow-xl ${isPopular ? 'hover:shadow-secondary/10' : 'hover:shadow-primary/5'}`}>
+      <div
+        className={`relative h-full p-8 rounded-3xl ${
+          isPopular
+            ? 'bg-gradient-to-b from-secondary/10 to-accent/10 border-2 border-secondary/50'
+            : 'bg-card border border-border/50'
+        } transition-all duration-300 hover:shadow-xl ${
+          isPopular ? 'hover:shadow-secondary/10' : 'hover:shadow-primary/5'
+        }`}
+      >
         {/* Header */}
         <div className="mb-6">
           <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
@@ -120,7 +114,13 @@ function PricingCard({ plan, index }: PricingCardProps) {
         {showPrice && (
           <div className="mb-6">
             <div className="flex items-baseline gap-1">
-              <span className={`text-4xl font-bold ${isPopular ? 'bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent' : ''}`}>
+              <span
+                className={`text-4xl font-bold ${
+                  isPopular
+                    ? 'bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent'
+                    : ''
+                }`}
+              >
                 {monthlyPrice}
               </span>
               <span className="text-muted-foreground">/mes</span>
@@ -132,7 +132,11 @@ function PricingCard({ plan, index }: PricingCardProps) {
         <ul className="space-y-3 mb-8">
           {features.map((feature) => (
             <li key={feature} className="flex items-start gap-2 text-sm">
-              <CheckCircle2 className={`h-5 w-5 shrink-0 ${isPopular ? 'text-secondary' : 'text-secondary/70'}`} />
+              <CheckCircle2
+                className={`h-5 w-5 shrink-0 ${
+                  isPopular ? 'text-secondary' : 'text-secondary/70'
+                }`}
+              />
               <span>{feature}</span>
             </li>
           ))}

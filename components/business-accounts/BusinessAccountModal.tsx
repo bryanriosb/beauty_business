@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { StateComboBox } from '@/components/ui/state-combobox'
+import { CityComboBox } from '@/components/ui/city-combobox'
 import {
   Form,
   FormControl,
@@ -56,9 +58,9 @@ const formSchema = z.object({
     .min(1, 'El email es requerido')
     .email({ message: 'Ingresa un correo electrónico válido' }),
   contact_phone: z.string().optional().or(z.literal('')),
-   subscription_plan: z.enum(['trial', 'free', 'basic', 'pro', 'enterprise']),
-   status: z.enum(['active', 'trial', 'suspended', 'cancelled']),
-   created_by: z.string(),
+  subscription_plan: z.enum(['trial', 'free', 'basic', 'pro', 'enterprise']),
+  status: z.enum(['active', 'trial', 'suspended', 'cancelled']),
+  created_by: z.string(),
 })
 
 type BusinessAccountFormValues = z.infer<typeof formSchema>
@@ -106,9 +108,9 @@ export function BusinessAccountModal({
       contact_name: '',
       contact_email: '',
       contact_phone: '',
-       subscription_plan: 'trial' as SubscriptionPlan,
-       status: 'active' as AccountStatus,
-       created_by: '',
+      subscription_plan: 'trial' as SubscriptionPlan,
+      status: 'active' as AccountStatus,
+      created_by: '',
     },
   })
 
@@ -126,9 +128,9 @@ export function BusinessAccountModal({
         contact_name: account.contact_name,
         contact_email: account.contact_email,
         contact_phone: account.contact_phone || '',
-         subscription_plan: account.subscription_plan,
-         status: account.status,
-         created_by: account.created_by,
+        subscription_plan: account.subscription_plan,
+        status: account.status,
+        created_by: account.created_by,
       }
       form.reset(values)
       setInitialValues(values)
@@ -158,9 +160,9 @@ export function BusinessAccountModal({
         contact_name: '',
         contact_email: '',
         contact_phone: '',
-         subscription_plan: 'trial' as SubscriptionPlan,
-         status: 'active' as AccountStatus,
-         created_by: '',
+        subscription_plan: 'trial' as SubscriptionPlan,
+        status: 'active' as AccountStatus,
+        created_by: '',
       }
       form.reset(emptyValues)
       setInitialValues(null)
@@ -214,9 +216,9 @@ export function BusinessAccountModal({
       formValues.billing_country !== initialValues.billing_country ||
       formValues.contact_name !== initialValues.contact_name ||
       formValues.contact_email !== initialValues.contact_email ||
-       formValues.contact_phone !== initialValues.contact_phone ||
-       formValues.subscription_plan !== initialValues.subscription_plan ||
-       formValues.status !== initialValues.status
+      formValues.contact_phone !== initialValues.contact_phone ||
+      formValues.subscription_plan !== initialValues.subscription_plan ||
+      formValues.status !== initialValues.status
     )
   }, [formValues, initialValues, isBusinessAdmin, isEdit])
 
@@ -439,18 +441,22 @@ export function BusinessAccountModal({
                 )}
               />
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid gap-4">
                 <FormField
                   control={form.control}
-                  name="billing_city"
+                  name="billing_state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ciudad</FormLabel>
+                      <FormLabel>Departamento</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Cali"
+                        <StateComboBox
+                          value={field.value}
+                          onChange={(value) => {
+                            field.onChange(value)
+                            // Reset city when state changes
+                            form.setValue('billing_city', '')
+                          }}
                           disabled={isSubmitting}
-                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -460,15 +466,15 @@ export function BusinessAccountModal({
 
                 <FormField
                   control={form.control}
-                  name="billing_state"
+                  name="billing_city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Departamento</FormLabel>
+                      <FormLabel>Ciudad</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Valle del Cauca"
+                        <CityComboBox
+                          value={field.value}
+                          onChange={field.onChange}
                           disabled={isSubmitting}
-                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -530,44 +536,44 @@ export function BusinessAccountModal({
                   </FormItem>
                 )}
               />
-             </div>
+            </div>
 
-             {/* Estado de la Cuenta - Solo company_admin */}
-             {canEditFullAccount && (
-               <div className="space-y-4">
-                 <h3 className="font-bold">Estado de la Cuenta</h3>
+            {/* Estado de la Cuenta - Solo company_admin */}
+            {canEditFullAccount && (
+              <div className="space-y-4">
+                <h3 className="font-bold">Estado de la Cuenta</h3>
 
-                 <FormField
-                   control={form.control}
-                   name="status"
-                   render={({ field }) => (
-                     <FormItem>
-                       <FormLabel>Estado</FormLabel>
-                       <Select
-                         onValueChange={field.onChange}
-                         defaultValue={field.value}
-                         disabled={isSubmitting}
-                       >
-                         <FormControl>
-                           <SelectTrigger className="w-full">
-                             <SelectValue placeholder="Selecciona un estado" />
-                           </SelectTrigger>
-                         </FormControl>
-                         <SelectContent>
-                           <SelectItem value="active">Activa</SelectItem>
-                           <SelectItem value="trial">Prueba</SelectItem>
-                           <SelectItem value="suspended">Suspendida</SelectItem>
-                           <SelectItem value="cancelled">Cancelada</SelectItem>
-                         </SelectContent>
-                       </Select>
-                       <FormMessage />
-                     </FormItem>
-                   )}
-                 />
-               </div>
-             )}
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecciona un estado" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Activa</SelectItem>
+                          <SelectItem value="trial">Prueba</SelectItem>
+                          <SelectItem value="suspended">Suspendida</SelectItem>
+                          <SelectItem value="cancelled">Cancelada</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
-             {/* Configuración Personalizada (Settings) - Solo company_admin */}
+            {/* Configuración Personalizada (Settings) - Solo company_admin */}
             {canEditFullAccount && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

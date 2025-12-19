@@ -50,15 +50,16 @@ export function CityComboBox({
   const options: ComboboxOption[] = useMemo(
     () =>
       cities.map((city) => ({
-        value: city.id_city.toString(),
+        value: city.city_name, // Usar nombre para el formulario
         label: city.city_name,
+        id: city.id_city, // Mantener ID para validaciones
       })),
     [cities]
   )
 
   const handleCityChange = (optionValue: string | null) => {
     if (optionValue) {
-      const city = cities.find((c) => c.id_city.toString() === optionValue)
+      const city = cities.find((c) => c.city_name === optionValue)
       setSelectedCity(city || null)
       onChange?.(optionValue, city || undefined)
     } else {
@@ -69,8 +70,8 @@ export function CityComboBox({
 
   // Sync external value with internal state
   useEffect(() => {
-    if (value && (!selectedCity || selectedCity.id_city.toString() !== value)) {
-      const city = cities.find((c) => c.id_city.toString() === value)
+    if (value && (!selectedCity || selectedCity.city_name !== value)) {
+      const city = cities.find((c) => c.city_name === value)
       setSelectedCity(city || null)
     } else if (!value && selectedCity) {
       setSelectedCity(null)
@@ -84,7 +85,7 @@ export function CityComboBox({
   return (
     <Combobox
       options={options}
-      value={selectedCity?.id_city.toString() || value}
+      value={selectedCity?.city_name || value}
       onChange={handleCityChange}
       placeholder={
         isDisabled ? 'Seleccione primero un departamento' : placeholder

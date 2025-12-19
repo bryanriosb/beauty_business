@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { StateComboBox } from '@/components/ui/state-combobox'
+import { CityComboBox } from '@/components/ui/city-combobox'
 import {
   Form,
   FormControl,
@@ -695,27 +697,7 @@ export function BusinessModal({
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Ciudad <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Bogotá"
-                              disabled={isSubmitting || isBusinessAdmin}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
+                  <div className="grid gap-4">
                     <FormField
                       control={form.control}
                       name="state"
@@ -726,10 +708,34 @@ export function BusinessModal({
                             <span className="text-destructive">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Cundinamarca"
+                            <StateComboBox
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value)
+                                // Reset city when state changes
+                                form.setValue('city', '')
+                              }}
                               disabled={isSubmitting || isBusinessAdmin}
-                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Ciudad <span className="text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <CityComboBox
+                              value={field.value}
+                              onChange={field.onChange}
+                              disabled={isSubmitting || isBusinessAdmin}
                             />
                           </FormControl>
                           <FormMessage />

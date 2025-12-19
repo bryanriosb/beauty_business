@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { Button } from './ui/button'
-import { LogOut, User, ChevronUp } from 'lucide-react'
+import { LogOut, User, ChevronUp, Loader2 } from 'lucide-react'
 import { useSidebar } from './ui/sidebar'
 import { useCurrentUser } from '@/hooks/use-current-user'
 import { USER_ROLES } from '@/const/roles'
@@ -27,6 +27,7 @@ export default function SidebarFooter() {
   const { user, role, specialistId } = useCurrentUser()
   const [specialist, setSpecialist] = useState<Specialist | null>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Verificar si el tutorial está activo para deshabilitar el dropdown
   const { isActive: isTutorialActive, getCurrentStep } = useTutorialStore()
@@ -68,9 +69,19 @@ export default function SidebarFooter() {
     router.push('/admin/profile')
   }
 
-  const handleLogout = (event: React.MouseEvent) => {
+  const handleLogout = async (event: React.MouseEvent) => {
     event.preventDefault()
-    signOut()
+    setIsLoggingOut(true)
+    try {
+      await signOut({ redirect: false })
+      router.push('/auth/sign-in')
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+      // Incluso si hay error, redirigir al login
+      router.push('/auth/sign-in')
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   const displayName = specialist
@@ -134,9 +145,16 @@ export default function SidebarFooter() {
                 Perfil
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Cerrar Sesión
+            <DropdownMenuItem 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="mr-2 h-4 w-4" />
+              )}
+              {isLoggingOut ? 'Cerrando...' : 'Cerrar Sesión'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -179,9 +197,16 @@ export default function SidebarFooter() {
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Cerrar Sesión
+          <DropdownMenuItem 
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <LogOut className="mr-2 h-4 w-4" />
+            )}
+            {isLoggingOut ? 'Cerrando...' : 'Cerrar Sesión'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

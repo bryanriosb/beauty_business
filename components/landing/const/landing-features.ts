@@ -45,7 +45,7 @@ export const LANDING_FEATURES = (plan: LandingPlan): string[] => {
     has_portfolio && 'Gestión de abonos y cartera',
     has_commissions && 'Gestión de comisiones por especialista',
     has_charts_reports && 'Reportes avanzados',
-    has_medical_record && 'Gestión de historias clínicas',
+    has_medical_record && 'Historias clínicas con firma digital',
     has_products && 'Gestión de productos',
     has_stock && 'Gestión inteligente de inventario',
     has_goals_management && 'Gestión de metas',
@@ -62,51 +62,55 @@ export const LANDING_FEATURES = (plan: LandingPlan): string[] => {
       has_ai_assistant_phone && 'Asistente IA llamadas',
       has_personalized_support && 'Soporte personalizado 24/7',
     ].filter(Boolean) as string[]
-    
+
     return [
       // Resumen al inicio
       'Todas las características del plan Profesional',
-      
+
       // Citas y clientes
       max_appointments_per_month
         ? `Hasta ${max_appointments_per_month} citas/mes`
         : 'Citas ilimitadas',
       max_customers ? `Hasta ${max_customers} clientes` : 'Clientes ilimitados',
-      
+
       // Servicios y productos
       max_services ? `Hasta ${max_services} servicios` : 'Servicios ilimitados',
       max_products ? `Hasta ${max_products} productos` : 'Productos ilimitados',
-      
+
       ...enterpriseFeatures,
     ]
   }
 
   const features = [
     // Límites básicos (solo para Basic y Professional)
-    ...(plan.code === 'basic' || plan.code === 'pro' ? [
-      `Hasta ${max_businesses} negocio(s)`,
-      `${max_users_per_business} usuarios por negocio`,
-      `${max_specialists_per_business} especialistas`,
-    ] : []),
-    
+    ...(plan.code === 'basic' || plan.code === 'pro'
+      ? [
+          `Hasta ${max_businesses} negocio(s)`,
+          `${max_users_per_business} usuarios por negocio`,
+          `${max_specialists_per_business} especialistas`,
+        ]
+      : []),
+
     // Citas y clientes
     max_appointments_per_month
       ? `Hasta ${max_appointments_per_month} citas/mes`
       : 'Citas ilimitadas',
     max_customers ? `Hasta ${max_customers} clientes` : 'Clientes ilimitados',
-    
+
     // Servicios y productos
     max_services ? `Hasta ${max_services} servicios` : 'Servicios ilimitados',
     max_products ? `Hasta ${max_products} productos` : 'Productos ilimitados',
-    
+
     // Para plan Professional: incluir todas sus características
     ...(plan.code === 'pro' ? professionalFeatures.filter(Boolean) : []),
-    
+
     // Para plan Basic: características básicas
-    ...(plan.code === 'basic' ? [
-      has_dashboard && 'Tablero de control',
-      has_charts_reports && 'Reportes básicos',
-    ].filter(Boolean) : []),
+    ...(plan.code === 'basic'
+      ? [
+          has_dashboard && 'Tablero de control',
+          has_charts_reports && 'Reportes básicos',
+        ].filter(Boolean)
+      : []),
   ]
 
   // Filtrar valores falsy y mantener el orden

@@ -16,6 +16,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { StateComboBox } from '@/components/ui/state-combobox'
+import { CityComboBox } from '@/components/ui/city-combobox'
 import {
   Form,
   FormControl,
@@ -83,7 +85,16 @@ const formSchema = z.object({
   email: z.string().email('Email inválido'),
   phone: z.string().optional(),
   status: z.enum(['active', 'inactive', 'vip', 'blocked']).optional(),
-  source: z.enum(['walk_in', 'referral', 'social_media', 'website', 'other', 'ai_agent']).optional(),
+  source: z
+    .enum([
+      'walk_in',
+      'referral',
+      'social_media',
+      'website',
+      'other',
+      'ai_agent',
+    ])
+    .optional(),
   notes: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -366,7 +377,10 @@ function CustomerModal({
                           </FormControl>
                           <SelectContent>
                             {STATUS_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
                                 {option.label}
                               </SelectItem>
                             ))}
@@ -395,7 +409,10 @@ function CustomerModal({
                           </FormControl>
                           <SelectContent>
                             {SOURCE_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
                                 {option.label}
                               </SelectItem>
                             ))}
@@ -431,14 +448,19 @@ function CustomerModal({
                     <div className="grid grid-cols-3 gap-3">
                       <FormField
                         control={form.control}
-                        name="city"
+                        name="state"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Ciudad</FormLabel>
+                            <FormLabel>Departamento</FormLabel>
                             <FormControl>
-                              <Input
-                                {...field}
-                                disabled
+                              <StateComboBox
+                                value={field.value}
+                                onChange={(value) => {
+                                  field.onChange(value)
+                                  // Reset city when state changes
+                                  form.setValue('city', '')
+                                }}
+                                disabled={isEditing}
                                 className="bg-muted"
                               />
                             </FormControl>
@@ -448,14 +470,15 @@ function CustomerModal({
                       />
                       <FormField
                         control={form.control}
-                        name="state"
+                        name="city"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Departamento</FormLabel>
+                            <FormLabel>Ciudad</FormLabel>
                             <FormControl>
-                              <Input
-                                {...field}
-                                disabled
+                              <CityComboBox
+                                value={field.value}
+                                onChange={field.onChange}
+                                disabled={isEditing}
                                 className="bg-muted"
                               />
                             </FormControl>
@@ -470,11 +493,7 @@ function CustomerModal({
                           <FormItem>
                             <FormLabel>País</FormLabel>
                             <FormControl>
-                              <Input
-                                {...field}
-                                disabled
-                                className="bg-muted"
-                              />
+                              <Input {...field} disabled className="bg-muted" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -482,7 +501,10 @@ function CustomerModal({
                       />
                     </div>
 
-                    <Collapsible open={showOptionalFields} onOpenChange={setShowOptionalFields}>
+                    <Collapsible
+                      open={showOptionalFields}
+                      onOpenChange={setShowOptionalFields}
+                    >
                       <CollapsibleTrigger asChild>
                         <Button
                           type="button"
@@ -519,7 +541,10 @@ function CustomerModal({
                                   </FormControl>
                                   <SelectContent>
                                     {IDENTIFICATION_TYPES.map((type) => (
-                                      <SelectItem key={type.value} value={type.value}>
+                                      <SelectItem
+                                        key={type.value}
+                                        value={type.value}
+                                      >
                                         {type.label}
                                       </SelectItem>
                                     ))}
@@ -576,7 +601,13 @@ function CustomerModal({
                                 <FormLabel>Género</FormLabel>
                                 <Select
                                   onValueChange={(value) =>
-                                    field.onChange(value as 'FEMALE' | 'MALE' | 'OTHER' | 'PREFER_NOT_TO_SAY')
+                                    field.onChange(
+                                      value as
+                                        | 'FEMALE'
+                                        | 'MALE'
+                                        | 'OTHER'
+                                        | 'PREFER_NOT_TO_SAY'
+                                    )
                                   }
                                   value={field.value}
                                   disabled={isSubmitting}
@@ -588,7 +619,10 @@ function CustomerModal({
                                   </FormControl>
                                   <SelectContent>
                                     {GENDER_OPTIONS.map((option) => (
-                                      <SelectItem key={option.value} value={option.value}>
+                                      <SelectItem
+                                        key={option.value}
+                                        value={option.value}
+                                      >
                                         {option.label}
                                       </SelectItem>
                                     ))}
@@ -615,7 +649,9 @@ function CustomerModal({
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   {isSubmitting
                     ? 'Guardando'
                     : isEditing
