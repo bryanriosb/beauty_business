@@ -140,19 +140,21 @@ const CustomEvent = ({ event }: { event: Event }) => {
   }
 
   // Get unique specialists from appointment_services
-  const uniqueSpecialists = appointment?.appointment_services
-    ?.filter((as: any) => as.specialist)
-    .reduce((acc: any[], as: any) => {
-      if (!acc.find((s: any) => s.id === as.specialist.id)) {
-        acc.push(as.specialist)
-      }
-      return acc
-    }, []) || []
+  const uniqueSpecialists =
+    appointment?.appointment_services
+      ?.filter((as: any) => as.specialist)
+      .reduce((acc: any[], as: any) => {
+        if (!acc.find((s: any) => s.id === as.specialist.id)) {
+          acc.push(as.specialist)
+        }
+        return acc
+      }, []) || []
 
   // Fallback to main specialist
-  const specialists = uniqueSpecialists.length > 0
-    ? uniqueSpecialists
-    : appointment?.specialist
+  const specialists =
+    uniqueSpecialists.length > 0
+      ? uniqueSpecialists
+      : appointment?.specialist
       ? [appointment.specialist]
       : []
 
@@ -205,8 +207,7 @@ const CustomEvent = ({ event }: { event: Event }) => {
         <div className="font-semibold truncate text-[0.65rem] md:text-xs leading-tight">
           {isMultiple
             ? specialists.map((s: any) => s.first_name).join(', ')
-            : specialists[0]?.first_name || 'Especialista'
-          }
+            : specialists[0]?.first_name || 'Especialista'}
         </div>
         <div className="flex items-center justify-between gap-1">
           <div className="truncate text-[0.6rem] md:text-[0.7rem] leading-tight opacity-90">
@@ -292,6 +293,7 @@ export default function BigCalendar({
   return (
     <div className="h-[calc(100vh-12rem)] w-full [&_.rbc-event]:!p-1 [&_.rbc-event]:min-h-[2.5rem] [&_.rbc-event]:md:min-h-[3rem] [&_.rbc-show-more]:!text-primary [&_.rbc-show-more]:!font-bold [&_.rbc-show-more]:text-xs [&_.rbc-show-more]:md:text-sm [&_.rbc-show-more:hover]:!underline [&_.rbc-date-cell]:cursor-pointer [&_.rbc-date-cell:hover]:bg-accent [&_.rbc-date-cell]:transition-colors [&_.rbc-date-cell]:rounded-sm [&_.rbc-button-link]:font-semibold [&_.rbc-button-link]:text-xs [&_.rbc-button-link]:md:text-sm [&_.rbc-button-link:hover]:text-primary [&_.rbc-button-link]:transition-colors [&_.rbc-header]:text-xs [&_.rbc-header]:md:text-sm [&_.rbc-header]:font-semibold [&_.rbc-header]:py-2 [&_.rbc-month-view]:text-xs [&_.rbc-month-view]:md:text-sm [&_.rbc-time-header-content]:text-xs [&_.rbc-time-header-content]:md:text-sm [&_.rbc-time-slot]:text-xs [&_.rbc-time-slot]:md:text-sm [&_.rbc-time-content]:overflow-x-auto [&_.rbc-off-range]:!bg-[#F5F5F5] [&_.rbc-off-range_.rbc-button-link]:!text-[#F5F5F5] [&_.rbc-today]:!bg-primary/10 [&_.rbc-today_.rbc-button-link]:!text-primary [&_.rbc-today_.rbc-button-link]:!font-bold">
       <Calendar
+        className="w-[calc(100vw-2.5rem)] md:w-full"
         localizer={localizer}
         events={events}
         startAccessor="start"
