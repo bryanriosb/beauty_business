@@ -24,7 +24,7 @@ export function SubscriptionWarningBanner({ message }: SubscriptionWarningBanner
 
         <div className="flex items-center gap-2">
           <Button asChild size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
-            <Link href="/admin/settings/billing">
+            <Link href="/admin/suscription">
               Renovar Ahora
             </Link>
           </Button>

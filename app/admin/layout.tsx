@@ -40,7 +40,7 @@ export default async function AdminLayout({
         <AppSidebar accessibleModules={accessibleModules} />
       </Suspense>
       {businessAccountId && (
-        <TrialProviderClient 
+        <TrialProviderClient
           businessAccountId={businessAccountId}
           initialData={trialData || undefined}
         >

@@ -15,9 +15,11 @@ import {
   SIDE_SYSTEM_MENU_ITEMS,
 } from '@/const/sidebar-menu'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import { USER_ROLES } from '@/const/roles'
 import { NavMain } from './NavMain'
 import { BusinessSwitcher } from './BusinessSwitcher'
 import { LowStockAlertBadge } from './inventory/LowStockAlert'
+import { SubscriptionOnlyMenu } from './SubscriptionOnlyMenu'
 import Image from 'next/image'
 
 interface AppSidebarProps {
@@ -28,6 +30,19 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
   const { role } = useCurrentUser()
   const { state } = useSidebar()
   const isCollapsed = state === 'collapsed'
+
+  // COMPANY_ADMIN siempre tiene acceso completo (superuser)
+  const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
+
+  // Determinar si mostrar solo menú de suscripción basado en módulos accesibles del servidor
+  // Si no hay módulos de aplicación accesibles (excepto para COMPANY_ADMIN), mostrar solo suscripción
+  const hasAppModules = accessibleModules.some(module => 
+    ['dashboard', 'appointments', 'services', 'products', 'inventory', 
+     'specialists', 'customers', 'medical_records', 'commissions', 'reports', 
+     'invoices', 'ai_assistant', 'whatsapp'].includes(module)
+  )
+  
+  const shouldShowSubscriptionOnly = !isCompanyAdmin && !hasAppModules
 
   // Crear set de módulos accesibles para búsqueda rápida
   const accessibleModulesSet = useMemo(
@@ -142,6 +157,20 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
     })
   }, [filteredSystemItems, role, accessibleModulesSet])
 
+  // Determinar contenido del sidebar basado en módulos accesibles del servidor
+  const sidebarContent = shouldShowSubscriptionOnly ? (
+    <SubscriptionOnlyMenu />
+  ) : (
+    <>
+      {finalAppItems.length > 0 && (
+        <NavMain items={finalAppItems} label="Aplicación" userRole={role} />
+      )}
+      {finalSystemItems.length > 0 && (
+        <NavMain items={finalSystemItems} label="Sistema" userRole={role} />
+      )}
+    </>
+  )
+
   return (
     <Sidebar collapsible="icon" className="z-50">
       <SidebarHeader>
@@ -183,12 +212,7 @@ export function AppSidebar({ accessibleModules }: AppSidebarProps) {
         <BusinessSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        {finalAppItems.length > 0 && (
-          <NavMain items={finalAppItems} label="Aplicación" userRole={role} />
-        )}
-        {finalSystemItems.length > 0 && (
-          <NavMain items={finalSystemItems} label="Sistema" userRole={role} />
-        )}
+        {sidebarContent}
       </SidebarContent>
       <SidebarFooter>
         <SidebarCustomFooter />

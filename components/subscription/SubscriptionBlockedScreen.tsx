@@ -38,7 +38,7 @@ export function SubscriptionBlockedScreen({ reason }: SubscriptionBlockedScreenP
 
           <div className="flex flex-col gap-3">
             <Button asChild size="lg" className="w-full">
-              <Link href="/admin/settings/billing">
+              <Link href="/admin/suscription">
                 <CreditCard className="mr-2 h-5 w-5" />
                 Ver Planes y Suscribirse
               </Link>

@@ -38,7 +38,7 @@ export function PaymentSuccess({
     if (onContinue) {
       onContinue()
     } else {
-      router.push('/admin/settings/billing')
+      router.push('/admin')
     }
   }
 

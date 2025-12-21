@@ -25,7 +25,7 @@ import { SubscriptionActions } from './SubscriptionActions'
 import type { Plan } from '@/lib/models/plan/plan'
 import type { BillingCycle } from '@/lib/models/subscription/subscription'
 
-export default function BillingPage() {
+export default function SuscriptionPage() {
   const router = useRouter()
   const { activeBusiness } = useActiveBusinessStore()
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
@@ -84,7 +84,7 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>

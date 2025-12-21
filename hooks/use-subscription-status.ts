@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 import {
   checkSubscriptionAccessAction,
@@ -26,10 +26,12 @@ export function useSubscriptionAccess() {
     }
 
     setIsLoading(true)
+
     try {
       const result = await checkSubscriptionAccessAction(
         activeBusiness.business_account_id
       )
+      console.log('Subscription access check result:', result)
       setAccess(result)
     } catch (error) {
       console.error('Error checking subscription access:', error)
@@ -39,14 +41,20 @@ export function useSubscriptionAccess() {
     }
   }, [activeBusiness?.business_account_id])
 
+  const recheckAccess = useCallback(() => {
+    console.log('Forcing subscription recheck...')
+    checkAccess()
+  }, [checkAccess])
+
   useEffect(() => {
+    // Solo hacer la consulta fresh al cargar la página
     checkAccess()
   }, [checkAccess])
 
   return {
     access,
     isLoading,
-    recheckAccess: checkAccess,
+    recheckAccess, // Usar la función optimizada
     hasAccess: access?.hasAccess ?? false,
     isInGracePeriod: access?.isInGracePeriod ?? false,
     daysUntilExpiry: access?.daysUntilExpiry ?? null,
@@ -111,7 +119,7 @@ export function useSubscriptionStatus() {
 }
 
 export function useSubscriptionGate() {
-  const { hasAccess, isLoading, isInGracePeriod, daysUntilExpiry, subscriptionStatus } =
+  const { hasAccess, isLoading, isInGracePeriod, daysUntilExpiry, subscriptionStatus, recheckAccess } =
     useSubscriptionAccess()
 
   const shouldBlockAccess = !isLoading && !hasAccess
@@ -146,5 +154,6 @@ export function useSubscriptionGate() {
     warningMessage: getWarningMessage(),
     subscriptionStatus,
     daysUntilExpiry,
+    recheckAccess, // Método para forzar recarga del estado de suscripción
   }
 }

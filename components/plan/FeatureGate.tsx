@@ -108,7 +108,7 @@ export function FeatureGate({
               </p>
             )}
             <Button asChild size="sm" className="w-full">
-              <Link href="/admin/settings/billing">
+              <Link href="/admin/suscription">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Actualizar Plan
               </Link>
@@ -156,7 +156,7 @@ export function FeatureGate({
                 </p>
               )}
               <Button asChild size="sm" className="w-full">
-                <Link href="/admin/settings/billing">
+                <Link href="/admin/suscription">
                   <Sparkles className="mr-2 h-4 w-4" />
                   Actualizar Plan
                 </Link>
