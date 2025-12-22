@@ -52,6 +52,17 @@ export function BusinessSwitcher() {
 
   useEffect(() => {
     if (role === USER_ROLES.BUSINESS_ADMIN && businessAccountId) {
+      // Resetear el estado actual antes de cargar nuevos negocios
+      // Esto evita que se muestren datos de una cuenta anterior
+      const currentState = useActiveBusinessStore.getState()
+      const needsReset = 
+        currentState.businesses.length > 0 && 
+        currentState.businesses[0]?.business_account_id !== businessAccountId
+      
+      if (needsReset) {
+        useActiveBusinessStore.getState().reset()
+      }
+      
       loadBusinesses(businessAccountId)
     }
   }, [role, businessAccountId, loadBusinesses])

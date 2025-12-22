@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import SpecialistService from '@/lib/services/specialist/specialist-service'
 import type { Specialist } from '@/lib/models/specialist/specialist'
 import { useTutorialStore } from '@/lib/store/tutorial-store'
+import { useActiveBusinessStore } from '@/lib/store/active-business-store'
 
 export default function SidebarFooter() {
   const router = useRouter()
@@ -28,6 +29,7 @@ export default function SidebarFooter() {
   const [specialist, setSpecialist] = useState<Specialist | null>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const { reset: resetActiveBusinessStore } = useActiveBusinessStore()
 
   // Verificar si el tutorial está activo para deshabilitar el dropdown
   const { isActive: isTutorialActive, getCurrentStep } = useTutorialStore()
@@ -73,6 +75,8 @@ export default function SidebarFooter() {
     event.preventDefault()
     setIsLoggingOut(true)
     try {
+      // Limpiar el store de negocio activo antes de cerrar sesión
+      resetActiveBusinessStore()
       await signOut({ redirect: false })
       router.push('/auth/sign-in')
     } catch (error) {
