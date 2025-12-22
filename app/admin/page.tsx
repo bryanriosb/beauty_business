@@ -19,12 +19,8 @@ export default function AdminPage() {
   }, [isLoading, role, router])
 
   return (
-    <div className="flex flex-col gap-6 w-full overflow-auto">
-      <div className="flex items-center justify-center min-h-[200px]">
-        <div className="animate-pulse text-muted-foreground">
-          <Loading />
-        </div>
-      </div>
+    <div className="flex items-center justify-center min-h-[200px]">
+      <Loading className="h-8 w-8" />
     </div>
   )
 }

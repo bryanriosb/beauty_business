@@ -15,16 +15,30 @@ import BusinessService from '@/lib/services/business/business-service'
 import { BUSINESSES_COLUMNS } from '@/lib/models/business/const/data-table/businesses-columns'
 import { BusinessModal } from '@/components/businesses/BusinessModal'
 import { BusinessDetailModal } from '@/components/businesses/BusinessDetailModal'
-import { useRef, useMemo, useState } from 'react'
+import { useRef, useMemo, useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { useCurrentUser } from '@/hooks/use-current-user'
+import { useCanCreate, formatLimitUsage } from '@/hooks/use-plan-limits'
+import { useUnifiedPermissionsStore } from '@/lib/store/unified-permissions-store'
 import { toast } from 'sonner'
 import type { BusinessWithAccount, BusinessInsert, BusinessUpdate } from '@/lib/models/business/business'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Store, AlertTriangle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function BusinessesPage() {
   const { user, role, isLoading } = useCurrentUser()
   const businessService = useMemo(() => new BusinessService(), [])
   const dataTableRef = useRef<DataTableRef>(null)
+  const { canCreate, limitInfo } = useCanCreate('business')
+  const { loadPermissions } = useUnifiedPermissionsStore()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
@@ -70,9 +84,16 @@ export default function BusinessesPage() {
 
   const isCompanyAdmin = role === 'company_admin'
   const isBusinessAdmin = role === 'business_admin'
-  const canCreate = isCompanyAdmin // Solo company_admin puede crear
+  const canCreateBusiness = isCompanyAdmin || (isBusinessAdmin && canCreate) // Company_admin siempre puede, business_admin según su plan
   const canEdit = isCompanyAdmin || isBusinessAdmin
   const canDelete = isCompanyAdmin
+
+  // Cargar permisos cuando el usuario esté listo
+  useEffect(() => {
+    if (isBusinessAdmin && user?.business_account_id && !isLoading) {
+      loadPermissions(user.business_account_id)
+    }
+  }, [isBusinessAdmin, user?.business_account_id, isLoading, loadPermissions])
 
   const handleCreateBusiness = () => {
     setSelectedBusiness(null)
@@ -100,7 +121,18 @@ export default function BusinessesPage() {
     try {
       await businessService.destroyItem(businessToDelete)
       toast.success('Sucursal eliminada correctamente')
+      
+      // Recargar datos para actualizar el contador
       dataTableRef.current?.refreshData()
+      
+      // Recargar permisos para actualizar el contador de límites si es business_admin
+      if (isBusinessAdmin && user?.business_account_id) {
+        try {
+          await loadPermissions(user.business_account_id)
+        } catch (error) {
+          console.error('Error al recargar permisos:', error)
+        }
+      }
     } catch (error: any) {
       toast.error(error.message || 'No se pudo eliminar la sucursal')
     } finally {
@@ -121,8 +153,19 @@ export default function BusinessesPage() {
       const result = await businessService.destroyMany(businessesToDelete)
       if (result.success) {
         toast.success(`${result.deletedCount} sucursal(es) eliminada(s)`)
+        
+        // Recargar datos para actualizar el contador
         dataTableRef.current?.refreshData()
         dataTableRef.current?.clearSelection()
+        
+        // Recargar permisos para actualizar el contador de límites si es business_admin
+        if (isBusinessAdmin && user?.business_account_id) {
+          try {
+            await loadPermissions(user.business_account_id)
+          } catch (error) {
+            console.error('Error al recargar permisos:', error)
+          }
+        }
       } else {
         throw new Error(result.error)
       }
@@ -143,11 +186,26 @@ export default function BusinessesPage() {
         })
         toast.success('Sucursal actualizada correctamente')
       } else {
-        // Solo company_admin puede crear sucursales
+        // Company admin siempre puede crear, business admin debe respetar límites del plan
+        if (!isCompanyAdmin && !canCreate) {
+          throw new Error('Has alcanzado el límite de sucursales para tu plan')
+        }
+        
         await businessService.createItem(data as BusinessInsert)
         toast.success('Sucursal creada correctamente')
       }
+      
+      // Recargar datos para actualizar el contador
       dataTableRef.current?.refreshData()
+      
+      // Recargar permisos para actualizar el contador de límites si es business_admin
+      if (isBusinessAdmin && user?.business_account_id) {
+        try {
+          await loadPermissions(user.business_account_id)
+        } catch (error) {
+          console.error('Error al recargar permisos:', error)
+        }
+      }
     } catch (error: any) {
       toast.error(error.message || 'No se pudo guardar la sucursal')
       throw error
@@ -165,13 +223,55 @@ export default function BusinessesPage() {
             Gestiona los negocios registrados en la plataforma
           </p>
         </div>
-        {canCreate && (
+        {canCreateBusiness && (
           <Button className="w-full sm:w-auto" onClick={handleCreateBusiness}>
             <Plus size={20} />
             Crear Sucursal
           </Button>
         )}
       </div>
+
+      {/* Límites del plan para business_admin */}
+      {isBusinessAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Store className="h-5 w-5" />
+              Límites del Plan
+            </CardTitle>
+            <CardDescription>
+              Uso de sucursales según tu plan actual
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-2xl font-bold">
+                  {formatLimitUsage(limitInfo)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {limitInfo.isAtLimit 
+                    ? 'Has alcanzado el límite de tu plan' 
+                    : `Puedes crear ${limitInfo.remaining || 'ilimitadas'} sucursales más`}
+                </div>
+              </div>
+              <Badge variant={limitInfo.isAtLimit ? 'destructive' : 'default'}>
+                {limitInfo.isAtLimit ? 'Límite Alcanzado' : 'Disponible'}
+              </Badge>
+            </div>
+            
+            {limitInfo.isAtLimit && (
+              <Alert className="mt-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Has alcanzado el límite de sucursales para tu plan actual. 
+                  Contacta al administrador para actualizar tu plan si necesitas más sucursales.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <DataTable
         key={isReady ? (shouldFilterByAccount ? user?.business_account_id : 'company-admin') : 'loading'}
@@ -232,7 +332,7 @@ export default function BusinessesPage() {
         searchConfig={searchConfig}
         defaultQueryParams={serviceParams || {}}
         enableRowSelection={canDelete}
-        onDeleteSelected={handleBatchDelete}
+        onDeleteSelected={canDelete ? handleBatchDelete : undefined}
       />
 
       <BusinessModal

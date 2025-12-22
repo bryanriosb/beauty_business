@@ -136,7 +136,20 @@ export const useUnifiedPermissionsStore = create<UnifiedPermissionsState>((set, 
   getLimitInfo: (limitType: keyof PlanLimits) => {
     const state = get()
     const limit = state.planLimits?.[limitType] || null
-    const current = state.currentUsage?.[limitType as keyof CurrentUsage] || 0
+    
+    // Mapeo correcto entre limitType y CurrentUsage
+    const usageMapping: Record<keyof PlanLimits, keyof CurrentUsage> = {
+      max_appointments_per_month: 'appointments_per_month',
+      max_products: 'products',
+      max_services: 'services',
+      max_customers: 'customers',
+      max_storage_mb: 'appointments_per_month', // TODO: Add storage to CurrentUsage
+      max_businesses: 'businesses',
+      max_users_per_business: 'users',
+      max_specialists_per_business: 'specialists',
+    }
+    
+    const current = state.currentUsage?.[usageMapping[limitType]] || 0
     
     let remaining: number | null = null
     let isAtLimit = false

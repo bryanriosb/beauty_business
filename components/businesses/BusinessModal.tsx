@@ -61,6 +61,7 @@ import BusinessAccountService from '@/lib/services/business-account/business-acc
 import { BusinessAccount } from '@/lib/models/business-account/business-account'
 import { BUSINESS_TYPES_OPTIONS } from '@/lib/services/business/const/business-type-labels'
 import Loading from '../ui/loading'
+import PhoneInput from 'react-phone-number-input'
 
 const formSchema = z.object({
   business_account_id: z.string().min(1, 'La cuenta de negocio es requerida'),
@@ -133,7 +134,7 @@ export function BusinessModal({
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const storageService = useRef(new BusinessStorageService())
   const businessAccountService = useRef(new BusinessAccountService())
-  const { role } = useCurrentUser()
+  const { role, businessAccountId } = useCurrentUser()
 
   const isBusinessAdmin = role === 'business_admin'
   const isCompanyAdmin = role === 'company_admin'
@@ -208,8 +209,10 @@ export function BusinessModal({
           setExistingGalleryImages(galleryImages)
         }
       } else {
+        // Para business_admin, establecer el business_account_id automáticamente
+        // Para company_admin, mantener vacío para que seleccione
         form.reset({
-          business_account_id: '',
+          business_account_id: isBusinessAdmin && businessAccountId ? businessAccountId : '',
           name: '',
           description: '',
           address: '',
@@ -231,7 +234,7 @@ export function BusinessModal({
     if (open) {
       loadBusinessData()
     }
-  }, [business, form, open, isCompanyAdmin])
+  }, [business, form, open, isCompanyAdmin, isBusinessAdmin, businessAccountId])
 
   const handleImageSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -440,7 +443,11 @@ export function BusinessModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {business ? 'Editar Sucursal' : 'Crear Sucursal'}
@@ -527,6 +534,17 @@ export function BusinessModal({
                     />
                   )}
 
+                  {/* Campo hidden para business_account_id (solo para business_admin) */}
+                  {isBusinessAdmin && (
+                    <FormField
+                      control={form.control}
+                      name="business_account_id"
+                      render={({ field }) => (
+                        <input type="hidden" {...field} />
+                      )}
+                    />
+                  )}
+
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -539,7 +557,7 @@ export function BusinessModal({
                           <FormControl>
                             <Input
                               placeholder="Nombre del salón"
-                              disabled={isSubmitting || isBusinessAdmin}
+                              disabled={isSubmitting}
                               {...field}
                             />
                           </FormControl>
@@ -559,7 +577,7 @@ export function BusinessModal({
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
-                            disabled={isSubmitting || isBusinessAdmin}
+                            disabled={isSubmitting}
                           >
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -590,7 +608,7 @@ export function BusinessModal({
                           <Textarea
                             placeholder="Descripción del salón"
                             rows={3}
-                            disabled={isSubmitting || isBusinessAdmin}
+                            disabled={isSubmitting}
                             {...field}
                           />
                         </FormControl>
@@ -606,11 +624,15 @@ export function BusinessModal({
                       <FormItem>
                         <FormLabel>Teléfono</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="+57 123 456 7890"
-                            type="tel"
+                          <PhoneInput
+                            defaultCountry="CO"
+                            international
+                            countryCallingCodeEditable={false}
+                            placeholder="300 123 4567"
+                            value={field.value}
+                            onChange={field.onChange}
                             disabled={isSubmitting}
-                            {...field}
+                            className="phone-input"
                           />
                         </FormControl>
                         <FormMessage />
@@ -688,7 +710,7 @@ export function BusinessModal({
                         <FormControl>
                           <Input
                             placeholder="Calle 123 #45-67"
-                            disabled={isSubmitting || isBusinessAdmin}
+                            disabled={isSubmitting}
                             {...field}
                           />
                         </FormControl>
@@ -715,7 +737,7 @@ export function BusinessModal({
                                 // Reset city when state changes
                                 form.setValue('city', '')
                               }}
-                              disabled={isSubmitting || isBusinessAdmin}
+                              disabled={isSubmitting}
                             />
                           </FormControl>
                           <FormMessage />
@@ -735,7 +757,7 @@ export function BusinessModal({
                             <CityComboBox
                               value={field.value}
                               onChange={field.onChange}
-                              disabled={isSubmitting || isBusinessAdmin}
+                              disabled={isSubmitting}
                             />
                           </FormControl>
                           <FormMessage />
@@ -904,6 +926,9 @@ export function BusinessModal({
                 )}
               </TabsContent>
             </Tabs>
+            <small>
+              Para definir horario e imagenes debes primero crear la sucursal
+            </small>
 
             <DialogFooter>
               <Button
@@ -918,9 +943,7 @@ export function BusinessModal({
                 type="submit"
                 disabled={isSubmitting || isUploadingGallery}
               >
-                {(isSubmitting || isUploadingGallery) && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {(isSubmitting || isUploadingGallery) && <Loading />}
                 {isUploadingGallery
                   ? 'Subiendo imágenes...'
                   : business

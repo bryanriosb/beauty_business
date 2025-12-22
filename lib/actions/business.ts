@@ -10,11 +10,68 @@ import {
 } from '@/lib/actions/supabase'
 import { createDefaultBusinessHoursAction } from '@/lib/actions/business-hours'
 import type { Business, BusinessInsert, BusinessWithAccount } from '@/lib/models/business/business'
+import type { BusinessAccount } from '@/lib/models/business-account/business-account'
+import { getCurrentUser } from '@/lib/services/auth/supabase-auth'
+import { USER_ROLES } from '@/const/roles'
+import { getSupabaseClient } from './supabase'
 
 export interface BusinessListResponse {
   data: BusinessWithAccount[]
   total: number
   total_pages: number
+}
+
+/**
+ * Valida si un business account puede crear más sucursales según su plan
+ */
+async function validateBusinessLimitsForAccount(businessAccountId: string): Promise<{ isValid: boolean; error?: string }> {
+  try {
+    // Obtener información del business account y su plan
+    const client = await getSupabaseClient()
+    
+    const { data: account, error: accountError } = await client
+      .from('business_accounts')
+      .select(`
+        *,
+        plan:plans(*)
+      `)
+      .eq('id', businessAccountId)
+      .single()
+
+    if (accountError || !account) {
+      return { isValid: false, error: 'No se encontró la cuenta de negocio' }
+    }
+
+    // Si no hay plan, no se puede crear
+    if (!account.plan) {
+      return { isValid: false, error: 'La cuenta no tiene un plan asignado' }
+    }
+
+    // Contar sucursales existentes
+    const { count, error: countError } = await client
+      .from('businesses')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_account_id', businessAccountId)
+
+    if (countError) {
+      return { isValid: false, error: 'Error al verificar sucursales existentes' }
+    }
+
+    const currentCount = count || 0
+    const maxAllowed = account.plan.max_businesses
+
+    if (currentCount >= maxAllowed) {
+      return { 
+        isValid: false, 
+        error: `Has alcanzado el límite de ${maxAllowed} sucursales para tu plan ${account.plan.name}` 
+      }
+    }
+
+    return { isValid: true }
+  } catch (error: any) {
+    console.error('Error validating business limits:', error)
+    return { isValid: false, error: 'Error al validar límites del plan' }
+  }
 }
 
 /**
@@ -86,10 +143,17 @@ export async function getBusinessByIdAction(id: string): Promise<Business | null
 }
 
 /**
- * Crea un nuevo negocio
+ * Crea un nuevo negocio con validación de límites del plan
  */
 export async function createBusinessAction(data: BusinessInsert): Promise<{ success: boolean; data?: Business; error?: string }> {
   try {
+    // Validar límites del plan antes de crear
+    const limitValidation = await validateBusinessLimitsForAccount(data.business_account_id)
+    
+    if (!limitValidation.isValid) {
+      return { success: false, error: limitValidation.error || 'Límite de sucursales alcanzado' }
+    }
+
     const business = await insertRecord<Business>('businesses', data)
 
     if (!business) {

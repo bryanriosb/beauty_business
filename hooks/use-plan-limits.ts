@@ -115,18 +115,25 @@ const UNLIMITED_LIMIT_INFO: LimitInfo = {
  */
 export function useLimitCheck(limitType: LimitType): LimitInfo {
   const { getLimitInfo, isLoading } = useUnifiedPermissionsStore()
-  const { role } = useCurrentUser()
+  const { role, businessAccountId: userBusinessAccountId } = useCurrentUser()
   const { activeBusiness } = useActiveBusinessStore()
 
   const isCompanyAdmin = role === USER_ROLES.COMPANY_ADMIN
+  const isBusinessAdmin = role === USER_ROLES.BUSINESS_ADMIN
 
   // COMPANY_ADMIN no tiene límites
   if (isCompanyAdmin) {
     return UNLIMITED_LIMIT_INFO
   }
 
-  // Si no hay business activo, no hay información de límites
-  if (!activeBusiness?.business_account_id) {
+  // Para business_admin, usar el businessAccountId del usuario directamente
+  // Para otros roles, usar el activeBusiness
+  const effectiveBusinessAccountId = isBusinessAdmin 
+    ? userBusinessAccountId 
+    : activeBusiness?.business_account_id
+
+  // Si no hay business account ID efectivo, no hay información de límites
+  if (!effectiveBusinessAccountId) {
     return { ...DEFAULT_LIMIT_INFO, isLoading: false }
   }
 

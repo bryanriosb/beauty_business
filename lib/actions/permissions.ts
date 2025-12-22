@@ -63,7 +63,7 @@ async function getCurrentUsageCounts(businessAccountId: string) {
       .select('id', { count: 'exact', head: true })
       .eq('business_account_id', businessAccountId)
   ])
-
+  
   return {
     appointments_per_month: appointmentsResult.count || 0,
     products: productsResult.count || 0,
