@@ -62,6 +62,8 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
 
   const {
     speak,
+    streamText,
+    finishStream,
     stop: stopTTS,
     isSpeaking: isTTSSpeaking,
     volume: ttsVolume,
@@ -149,10 +151,17 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
                   }
                 }
 
+                // Manejar chunks optimizados para TTS
+                if (data.tts_chunk) {
+                  if (voiceModeRef.current && ttsEnabledRef.current) {
+                    streamText(data.tts_chunk.text, data.tts_chunk.isFinal)
+                  }
+                }
+
                 if (data.isComplete) {
                   setIsStreaming(false)
-                  if (voiceModeRef.current && ttsEnabledRef.current && accumulatedContent) {
-                    speak(accumulatedContent)
+                  if (voiceModeRef.current && ttsEnabledRef.current) {
+                    finishStream()
                   }
                 }
 

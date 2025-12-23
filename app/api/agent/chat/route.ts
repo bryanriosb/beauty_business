@@ -11,6 +11,47 @@ import type { AgentMessage } from '@/lib/models/ai-conversation'
 
 export const maxDuration = 60
 
+/**
+ * Clase para buffering de texto optimizado para TTS.
+ * Acumula texto hasta encontrar un punto de corte natural (., !, ?, :, \n)
+ * y lo envía como chunk completo para síntesis de voz más rápida.
+ */
+class TTSBuffer {
+  private buffer = ''
+  private readonly sentenceEnders = /([.!?:]\s*|\n)/
+
+  /**
+   * Agrega texto al buffer y retorna oraciones completas listas para TTS.
+   * @returns Array de oraciones completas, o vacío si aún no hay oraciones completas
+   */
+  push(text: string): string[] {
+    this.buffer += text
+    const sentences: string[] = []
+
+    // Buscar oraciones completas
+    let match: RegExpExecArray | null
+    while ((match = this.sentenceEnders.exec(this.buffer)) !== null) {
+      const endIndex = match.index + match[0].length
+      const sentence = this.buffer.slice(0, endIndex).trim()
+      if (sentence) {
+        sentences.push(sentence)
+      }
+      this.buffer = this.buffer.slice(endIndex)
+    }
+
+    return sentences
+  }
+
+  /**
+   * Retorna cualquier texto restante en el buffer (para el final del stream)
+   */
+  flush(): string | null {
+    const remaining = this.buffer.trim()
+    this.buffer = ''
+    return remaining || null
+  }
+}
+
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder()
 
@@ -79,6 +120,7 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         let hasStartedResponse = false
         const businessName = session.settings?.assistant_name || 'el asistente'
+        const ttsBuffer = new TTSBuffer()
 
         const sendEvent = (event: string, data: unknown) => {
           if (isClosed || abortController.signal.aborted) return
@@ -148,6 +190,17 @@ export async function POST(request: NextRequest) {
                   fallbackTimeouts.forEach(clearTimeout)
                 }
                 fullResponse += event.content
+
+                // Enviar chunks optimizados para TTS (oraciones completas)
+                const sentences = ttsBuffer.push(event.content)
+                for (const sentence of sentences) {
+                  sendEvent('tts_chunk', {
+                    text: sentence,
+                    isFinal: false,
+                  })
+                }
+
+                // También enviar el chunk raw para UI
                 sendEvent('message', {
                   chunk: event.content,
                   isComplete: false,
@@ -190,6 +243,18 @@ export async function POST(request: NextRequest) {
                 })
                 break
             }
+          }
+
+          // Flush cualquier texto restante en el buffer TTS
+          const remainingText = ttsBuffer.flush()
+          if (remainingText) {
+            sendEvent('tts_chunk', {
+              text: remainingText,
+              isFinal: true,
+            })
+          } else {
+            // Marcar fin del TTS aunque no haya texto restante
+            sendEvent('tts_chunk', { text: '', isFinal: true })
           }
 
           // Si no hubo respuesta y no fue abortado, enviar un mensaje de fallback
