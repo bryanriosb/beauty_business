@@ -69,7 +69,6 @@ export class VercelAIAgent implements AgentProvider {
         model,
         instructions: systemPrompt,
         tools,
-        temperature: 0,
         toolChoice: 'auto',
         stopWhen: stepCountIs(10),
       })
