@@ -73,12 +73,14 @@ export function useAgentSSE({
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null)
   const [currentTool, setCurrentTool] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [connectionAttempts, setConnectionAttempts] = useState(0)
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const currentMessageRef = useRef<string>('')
   const currentMessageIdRef = useRef<string>('')
   const sessionRef = useRef<AgentSession | null>(null)
   const tokenRef = useRef(token)
+  const maxConnectionAttempts = 3
 
   useEffect(() => {
     tokenRef.current = token
@@ -89,10 +91,11 @@ export function useAgentSSE({
   }, [session])
 
   const connect = useCallback(async () => {
-    if (isConnecting || session) return
+    if (isConnecting || session || connectionAttempts >= maxConnectionAttempts) return
 
     setIsConnecting(true)
     setError(null)
+    setConnectionAttempts(prev => prev + 1)
 
     try {
       const response = await fetch('/api/agent/session', {
@@ -108,6 +111,13 @@ export function useAgentSSE({
         setError(errorMsg)
         onError?.(errorMsg)
         setIsConnecting(false)
+        
+        // Si alcanzamos el máximo de intentos, limpiar el token para evitar más intentos
+        if (connectionAttempts + 1 >= maxConnectionAttempts) {
+          console.error('[useAgentSSE] Máximo de intentos de conexión alcanzado')
+          tokenRef.current = ''
+        }
+        
         return
       }
 
@@ -131,14 +141,23 @@ export function useAgentSSE({
       onMessage?.(welcomeMsg)
       onWelcome?.(welcomeMessage)
       onSessionStart?.(newSession, welcomeMessage)
+      
+      // Reset connection attempts on successful connection
+      setConnectionAttempts(0)
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error de conexión'
       setError(errorMsg)
       onError?.(errorMsg)
+      
+      // Si alcanzamos el máximo de intentos, limpiar el token
+      if (connectionAttempts >= maxConnectionAttempts) {
+        console.error('[useAgentSSE] Máximo de intentos de conexión alcanzado')
+        tokenRef.current = ''
+      }
     } finally {
       setIsConnecting(false)
     }
-  }, [isConnecting, session, onMessage, onWelcome, onError, onSessionStart])
+  }, [isConnecting, session, connectionAttempts, onMessage, onWelcome, onError, onSessionStart])
 
   const disconnect = useCallback(() => {
     if (abortControllerRef.current) {
@@ -151,6 +170,7 @@ export function useAgentSSE({
     setIsProcessing(false)
     setFeedback(null)
     setCurrentTool(null)
+    setConnectionAttempts(0)
   }, [])
 
   const sendMessage = useCallback(async (message: string) => {

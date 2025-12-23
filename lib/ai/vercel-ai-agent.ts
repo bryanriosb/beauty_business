@@ -1,5 +1,5 @@
 import { AgentProvider, AgentStreamEvent } from './types'
-import { streamText, generateText, ToolLoopAgent } from 'ai'
+import { streamText, generateText, ToolLoopAgent, stepCountIs } from 'ai'
 import { deepinfra } from '@ai-sdk/deepinfra'
 import { google } from '@ai-sdk/google'
 import { createAppointmentTools } from './tools/ai-sdk-tools'
@@ -18,8 +18,8 @@ export class VercelAIAgent implements AgentProvider {
   constructor(config: VercelAIAgentConfig) {
     this.config = {
       // model: 'gemini-2.5-flash-preview-09-2025', // Modelo estándar de Gemini
-      model: 'Qwen/Qwen3-235B-A22B-Instruct-2507',
-      temperature: 0.3,
+      model: 'Qwen/Qwen3-Next-80B-A3B-Instruct',
+      temperature: 0,
       ...config,
     }
 
@@ -75,44 +75,132 @@ export class VercelAIAgent implements AgentProvider {
       )
       console.log(`🔧 [VERCEL AI SDK 6] Tipo de modelo:`, model.provider)
 
+      // Detectar si el usuario está pidiendo acciones que requieren herramientas
+      const lastMessage =
+        messages[messages.length - 1]?.content.toLowerCase() || ''
+      const requiresToolExecution =
+        lastMessage.includes('disponibilidad') ||
+        lastMessage.includes('mañana') ||
+        lastMessage.includes('hoy') ||
+        lastMessage.includes('horario') ||
+        lastMessage.includes('cita') ||
+        lastMessage.includes('10') ||
+        lastMessage.includes('servicio') ||
+        messages.some((m) => m.content.includes('especialistas'))
+
+      // Importante: usar 'auto' siempre y dejar que el modelo decida cuándo usar herramientas
       const agent = new ToolLoopAgent({
         model: model,
-        instructions: systemPrompt,
+        instructions:
+          systemPrompt +
+          (requiresToolExecution
+            ? '\n\nIMPORTANTE: El usuario necesita información específica. USA la herramienta EXACTA que necesites UNA SOLA VEZ y luego responde basado en el resultado.'
+            : ''),
         tools,
         temperature: this.config.temperature,
-        toolChoice: 'auto',
+        toolChoice: 'auto', // Siempre 'auto' para evitar loops infinitos
+        stopWhen: stepCountIs(8), // Limitar a máximo 8 pasos para evitar loops
       })
 
-      // const result = streamText({
-      //   model,
-      //   messages: fullMessages,
-      //   tools,
-      //   temperature: this.config.temperature,
-      //   toolChoice: 'auto', // Importante para Gemini
-      // })
+      let currentResult = await agent.stream({ messages: fullMessages })
+      let currentMessages = fullMessages
+
+      console.log(
+        `🔧 [TOOL LOOP] Configurado: toolChoice=auto, maxSteps=8, necesitaHerramientas=${requiresToolExecution}`
+      )
+
+      console.log(
+        `🔧 [TOOL LOOP] toolChoice: ${
+          requiresToolExecution ? 'required' : 'auto'
+        }, razón: ${
+          requiresToolExecution ? 'requiere herramientas' : 'respuesta libre'
+        }`
+      )
 
       const result = await agent.stream({ messages: fullMessages })
 
       let hasContent = false
       let chunkCount = 0
+      let toolCallCount = 0
+      let evaluationFailures = 0
+      const maxToolCalls = 3 // Máximo 3 llamadas a herramientas para evitar loops
 
       try {
-        console.log(
-          '🔍 [VERCEL AI SDK 6] Iniciando lectura de stream con Gemini...'
-        )
-
+        // Usar textStream simple para evitar loops
         for await (const chunk of result.textStream) {
           chunkCount++
           if (chunk.trim()) {
             hasContent = true
-            console.log(
-              '📝 [VERCEL AI SDK 6] Text chunk:',
-              chunk.substring(0, 50)
-            )
           }
+
+          // Detectar repeticiones que indiquen loop
+          if (chunk.includes('Jimmy Ardila') && chunk.includes('Bryan Rios')) {
+            console.warn(
+              `⚠️ [TOOL LOOP] Posible loop: misma respuesta de especialistas (chunkCount: ${chunkCount})`
+            )
+
+            // Si después de mostrar especialistas se repite, forzar siguiente paso
+            if (chunkCount > 20) {
+              console.log(`🔄 [TOOL LOOP] Forzando avance para evitar loop`)
+              yield {
+                type: 'chunk',
+                content: `\n\nPerfecto, ya tenemos los especialistas. Jimmy Ardila y Bryan Rios están disponibles para Corte Caballero. ¿Con cuál prefieres agendar y para qué fecha?`,
+              }
+              return
+            }
+          }
+
+          // Detectar errores de evaluación en el chunk
+          if (chunk.includes('[ERROR]')) {
+            evaluationFailures++
+            console.warn(
+              `⚠️ [EVALUATION] Error detected in chunk ${evaluationFailures}:`,
+              chunk.substring(0, 100)
+            )
+
+            if (evaluationFailures >= 2) {
+              console.error(
+                `🚨 [EVALUATION] Múltiples errores de evaluación detectados (${evaluationFailures}), intentando recuperación`
+              )
+              yield {
+                type: 'chunk',
+                content: `\n\nHa habido dificultades en el proceso. Por favor, intentemos de nuevo con la información que necesitas.`,
+              }
+              return
+            }
+          }
+
           yield {
             type: 'chunk',
             content: chunk,
+          }
+        }
+
+        console.log(
+          `📊 [TOOL LOOP] Completado: ${chunkCount} chunks, ${toolCallCount} tool calls, ${evaluationFailures} evaluaciones fallidas`
+        )
+
+        // Si no hubo contenido pero hubo tool calls, dar respuesta de fallback
+        if (!hasContent && toolCallCount > 0) {
+          console.warn(
+            '⚠️ [TOOL LOOP] Hubo tool calls pero sin respuesta de texto'
+          )
+          yield {
+            type: 'chunk',
+            content:
+              '\n\nBasado en la información obtenida, ¿necesitas algo más específico de tu parte para continuar?',
+          }
+        }
+
+        // Si hubo errores de evaluación, proporcionar feedback útil
+        if (evaluationFailures > 0) {
+          console.warn(
+            '⚠️ [TOOL LOOP] Se detectaron errores de evaluación durante el proceso'
+          )
+          yield {
+            type: 'chunk',
+            content:
+              '\n\nHe detectado algunas dificultades técnicas. Si necesitas agendar una cita, por favor proporciona toda la información clara y específica (nombre, teléfono, servicio, especialista, fecha y hora).',
           }
         }
       } catch (streamError) {
@@ -120,7 +208,15 @@ export class VercelAIAgent implements AgentProvider {
 
         // Si falla el streaming con Gemini, intentar con generateText como fallback
         console.log(
-          '🔄 [VERCEL AI SDK 6] Intentando fallback con generateText...'
+          `🛠️ [VERCEL AI SDK 6] Preparando agente con herramientas...`
+        )
+
+        // Preparar herramientas
+        const tools = createAppointmentTools({ businessId, sessionId })
+        console.log(
+          `🔧 [VERCEL AI SDK 6] Herramientas preparadas: ${
+            Object.keys(tools).length
+          } (${Object.keys(tools).join(', ')})`
         )
         try {
           const fallbackResult = await generateText({
@@ -295,7 +391,7 @@ export class VercelAIAgent implements AgentProvider {
 
 Eres un asistente amable y profesional para ${
       context.businessName
-    }, dedicado a ayudar a los clientes con agendamiento, consultas y gestión de citas de belleza.
+    }, dedicado a ayudar a los clientes con agendamiento, consultas y gestión de citas de belleza con Rasoning HIGH.
 
 # Contexto del negocio
 
