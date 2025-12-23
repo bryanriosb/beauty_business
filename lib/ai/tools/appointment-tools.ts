@@ -20,7 +20,8 @@ const getAvailableSlotsToolSchema = z.object({
 const createAppointmentToolSchema = z.object({
   customerId: z
     .string()
-    .describe('ID del cliente (requerido, se obtiene del tool create_customer)'),
+    .optional()
+    .describe('ID del cliente. OPCIONAL - se obtiene automáticamente del estado de la sesión si ya fue identificado.'),
   serviceIds: z.array(z.string()).describe('IDs de los servicios a agendar'),
   specialistId: z.string().describe('ID del especialista'),
   startTime: z.string().describe('Fecha y hora de inicio en formato ISO'),

@@ -182,6 +182,13 @@ export async function POST(request: NextRequest) {
                 console.error('[Agent Error]', event.error)
                 sendEvent('error', { error: event.error })
                 break
+
+              case 'session_end':
+                sendEvent('session_end', {
+                  message: event.message,
+                  reason: event.reason,
+                })
+                break
             }
           }
 

@@ -16,6 +16,7 @@ import {
   getCustomerData,
   getFirstAppointment,
   getAgentContext,
+  getCustomerContextReminder,
 } from '../graph/agent-context'
 import type { CustomerData } from '../graph/state'
 import { format, addDays } from 'date-fns'
@@ -146,11 +147,12 @@ export async function handleGetAvailableSlots(
       return `${hour12}:${minutes} ${ampm}`
     })
 
+    const contextReminder = getCustomerContextReminder(input.sessionId)
     return `Horarios disponibles para el ${format(
       new Date(input.date + 'T12:00:00'),
       "EEEE d 'de' MMMM",
       { locale: es }
-    )} (${availableSlots.length} horarios):\n${slotsFormatted.join(', ')}`
+    )} (${availableSlots.length} horarios):\n${slotsFormatted.join(', ')}${contextReminder}`
   } catch (error: unknown) {
     console.error('[AI Agent] handleGetAvailableSlots error:', error)
     const message = error instanceof Error ? error.message : 'Error desconocido'
@@ -207,7 +209,8 @@ export async function handleGetServices(
       }\n  [ID: ${s.id}]`
     })
 
-    return `📋 SERVICIOS DISPONIBLES:\n\n${servicesFormatted.join('\n\n')}`
+    const contextReminder = getCustomerContextReminder(input.sessionId)
+    return `📋 SERVICIOS DISPONIBLES:\n\n${servicesFormatted.join('\n\n')}${contextReminder}`
   } catch (error: unknown) {
     console.error('[AI Agent] handleGetServices error:', error)
     const message = error instanceof Error ? error.message : 'Error desconocido'
@@ -239,7 +242,8 @@ export async function handleGetSpecialists(
       }`
     })
 
-    return `Especialistas disponibles:\n${specialistsFormatted.join('\n')}`
+    const contextReminder = getCustomerContextReminder(input.sessionId)
+    return `Especialistas disponibles:\n${specialistsFormatted.join('\n')}${contextReminder}`
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error desconocido'
     return `Error al obtener especialistas: ${message}`
@@ -459,23 +463,30 @@ export async function handleCreateAppointment(
   try {
     const supabase = await getSupabaseAdminClient()
 
-    // Validar que tenemos el customerId
-    if (!input.customerId) {
-      return '[ERROR] Se requiere el ID del cliente. Usa create_customer para crear un nuevo cliente o get_appointments_by_phone para buscar uno existente.'
+    // FUENTE DE VERDAD: Primero intentar obtener customerId del estado del agente
+    const customerDataFromState = getCustomerData(input.sessionId)
+    let customerId = input.customerId
+
+    if (customerDataFromState) {
+      // El estado es la fuente de verdad
+      customerId = customerDataFromState.id
+      console.log('[AI Agent] Using customerId from STATE (source of truth):', customerId)
+    } else if (!customerId) {
+      return '[ERROR] No hay cliente identificado en la sesión. Primero usa get_appointments_by_phone para identificar al cliente o create_customer para crear uno nuevo.'
     }
 
-    // Obtener datos del cliente
-    console.log('[AI Agent] Getting customer data for ID:', input.customerId)
+    // Obtener datos del cliente desde la DB para confirmar
+    console.log('[AI Agent] Getting customer data for ID:', customerId)
     const { data: customer, error: customerError } = await supabase
       .from('business_customers')
       .select('id, user_profile_id, first_name, last_name, phone, email')
       .eq('business_id', input.businessId)
-      .eq('id', input.customerId)
+      .eq('id', customerId)
       .single()
 
     if (customerError || !customer) {
       console.error('[AI Agent] Error finding customer:', customerError)
-      return `[ERROR] No se encontró el cliente con ID ${input.customerId}. Verifica que el ID sea correcto y pertenezca a este negocio.`
+      return `[ERROR] No se encontró el cliente con ID ${customerId}. Verifica que el cliente esté registrado.`
     }
 
     const userProfileId = customer.user_profile_id
@@ -561,20 +572,47 @@ export async function handleCreateAppointment(
 
     const { data: specialist } = await supabase
       .from('specialists')
-      .select('first_name, last_name')
+      .select('id, first_name, last_name')
       .eq('id', input.specialistId)
       .single()
 
     const { data: serviceDetails } = await supabase
       .from('services')
-      .select('name, price_cents')
+      .select('id, name, price_cents')
       .in('id', input.serviceIds)
+
+    const servicesNames =
+      serviceDetails?.map((s) => s.name).join(', ') || 'Servicios seleccionados'
+
+    // CRÍTICO: Actualizar el contexto con la cita recién creada
+    const newAppointment = {
+      appointmentId: appointment.id,
+      serviceId: serviceDetails?.[0]?.id || input.serviceIds[0],
+      serviceName: servicesNames,
+      specialistId: specialist?.id || input.specialistId,
+      specialistName: specialist
+        ? `${specialist.first_name} ${specialist.last_name || ''}`.trim()
+        : 'Especialista',
+      startTime: startTime.toISOString(),
+      status: 'PENDING' as const,
+    }
+
+    // Actualizar el customerData con la nueva cita
+    if (customerDataFromState) {
+      setCustomerData(input.sessionId, {
+        ...customerDataFromState,
+        appointments: [...customerDataFromState.appointments, newAppointment],
+      })
+      console.log('[AI Agent] Updated customer context with new appointment:', {
+        sessionId: input.sessionId,
+        appointmentId: appointment.id,
+        totalAppointments: customerDataFromState.appointments.length + 1,
+      })
+    }
 
     const dateFormatted = format(startTime, "EEEE d 'de' MMMM 'a las' h:mm a", {
       locale: es,
     })
-    const servicesNames =
-      serviceDetails?.map((s) => s.name).join(', ') || 'Servicios seleccionados'
 
     const subtotalFormatted = (subtotal / 100).toLocaleString('es-CO', {
       minimumFractionDigits: 0,
@@ -601,7 +639,11 @@ export async function handleCreateAppointment(
 • IVA: $${taxFormatted}
 • TOTAL A PAGAR: $${totalFormatted}
 
-El pago se realizará en el establecimiento. ¿Hay algo más en lo que pueda ayudarte?`
+El pago se realizará en el establecimiento.
+
+---
+📌 CITA GUARDADA EN CONTEXTO: ID ${appointment.id}
+Si el cliente quiere reprogramar o cancelar, usa esta cita automáticamente.`
   } catch (error: unknown) {
     console.error('[AI Agent] handleCreateAppointment error:', error)
     let message = 'Error desconocido'

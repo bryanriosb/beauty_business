@@ -34,7 +34,8 @@ const createCustomerSchema = z.object({
 const createAppointmentSchema = z.object({
   customerId: z
     .string()
-    .describe('ID del cliente (obtenido del tool create_customer o get_appointments_by_phone). REQUERIDO.'),
+    .optional()
+    .describe('ID del cliente. OPCIONAL - se obtiene automáticamente del estado de la sesión si ya fue identificado.'),
   serviceIds: z
     .array(z.string())
     .describe('Array con IDs de los servicios a agendar. REQUERIDO.'),
@@ -69,6 +70,13 @@ const rescheduleAppointmentSchema = z.object({
     .describe('ID del nuevo especialista. OPCIONAL - si se omite, mantiene el mismo especialista.'),
 });
 
+const endConversationSchema = z.object({
+  reason: z
+    .string()
+    .optional()
+    .describe('Motivo del cierre. OPCIONAL. Ejemplos: "cliente satisfecho", "no necesita más ayuda"'),
+});
+
 const getServicesSchema = z.object({});
 
 const getSpecialistsSchema = z.object({
@@ -95,6 +103,7 @@ import {
   handleCancelAppointment,
   handleRescheduleAppointment,
 } from './handlers';
+import { getCustomerData, getAgentContext } from '../graph/agent-context';
 
 // Crear herramientas en formato AI SDK 6
 export function createAppointmentTools(context: BusinessContext) {
@@ -236,7 +245,60 @@ export function createAppointmentTools(context: BusinessContext) {
     },
   });
 
+  const endConversation = tool({
+    description: 'Finaliza la conversación cuando el cliente indica que no necesita más ayuda. Usa cuando el cliente responda "no", "nada más", "eso es todo", "gracias, eso es todo", etc. a la pregunta de si necesita algo más.',
+    inputSchema: endConversationSchema,
+    execute: async ({ reason }) => {
+      console.log('[AI SDK Tool] endConversation ejecutando con:', { reason, ...context });
+      return JSON.stringify({
+        action: 'END_CONVERSATION',
+        message: 'Gracias por contactarnos. ¡Que tengas un excelente día!',
+        reason: reason || 'Cliente no necesita más ayuda',
+        sessionId: context.sessionId,
+      });
+    },
+  });
+
+  const getSessionContext = tool({
+    description: 'Obtiene los datos del cliente ya identificado en esta sesión. SIEMPRE usa esta herramienta al inicio de cada interacción para verificar si ya conoces al cliente. Si retorna datos, NO vuelvas a pedir nombre ni teléfono.',
+    inputSchema: z.object({}),
+    execute: async () => {
+      // Ensure context is initialized
+      getAgentContext(context.sessionId, context.businessId);
+
+      const customerData = getCustomerData(context.sessionId);
+      console.log('[AI SDK Tool] getSessionContext:', {
+        sessionId: context.sessionId,
+        hasCustomer: !!customerData,
+        customerName: customerData ? `${customerData.firstName} ${customerData.lastName || ''}`.trim() : null,
+      });
+
+      if (customerData) {
+        return JSON.stringify({
+          hasCustomer: true,
+          customerId: customerData.id,
+          customerName: `${customerData.firstName} ${customerData.lastName || ''}`.trim(),
+          firstName: customerData.firstName,
+          phone: customerData.phone,
+          email: customerData.email,
+          pendingAppointments: customerData.appointments.length,
+          appointments: customerData.appointments.map(apt => ({
+            id: apt.appointmentId,
+            service: apt.serviceName,
+            specialist: apt.specialistName,
+            date: apt.startTime,
+          })),
+        });
+      }
+      return JSON.stringify({
+        hasCustomer: false,
+        message: 'No hay cliente identificado en esta sesión. Solicita el teléfono para identificarlo.',
+      });
+    },
+  });
+
   return {
+    getSessionContext,
     getAvailableSlots,
     getServices,
     getSpecialists,
@@ -246,6 +308,7 @@ export function createAppointmentTools(context: BusinessContext) {
     createAppointment,
     cancelAppointment,
     rescheduleAppointment,
+    endConversation,
   };
 }
 

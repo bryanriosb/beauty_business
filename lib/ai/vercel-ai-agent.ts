@@ -75,10 +75,25 @@ export class VercelAIAgent implements AgentProvider {
 
       const result = await agent.stream({ messages: fullMessages })
       let hasContent = false
+      let fullText = ''
 
       for await (const chunk of result.textStream) {
         if (chunk.trim()) hasContent = true
+        fullText += chunk
         yield { type: 'chunk', content: chunk }
+      }
+
+      // Detectar si se llamó end_conversation (el modelo incluirá el mensaje de despedida)
+      if (
+        fullText.includes('END_CONVERSATION') ||
+        fullText.toLowerCase().includes('sesión finalizada') ||
+        fullText.toLowerCase().includes('gracias por contactarnos')
+      ) {
+        yield {
+          type: 'session_end',
+          message: 'Gracias por contactarnos. ¡Que tengas un excelente día!',
+          reason: 'Cliente finalizó la conversación',
+        }
       }
 
       if (!hasContent) {

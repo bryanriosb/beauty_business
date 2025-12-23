@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { VoiceVisualizer } from './VoiceVisualizer'
+import { Badge } from '../ui/badge'
 
 interface AgentChatInputProps {
   value: string
@@ -140,13 +141,13 @@ export function AgentChatInput({
                 disabled={disabled}
               >
                 <MessageSquare className="h-3.5 w-3.5" />
-                <span>Normal</span>
+                <span>Texto</span>
               </button>
 
               <button
                 onClick={() => handleModeChange('voice')}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all',
+                  'relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all',
                   mode === 'voice'
                     ? 'bg-background shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -155,6 +156,9 @@ export function AgentChatInput({
               >
                 <AudioWaveform className="h-3.5 w-3.5" />
                 <span>Voz</span>
+                <Badge variant="default" className="px-1 py-0">
+                  Beta
+                </Badge>
               </button>
             </div>
           )}

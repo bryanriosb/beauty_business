@@ -79,3 +79,16 @@ export function getAppointmentById(sessionId: string, appointmentId: string): Cu
   }
   return context.customer.appointments.find((apt) => apt.appointmentId === appointmentId) || null
 }
+
+/**
+ * Genera un recordatorio del contexto del cliente para incluir en respuestas de herramientas.
+ * Esto ayuda al modelo a no "olvidar" que ya tiene los datos del cliente.
+ */
+export function getCustomerContextReminder(sessionId: string): string {
+  const customer = getCustomerData(sessionId)
+  if (!customer) {
+    return ''
+  }
+
+  return `\n\n---\n📌 CONTEXTO DE SESIÓN (ya identificado):\n- Cliente: ${customer.firstName} ${customer.lastName || ''}\n- Teléfono: ${customer.phone}\n- ID: ${customer.id}\n- Citas pendientes: ${customer.appointments.length}\nNO vuelvas a pedir estos datos.`
+}

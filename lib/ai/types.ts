@@ -1,4 +1,4 @@
-export type AgentStreamEvent = 
+export type AgentStreamEvent =
   | { type: 'chunk'; content: string }
   | { type: 'feedback'; event: { type: 'thinking' | 'progress' | 'waiting'; message: string; toolName?: string; elapsedMs?: number } }
   | { type: 'tool_start'; toolName: string }
@@ -6,6 +6,7 @@ export type AgentStreamEvent =
   | { type: 'intent'; intent: string }
   | { type: 'error'; error: string }
   | { type: 'complete' }
+  | { type: 'session_end'; message: string; reason?: string }
 
 export interface AgentProvider {
   streamResponse(
