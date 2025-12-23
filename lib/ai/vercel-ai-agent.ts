@@ -1,7 +1,5 @@
 import { AgentProvider, AgentStreamEvent } from './types'
 import { generateText, ToolLoopAgent, stepCountIs } from 'ai'
-import { deepinfra } from '@ai-sdk/deepinfra'
-import { google } from '@ai-sdk/google'
 import { openai } from '@ai-sdk/openai'
 import { createAppointmentTools } from './tools/ai-sdk-tools'
 import { createVercelAIAgentPrompt } from './prompts/vercel-ai-agent-prompt'
