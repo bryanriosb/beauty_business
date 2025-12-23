@@ -136,22 +136,34 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
                   throw new Error(data.error)
                 }
 
-                if (data.chunk) {
-                  accumulatedContent += data.chunk
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMessageId
-                        ? { ...msg, content: accumulatedContent }
-                        : msg
+                if (data.chunk !== undefined) {
+                  if (data.chunk) {
+                    accumulatedContent += data.chunk
+                    setMessages((prev) =>
+                      prev.map((msg) =>
+                        msg.id === assistantMessageId
+                          ? { ...msg, content: accumulatedContent }
+                          : msg
+                      )
                     )
-                  )
+                  }
                 }
 
-                if (data.done) {
+                if (data.isComplete) {
                   setIsStreaming(false)
                   if (voiceModeRef.current && ttsEnabledRef.current && accumulatedContent) {
                     speak(accumulatedContent)
                   }
+                }
+
+                // Manejar errores del servidor
+                if (data.type === 'error') {
+                  throw new Error(data.error || 'Error del servidor')
+                }
+
+                // Manejar mensajes de retroalimentación
+                if (data.type === 'feedback' && data.message) {
+                  console.log('[Feedback]', data.message)
                 }
               } catch {
                 // Ignore JSON parse errors for incomplete chunks
@@ -162,12 +174,24 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
       }
     } catch (err) {
       console.error('Error sending message:', err)
+      
+      // Remover mensaje vacío si existe
+      setMessages((prev) => 
+        prev.filter(msg => !(msg.id === assistantMessageId && !msg.content.trim()))
+      )
+      
+      // Agregar mensaje de error
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      const userMessage = errorMessage.includes('tiempo') || errorMessage.includes('timeout') 
+        ? 'Lo siento, estoy tardando mucho en responder. Por favor, intenta con una pregunta más breve.'
+        : 'Lo siento, tuve un problema al procesar tu mensaje. Por favor, intenta de nuevo.'
+        
       setMessages((prev) => [
         ...prev,
         {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.',
+          content: userMessage,
         },
       ])
     } finally {

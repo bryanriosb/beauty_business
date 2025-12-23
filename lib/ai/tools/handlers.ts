@@ -17,8 +17,41 @@ import {
   getAgentContext,
 } from '../graph/agent-context'
 import type { CustomerData } from '../graph/state'
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+// Función para convertir fechas naturales a YYYY-MM-DD
+function convertNaturalDate(dateStr: string): string | null {
+  if (!dateStr) return null
+  
+  const today = new Date()
+  const normalized = dateStr.toLowerCase().trim()
+  
+  try {
+    // Expresiones relativas comunes
+    if (normalized === 'hoy') {
+      return format(today, 'yyyy-MM-dd')
+    }
+    
+    if (normalized === 'mañana') {
+      return format(addDays(today, 1), 'yyyy-MM-dd')
+    }
+    
+    if (normalized === 'pasado mañana') {
+      return format(addDays(today, 2), 'yyyy-MM-dd')
+    }
+    
+    // Intentar parseo directo si ya está en formato YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Error converting date:', error)
+    return null
+  }
+}
 
 export async function handleGetAvailableSlots(
   input: GetAvailableSlotsInput
@@ -52,14 +85,25 @@ export async function handleGetAvailableSlots(
       return `[ERROR] No se proporcionó serviceId y no hay cita del cliente en el contexto. Primero busca las citas del cliente con get_appointments_by_phone o proporciona un serviceId.`
     }
 
+    let processedDate = input.date
+    
+    // Si la fecha no está en formato YYYY-MM-DD, intentar convertirla
     if (!input.date || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
-      return `[ERROR] Formato de fecha inválido: "${input.date}". Debe ser YYYY-MM-DD (ejemplo: 2025-12-05).`
+      console.log('[AI Agent] Intentando convertir fecha natural:', input.date)
+      const convertedDate = convertNaturalDate(input.date)
+      
+      if (!convertedDate) {
+        return `[ERROR] No pude interpretar la fecha "${input.date}". Por favor, usa un formato como "2025-12-25" o expresa la fecha más claramente.`
+      }
+      
+      processedDate = convertedDate
+      console.log('[AI Agent] Fecha convertida:', `"${input.date}" → "${processedDate}"`)
     }
 
     const result = await getAvailableSlotsForServiceAction({
       businessId: input.businessId,
       serviceId: serviceId,
-      date: input.date,
+      date: processedDate,
       excludeAppointmentId: excludeAppointmentId,
     })
 

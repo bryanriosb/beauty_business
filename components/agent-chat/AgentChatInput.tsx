@@ -120,7 +120,6 @@ export function AgentChatInput({
           placeholder={
             mode === 'voice' ? 'Habla o escribe tu mensaje...' : placeholder
           }
-          disabled={disabled || isLoading}
           rows={1}
           className="w-full bg-transparent border-none outline-none px-4 py-4 text-base placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed resize-none min-h-[3.5rem] max-h-[120px] overflow-y-auto"
         />

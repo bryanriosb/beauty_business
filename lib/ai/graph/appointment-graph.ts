@@ -75,7 +75,7 @@ function createMainModel() {
   })
 }
 
-async function getBusinessContext(
+export async function getBusinessContext(
   businessId: string,
   assistantName?: string
 ): Promise<BusinessContext> {

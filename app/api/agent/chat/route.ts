@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
-import { streamAgentResponseWithFeedback } from '@/lib/ai/graph/appointment-graph'
+import { createAgent } from '@/lib/ai/agent-factory'
+import { AI_CONFIG } from '@/lib/ai/config-provider'
 import {
   validateAndConsumeLink,
   addMessageAction,
@@ -19,7 +20,10 @@ export async function POST(request: NextRequest) {
 
     if (!message || !session) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Mensaje y sesión requeridos' }),
+        JSON.stringify({
+          success: false,
+          error: 'Mensaje y sesión requeridos',
+        }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       )
     }
@@ -28,7 +32,11 @@ export async function POST(request: NextRequest) {
       const validation = await validateAndConsumeLink(token)
       if (!validation.valid) {
         return new Response(
-          JSON.stringify({ success: false, error: validation.error, expired: true }),
+          JSON.stringify({
+            success: false,
+            error: validation.error,
+            expired: true,
+          }),
           { status: 403, headers: { 'Content-Type': 'application/json' } }
         )
       }
@@ -40,7 +48,9 @@ export async function POST(request: NextRequest) {
       content: message,
     })
 
-    const messagesResult = await fetchConversationMessagesAction(session.conversationId)
+    const messagesResult = await fetchConversationMessagesAction(
+      session.conversationId
+    )
     if (!messagesResult.success || !messagesResult.data) {
       return new Response(
         JSON.stringify({ success: false, error: 'Error al obtener historial' }),
@@ -73,7 +83,11 @@ export async function POST(request: NextRequest) {
         const sendEvent = (event: string, data: unknown) => {
           if (isClosed || abortController.signal.aborted) return
           try {
-            controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
+            controller.enqueue(
+              encoder.encode(
+                `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
+              )
+            )
           } catch {
             // Controller may be closed
           }
@@ -93,8 +107,15 @@ export async function POST(request: NextRequest) {
         const fallbackDelays = [5000, 15000]
         fallbackDelays.forEach((delay) => {
           const timeout = setTimeout(async () => {
-            if (!hasStartedResponse && !abortController.signal.aborted && !isClosed) {
-              const waitingMessage = await generateWaitingMessage(delay / 1000, businessName)
+            if (
+              !hasStartedResponse &&
+              !abortController.signal.aborted &&
+              !isClosed
+            ) {
+              const waitingMessage = await generateWaitingMessage(
+                delay / 1000,
+                businessName
+              )
               sendEvent('fallback', { message: waitingMessage, speak: true })
             }
           }, delay)
@@ -104,12 +125,15 @@ export async function POST(request: NextRequest) {
         try {
           sendEvent('typing', { isTyping: true })
 
-          const responseStream = streamAgentResponseWithFeedback(
+          const agent = await createAgent(
+            AI_CONFIG.provider, // Usar configuración del archivo config-provider.ts
             session.businessId,
-            session.sessionId,
-            chatHistory,
-            session.settings?.assistant_name
+            session.sessionId
           )
+
+          const responseStream = agent.streamResponse(chatHistory, {
+            assistantName: session.settings?.assistant_name,
+          })
 
           for await (const event of responseStream) {
             if (abortController.signal.aborted || isClosed) {
@@ -124,7 +148,10 @@ export async function POST(request: NextRequest) {
                   fallbackTimeouts.forEach(clearTimeout)
                 }
                 fullResponse += event.content
-                sendEvent('message', { chunk: event.content, isComplete: false })
+                sendEvent('message', {
+                  chunk: event.content,
+                  isComplete: false,
+                })
                 break
 
               case 'feedback':
@@ -150,7 +177,22 @@ export async function POST(request: NextRequest) {
               case 'intent':
                 sendEvent('intent', { intent: event.intent })
                 break
+
+              case 'error':
+                console.error('[Agent Error]', event.error)
+                sendEvent('error', { error: event.error })
+                break
             }
+          }
+
+          // Si no hubo respuesta y no fue abortado, enviar un mensaje de fallback
+          if (!hasStartedResponse && !abortController.signal.aborted && !isClosed) {
+            const fallbackMessage = `Lo siento, no pude generar una respuesta. Por favor, intenta reformular tu pregunta.`
+            fullResponse = fallbackMessage
+            sendEvent('message', {
+              chunk: fallbackMessage,
+              isComplete: false,
+            })
           }
 
           if (!abortController.signal.aborted && fullResponse.trim()) {
@@ -166,9 +208,24 @@ export async function POST(request: NextRequest) {
           closeStream()
         } catch (error) {
           fallbackTimeouts.forEach(clearTimeout)
-          const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+          const errorMessage =
+            error instanceof Error ? error.message : 'Error desconocido'
           console.error('[SSE] Stream error:', errorMessage)
+          console.error('[SSE] Stack:', error instanceof Error ? error.stack : 'No stack')
+          
+          // Enviar error al cliente
           sendEvent('error', { error: errorMessage })
+          
+          // Si no hay contenido acumulado, enviar mensaje de error amigable
+          if (!fullResponse.trim()) {
+            const userFriendlyMessage = 'Lo siento, estoy teniendo dificultades para responder. Por favor, intenta de nuevo en unos momentos.'
+            fullResponse = userFriendlyMessage
+            sendEvent('message', {
+              chunk: userFriendlyMessage,
+              isComplete: false,
+            })
+          }
+          
           closeStream()
         }
       },
@@ -183,7 +240,8 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
     console.error('[SSE] Error in agent chat:', errorMessage)
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
