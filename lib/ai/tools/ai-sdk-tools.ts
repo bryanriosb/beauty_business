@@ -5,32 +5,45 @@ import { z } from 'zod';
 const getAvailableSlotsSchema = z.object({
   date: z
     .string()
-    .describe('Fecha en formato YYYY-MM-DD. Puedes usar expresiones como "hoy", "mañana", "pasado mañana" y convertirlas a YYYY-MM-DD'),
+    .describe('Fecha en formato YYYY-MM-DD. REQUERIDO. Convierte expresiones como "hoy", "mañana", "pasado mañana" a este formato.'),
   serviceId: z
     .string()
     .optional()
     .describe(
-      'ID del servicio (requerido para consultar disponibilidad)'
+      'ID del servicio. REQUERIDO para consultar disponibilidad exacta.'
     ),
   specialistId: z
     .string()
     .optional()
-    .describe('ID del especialista (requerido para consulta precisa)'),
+    .describe('ID del especialista. REQUERIDO para consulta precisa de disponibilidad.'),
+});
+
+const createCustomerSchema = z.object({
+  customerName: z
+    .string()
+    .describe('Nombre completo del cliente. REQUERIDO.'),
+  customerPhone: z
+    .string()
+    .describe('Teléfono del cliente con formato. REQUERIDO.'),
+  customerEmail: z
+    .string()
+    .optional()
+    .describe('Email del cliente. COMPLETAMENTE OPCIONAL.'),
 });
 
 const createAppointmentSchema = z.object({
-  customerName: z
+  customerId: z
     .string()
-    .optional()
-    .describe('Nombre del cliente (opcional si ya fue identificado)'),
-  customerPhone: z
+    .describe('ID del cliente (obtenido del tool create_customer o get_appointments_by_phone). REQUERIDO.'),
+  serviceIds: z
+    .array(z.string())
+    .describe('Array con IDs de los servicios a agendar. REQUERIDO.'),
+  specialistId: z
     .string()
-    .optional()
-    .describe('Teléfono del cliente (opcional si ya fue identificado)'),
-  customerEmail: z.string().optional().describe('Email del cliente (opcional)'),
-  serviceIds: z.array(z.string()).describe('IDs de los servicios a agendar'),
-  specialistId: z.string().describe('ID del especialista'),
-  startTime: z.string().describe('Fecha y hora de inicio en formato ISO'),
+    .describe('ID del especialista seleccionado. REQUERIDO.'),
+  startTime: z
+    .string()
+    .describe('Fecha y hora de inicio en formato ISO 8601 exacto (ej: 2025-12-25T14:30:00). REQUERIDO.'),
 });
 
 const getAppointmentsByPhoneSchema = z.object({
@@ -38,25 +51,31 @@ const getAppointmentsByPhoneSchema = z.object({
 });
 
 const cancelAppointmentSchema = z.object({
-  reason: z.string().optional().describe('Motivo de la cancelación (opcional)'),
+  reason: z
+    .string()
+    .optional()
+    .describe('Motivo específico de la cancelación. OPCIONAL pero útil para registro interno.'),
 });
 
 const rescheduleAppointmentSchema = z.object({
   newStartTime: z
     .string()
     .describe(
-      'Nueva fecha y hora en formato ISO (ejemplo: 2025-12-05T16:00:00)'
+      'Nueva fecha y hora en formato ISO 8601 exacto. REQUERIDO. Ejemplo: 2025-12-05T16:00:00'
     ),
   newSpecialistId: z
     .string()
     .optional()
-    .describe('Nuevo especialista (opcional)'),
+    .describe('ID del nuevo especialista. OPCIONAL - si se omite, mantiene el mismo especialista.'),
 });
 
 const getServicesSchema = z.object({});
 
 const getSpecialistsSchema = z.object({
-  serviceId: z.string().optional().describe('Filtrar por servicio específico'),
+  serviceId: z
+    .string()
+    .optional()
+    .describe('ID del servicio para filtrar especialistas por categoría. OPCIONAL - si se omite, muestra todos los especialistas.'),
 });
 
 // Contexto para las herramientas
@@ -71,6 +90,7 @@ import {
   handleGetServices,
   handleGetSpecialists,
   handleGetAppointmentsByPhone,
+  handleCreateCustomer,
   handleCreateAppointment,
   handleCancelAppointment,
   handleRescheduleAppointment,
@@ -166,14 +186,25 @@ export function createAppointmentTools(context: BusinessContext) {
     },
   });
 
-  const createAppointment = tool({
-    description: 'Crea una Crear Cita. Si el cliente ya fue identificado (get_appointments_by_phone), usa automáticamente sus datos. Solo pide nombre y teléfono si es cliente nuevo.',
-    inputSchema: createAppointmentSchema,
-    execute: async ({ customerName, customerPhone, customerEmail, serviceIds, specialistId, startTime }) => {
-      return await handleCreateAppointment({
+  const createCustomer = tool({
+    description: 'Crea un nuevo cliente en el sistema. Devuelve el ID del cliente para usar en create_appointment.',
+    inputSchema: createCustomerSchema,
+    execute: async ({ customerName, customerPhone, customerEmail }) => {
+      return await handleCreateCustomer({
         customerName,
         customerPhone,
         customerEmail,
+        ...context,
+      });
+    },
+  });
+
+  const createAppointment = tool({
+    description: 'Crea una nueva cita en el sistema. REQUIERE el ID del cliente obtenido previamente con create_customer o get_appointments_by_phone.',
+    inputSchema: createAppointmentSchema,
+    execute: async ({ customerId, serviceIds, specialistId, startTime }) => {
+      return await handleCreateAppointment({
+        customerId,
         serviceIds,
         specialistId,
         startTime,
@@ -211,6 +242,7 @@ export function createAppointmentTools(context: BusinessContext) {
     getSpecialists,
     getSpecialistsForService,
     getAppointmentsByPhone,
+    createCustomer,
     createAppointment,
     cancelAppointment,
     rescheduleAppointment,

@@ -14,6 +14,7 @@ import {
   createGetServicesTool,
   createGetSpecialistsTool,
   createGetAppointmentsByPhoneTool,
+  createCreateCustomerTool,
   createCreateAppointmentTool,
   createCancelAppointmentTool,
   createRescheduleAppointmentTool,
@@ -23,6 +24,7 @@ import {
   handleGetServices,
   handleGetSpecialists,
   handleGetAppointmentsByPhone,
+  handleCreateCustomer,
   handleCreateAppointment,
   handleCancelAppointment,
   handleRescheduleAppointment,
@@ -65,7 +67,7 @@ function createMainModel() {
   }
 
   return new ChatOpenAI({
-    model: 'openai/gpt-oss-120b', // Qwen/Qwen3-235B-A22B-Instruct-2507,
+    model: 'Qwen/Qwen3-Next-80B-A3B-Instruct', // Qwen/Qwen3-235B-A22B-Instruct-2507,
     temperature: 0.3,
     maxTokens: 1024,
     apiKey: apiKey,
@@ -184,6 +186,7 @@ function getToolsForIntent(
     createGetSpecialistsTool(ctx, handleGetSpecialists),
     createGetAvailableSlotsTool(ctx, handleGetAvailableSlots),
     createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
+    createCreateCustomerTool(ctx, handleCreateCustomer),
     createCreateAppointmentTool(ctx, handleCreateAppointment),
     createCancelAppointmentTool(ctx, handleCancelAppointment),
     createRescheduleAppointmentTool(ctx, handleRescheduleAppointment),
@@ -203,6 +206,7 @@ export async function createAppointmentAgent(config: BusinessAgentConfig) {
     createGetSpecialistsTool(ctx, handleGetSpecialists),
     createGetAvailableSlotsTool(ctx, handleGetAvailableSlots),
     createGetAppointmentsByPhoneTool(ctx, handleGetAppointmentsByPhone),
+    createCreateCustomerTool(ctx, handleCreateCustomer),
     createCreateAppointmentTool(ctx, handleCreateAppointment),
     createCancelAppointmentTool(ctx, handleCancelAppointment),
     createRescheduleAppointmentTool(ctx, handleRescheduleAppointment),

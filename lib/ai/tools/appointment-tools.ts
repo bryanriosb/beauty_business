@@ -18,18 +18,18 @@ const getAvailableSlotsToolSchema = z.object({
 })
 
 const createAppointmentToolSchema = z.object({
-  customerName: z
+  customerId: z
     .string()
-    .optional()
-    .describe('Nombre del cliente (opcional si ya fue identificado)'),
-  customerPhone: z
-    .string()
-    .optional()
-    .describe('Teléfono del cliente (opcional si ya fue identificado)'),
-  customerEmail: z.string().optional().describe('Email del cliente (opcional)'),
+    .describe('ID del cliente (requerido, se obtiene del tool create_customer)'),
   serviceIds: z.array(z.string()).describe('IDs de los servicios a agendar'),
   specialistId: z.string().describe('ID del especialista'),
   startTime: z.string().describe('Fecha y hora de inicio en formato ISO'),
+})
+
+const createCustomerToolSchema = z.object({
+  customerName: z.string().describe('Nombre completo del cliente'),
+  customerPhone: z.string().describe('Teléfono del cliente'),
+  customerEmail: z.string().optional().describe('Email del cliente (opcional)'),
 })
 
 const getAppointmentsByPhoneToolSchema = z.object({
@@ -70,6 +70,8 @@ export type GetAvailableSlotsInput = z.infer<
 export type CreateAppointmentInput = z.infer<
   typeof createAppointmentToolSchema
 > &
+  ContextParams
+export type CreateCustomerInput = z.infer<typeof createCustomerToolSchema> &
   ContextParams
 export type GetAppointmentsByPhoneInput = z.infer<
   typeof getAppointmentsByPhoneToolSchema
@@ -145,6 +147,22 @@ export function createGetAppointmentsByPhoneTool(
   )
 }
 
+export function createCreateCustomerTool(
+  ctx: ContextParams,
+  handler: (input: CreateCustomerInput) => Promise<string>
+) {
+  return tool(
+    async (input: z.infer<typeof createCustomerToolSchema>) =>
+      handler({ ...input, ...ctx }),
+    {
+      name: 'create_customer',
+      description:
+        'Crea un nuevo cliente en el sistema. Devuelve el ID del cliente para usar en create_appointment.',
+      schema: createCustomerToolSchema,
+    }
+  )
+}
+
 export function createCreateAppointmentTool(
   ctx: ContextParams,
   handler: (input: CreateAppointmentInput) => Promise<string>
@@ -155,7 +173,7 @@ export function createCreateAppointmentTool(
     {
       name: 'create_appointment',
       description:
-        'Crea una Crear Cita. Si el cliente ya fue identificado (get_appointments_by_phone), usa automáticamente sus datos. Solo pide nombre y teléfono si es cliente nuevo.',
+        'Crea una nueva cita en el sistema. IMPORTANTE: Solo usar después de haber verificado disponibilidad con get_available_slots y tener el ID del cliente (obtenido con create_customer o get_appointments_by_phone).',
       schema: createAppointmentToolSchema,
     }
   )

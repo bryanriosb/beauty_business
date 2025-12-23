@@ -13,9 +13,11 @@ export interface CustomerAppointment {
 
 export interface CustomerData {
   id: string
+  userProfileId: string
   phone: string
   firstName: string
   lastName: string | null
+  email: string | null
   appointments: CustomerAppointment[]
 }
 

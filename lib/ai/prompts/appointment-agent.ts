@@ -1,4 +1,7 @@
-import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts'
+import {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+} from '@langchain/core/prompts'
 
 export interface BusinessContext {
   businessName: string
@@ -11,10 +14,14 @@ export interface BusinessContext {
 
 export function createAppointmentAgentPrompt(context: BusinessContext) {
   const servicesInfo = context.services
-    .map((s) => `- ${s.name}: ${s.duration} min, $${(s.price / 100).toFixed(2)}`)
+    .map(
+      (s) => `- ${s.name}: ${s.duration} min, $${(s.price / 100).toFixed(2)}`
+    )
     .join('\n')
 
-  const specialistsInfo = context.specialists.map((s) => `- ${s.name} (${s.specialty})`).join('\n')
+  const specialistsInfo = context.specialists
+    .map((s) => `- ${s.name} (${s.specialty})`)
+    .join('\n')
 
   const systemPrompt = `Eres un asistente virtual profesional de ${context.businessName}, un ${context.businessType}.
 Tu objetivo principal es ayudar a los clientes a agendar, reprogramar o cancelar citas de manera eficiente y amigable.

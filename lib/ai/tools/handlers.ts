@@ -7,6 +7,7 @@ import {
   type GetSpecialistsInput,
   type GetAppointmentsByPhoneInput,
   type CreateAppointmentInput,
+  type CreateCustomerInput,
   type CancelAppointmentInput,
   type RescheduleAppointmentInput,
 } from './appointment-tools'
@@ -260,7 +261,7 @@ export async function handleGetAppointmentsByPhone(
 
     const { data: customer, error: customerError } = await supabase
       .from('business_customers')
-      .select('id, first_name, last_name, user_profile_id')
+      .select('id, first_name, last_name, user_profile_id, phone, email')
       .eq('business_id', input.businessId)
       .eq('phone', input.phone)
       .single()
@@ -290,11 +291,13 @@ export async function handleGetAppointmentsByPhone(
     if (error) throw error
 
     if (!appointments || appointments.length === 0) {
-      const customerData: CustomerData = {
+const customerData: CustomerData = {
         id: customer.id,
-        phone: input.phone,
+        userProfileId: customer.user_profile_id,
+        phone: customer.phone,
         firstName: customer.first_name,
         lastName: customer.last_name,
+        email: customer.email,
         appointments: [],
       }
       setCustomerData(input.sessionId, customerData)
@@ -333,9 +336,11 @@ export async function handleGetAppointmentsByPhone(
 
     const customerData: CustomerData = {
       id: customer.id,
-      phone: input.phone,
+      userProfileId: customer.user_profile_id,
+      phone: customer.phone,
       firstName: customer.first_name,
       lastName: customer.last_name,
+      email: customer.email,
       appointments: customerAppointments,
     }
     setCustomerData(input.sessionId, customerData)
@@ -368,6 +373,81 @@ Los datos de las citas han sido guardados. Puedes reprogramar o cancelar directa
   }
 }
 
+export async function handleCreateCustomer(
+  input: CreateCustomerInput
+): Promise<string> {
+  console.log('[AI Agent] handleCreateCustomer called with:', JSON.stringify(input, null, 2))
+
+  try {
+    // Validar datos requeridos
+    if (!input.customerName || !input.customerPhone) {
+      return '[ERROR] Se requiere nombre y teléfono del cliente para crear un nuevo cliente.'
+    }
+
+    const nameParts = input.customerName.split(' ')
+    const firstName = nameParts[0]
+    const lastName = nameParts.slice(1).join(' ') || null
+
+    const email = input.customerEmail || `${input.customerPhone}@guest.ai-agent.local`
+
+    console.log('[AI Agent] Creating customer:', {
+      business_id: input.businessId,
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      phone: input.customerPhone,
+      source: 'ai_agent',
+    })
+
+    const result = await createFullCustomerAction({
+      business_id: input.businessId,
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      phone: input.customerPhone,
+      source: 'ai_agent',
+    })
+
+    if (!result.success || !result.data) {
+      console.error('[AI Agent] Error creating customer:', result.error)
+      return `[ERROR] ${result.error || 'Error al crear cliente'}`
+    }
+
+    console.log('[AI Agent] Customer created successfully:', {
+      customerId: result.data.id,
+      userProfileId: result.userProfileId,
+      isNew: result.isNew,
+    })
+
+    // Guardar datos del cliente en el contexto para uso posterior
+    if (input.sessionId) {
+      setCustomerData(input.sessionId, {
+        id: result.data.id,
+        userProfileId: result.userProfileId!,
+        firstName: firstName,
+        lastName: lastName,
+        phone: input.customerPhone,
+        email: email,
+        appointments: [],
+      })
+    }
+
+    const statusText = result.isNew ? 'creado' : 'encontrado'
+    return `✅ Cliente ${statusText} exitosamente:
+- ID: ${result.data.id}
+- Nombre: ${firstName} ${lastName || ''}
+- Teléfono: ${input.customerPhone}
+- Email: ${email}
+- Perfil ID: ${result.userProfileId}
+
+Ahora puedes crear una cita usando este cliente.`
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error desconocido'
+    console.error('[AI Agent] handleCreateCustomer error:', error)
+    return `[ERROR] Error al crear cliente: ${message}`
+  }
+}
+
 export async function handleCreateAppointment(
   input: CreateAppointmentInput
 ): Promise<string> {
@@ -379,83 +459,31 @@ export async function handleCreateAppointment(
   try {
     const supabase = await getSupabaseAdminClient()
 
-    // Primero intentar obtener datos del cliente desde el contexto
-    const customerFromContext = getCustomerData(input.sessionId)
-
-    // Determinar nombre y teléfono: del input o del contexto
-    let customerName = input.customerName
-    let customerPhone = input.customerPhone
-
-    if (customerFromContext) {
-      console.log('[AI Agent] Customer data found in context:', {
-        id: customerFromContext.id,
-        firstName: customerFromContext.firstName,
-        lastName: customerFromContext.lastName,
-        phone: customerFromContext.phone,
-      })
-
-      // Usar datos del contexto si no se proporcionan en el input
-      if (!customerName) {
-        customerName = `${customerFromContext.firstName} ${
-          customerFromContext.lastName || ''
-        }`.trim()
-      }
-      if (!customerPhone) {
-        customerPhone = customerFromContext.phone
-      }
+    // Validar que tenemos el customerId
+    if (!input.customerId) {
+      return '[ERROR] Se requiere el ID del cliente. Usa create_customer para crear un nuevo cliente o get_appointments_by_phone para buscar uno existente.'
     }
 
-    // Validar que tenemos los datos necesarios
-    if (!customerName || !customerPhone) {
-      return '[ERROR] Se requiere nombre y teléfono del cliente. Si es un cliente existente, primero búscalo con get_appointments_by_phone.'
-    }
-
-    let userProfileId: string | null = null
-
-    console.log(
-      '[AI Agent] Looking for existing customer with phone:',
-      customerPhone
-    )
-    const { data: existingCustomer, error: customerError } = await supabase
+    // Obtener datos del cliente
+    console.log('[AI Agent] Getting customer data for ID:', input.customerId)
+    const { data: customer, error: customerError } = await supabase
       .from('business_customers')
-      .select('id, user_profile_id')
+      .select('id, user_profile_id, first_name, last_name, phone, email')
       .eq('business_id', input.businessId)
-      .eq('phone', customerPhone)
+      .eq('id', input.customerId)
       .single()
 
-    if (customerError && customerError.code !== 'PGRST116') {
+    if (customerError || !customer) {
       console.error('[AI Agent] Error finding customer:', customerError)
+      return `[ERROR] No se encontró el cliente con ID ${input.customerId}. Verifica que el ID sea correcto y pertenezca a este negocio.`
     }
 
-    if (existingCustomer) {
-      console.log('[AI Agent] Found existing customer:', existingCustomer.id)
-      userProfileId = existingCustomer.user_profile_id
-    } else {
-      console.log('[AI Agent] Creating new customer:', customerName)
-      const nameParts = customerName.split(' ')
-      const firstName = nameParts[0]
-      const lastName = nameParts.slice(1).join(' ') || null
-
-      const email =
-        input.customerEmail || `${customerPhone}@guest.ai-agent.local`
-
-      const result = await createFullCustomerAction({
-        business_id: input.businessId,
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        phone: customerPhone,
-        source: 'ai_agent',
-      })
-
-      if (!result.success || !result.data) {
-        console.error('[AI Agent] Error creating customer:', result.error)
-        throw new Error(result.error || 'Error al crear cliente')
-      }
-
-      console.log('[AI Agent] Created customer:', result.data.id)
-      userProfileId = result.userProfileId!
-    }
+    const userProfileId = customer.user_profile_id
+    console.log('[AI Agent] Using customer:', {
+      customerId: customer.id,
+      userProfileId: userProfileId,
+      customerName: `${customer.first_name} ${customer.last_name || ''}`.trim(),
+    })
 
     console.log('[AI Agent] Looking for services:', input.serviceIds)
     const { data: services, error: servicesError } = await supabase
@@ -562,8 +590,8 @@ export async function handleCreateAppointment(
     return `¡Cita agendada exitosamente! ✅
 
 📋 RESUMEN DE TU CITA:
-• Cliente: ${customerName}
-• Teléfono: ${customerPhone}
+• Cliente: ${customer.first_name} ${customer.last_name || ''}
+• Teléfono: ${customer.phone}
 • Servicio(s): ${servicesNames}
 • Fecha: ${dateFormatted}
 • Especialista: ${specialist?.first_name} ${specialist?.last_name || ''}

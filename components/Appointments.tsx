@@ -109,7 +109,9 @@ export default function Appointments() {
       case 'month':
         start.setDate(1)
         start.setHours(0, 0, 0, 0)
-        end.setMonth(end.getMonth() + 1, 0)
+        // Obtener el último día del mes actual
+        const lastDayOfMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0)
+        end.setTime(lastDayOfMonth.getTime())
         end.setHours(23, 59, 59, 999)
         break
     }
@@ -130,6 +132,8 @@ export default function Appointments() {
         const params: any = {
           start_date: dateRange.start.toISOString(),
           end_date: dateRange.end.toISOString(),
+          // Eliminar paginación para vista de calendario
+          page_size: 1000, // Suficientemente grande para cargar todas las citas del mes
         }
 
         if (!isCompanyAdmin && activeBusinessId) {
