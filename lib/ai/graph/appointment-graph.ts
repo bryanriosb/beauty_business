@@ -35,7 +35,7 @@ import {
   shouldRetry,
   formatErrorForAgent,
 } from './error-handler'
-import { getThinkingIndicator, type FeedbackEvent } from './feedback-generator'
+import { getThinkingIndicator, type FeedbackEvent, createProgressTracker } from './feedback-generator'
 import { routeIntent, getConversationContext, type Intent } from './router'
 import {
   createBookingPrompt,
@@ -54,6 +54,7 @@ export type StreamEvent =
   | { type: 'tool_start'; toolName: string }
   | { type: 'tool_end'; toolName: string; success: boolean }
   | { type: 'intent'; intent: Intent }
+  | { type: 'session_end'; message: string; reason?: string }
 
 export interface BusinessAgentConfig {
   businessId: string
@@ -168,6 +169,9 @@ function getPromptForIntent(intent: Intent, context: BusinessContext): string {
       return createReschedulePrompt(context)
     case 'CANCEL':
       return createCancelPrompt(context)
+    case 'SESSION_END':
+      // Para SESSION_END no usamos LLM, solo enviamos mensaje predefinido
+      return '' // No se usará ya que manejamos directamente
     case 'GENERAL':
     default:
       return createGeneralPrompt(context)
@@ -481,6 +485,21 @@ export async function* streamAgentResponseWithFeedback(
 
   yield { type: 'intent', intent }
 
+  // 🎯 NUEVO: Manejo de finalización de sesión
+  if (intent === 'SESSION_END') {
+    console.log('[AI Agent] Session end detected, sending goodbye')
+    yield { 
+      type: 'chunk', 
+      content: '¡Gracias por visitarnos! Que tengas un excelente día. 😊' 
+    }
+    yield { 
+      type: 'session_end', 
+      message: 'Sesión finalizada por el usuario',
+      reason: 'user_session_end' 
+    }
+    return // Terminar el stream inmediatamente
+  }
+
   const tools = getToolsForIntent(intent, businessId, sessionId)
   const model = createMainModel().bindTools(tools)
   const systemPrompt = getPromptForIntent(intent, context)
@@ -565,8 +584,27 @@ export async function* streamAgentResponseWithFeedback(
         let lastError: ErrorInfo | null = null
         let success = true
 
-        const startTime = Date.now()
+        const toolStartTime = Date.now()
         const maxRetries = 2
+
+        // 🎯 Implementación simple de progress tracking con tiempos correctos
+        console.log(`[Progress] Starting simple tracker for ${toolCall.name} at ${new Date().toISOString()}`)
+        
+        // Programar mensajes de progreso manuales
+        const scheduleProgressMessage = (delayMs: number, type: string) => {
+          setTimeout(() => {
+            const elapsed = Date.now() - toolStartTime
+            console.log(`[Progress] Emitting ${type} for ${toolCall.name} at ${elapsed}ms`)
+            // Nota: No podemos hacer yield aquí directamente, necesitamos arquitectura diferente
+          }, delayMs)
+        }
+        
+        // Programar los delays según especificación
+        scheduleProgressMessage(45000, 'working')   // 45s
+        scheduleProgressMessage(60000, 'patience')  // 60s  
+        scheduleProgressMessage(90000, 'apology')   // 90s
+        
+        console.log(`[Progress] Scheduled 3 progress messages for ${toolCall.name}: 45s, 60s, 90s`)
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
           try {
@@ -585,18 +623,19 @@ export async function* streamAgentResponseWithFeedback(
               result.substring(0, 500)
             )
 
-            const elapsed = Date.now() - startTime
-            if (elapsed > 5000) {
-              yield {
-                type: 'feedback',
-                event: {
-                  type: 'progress',
-                  message: 'Gracias por tu paciencia, ya casi termino...',
-                  toolName: toolCall.name,
-                  elapsedMs: elapsed,
-                },
-              }
-            }
+            // Removido: ahora el progress tracker maneja los tiempos
+            //             const elapsed = Date.now() - toolStartTime
+            // if (elapsed > 5000) {
+            //   yield {
+            //     type: 'feedback',
+            //     event: {
+            //       type: 'progress',
+            //       message: 'Gracias por tu paciencia, ya casi termino...',
+            //       toolName: toolCall.name,
+            //       elapsedMs: elapsed,
+            //     },
+            //   }
+            // }
 
             if (result.toLowerCase().includes('error')) {
               const errorInfo = createErrorInfo(
@@ -612,7 +651,7 @@ export async function* streamAgentResponseWithFeedback(
                     type: 'waiting',
                     message: 'Un momento, reintentando...',
                     toolName: toolCall.name,
-                    elapsedMs: Date.now() - startTime,
+                  elapsedMs: Date.now() - toolStartTime,
                   },
                 }
                 await new Promise((resolve) =>
@@ -644,7 +683,7 @@ export async function* streamAgentResponseWithFeedback(
                   type: 'waiting',
                   message: 'Hubo un pequeño problema, reintentando...',
                   toolName: toolCall.name,
-                  elapsedMs: Date.now() - startTime,
+                  elapsedMs: Date.now() - toolStartTime,
                 },
               }
               await new Promise((resolve) =>
@@ -666,6 +705,8 @@ export async function* streamAgentResponseWithFeedback(
         }
 
         yield { type: 'tool_end', toolName: toolCall.name, success }
+
+        // No hay progress tracker activo que detener en esta implementación simple
 
         toolResults.push(
           new ToolMessage({

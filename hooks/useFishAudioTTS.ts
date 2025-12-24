@@ -41,6 +41,10 @@ export function useFishAudioTTS(options: UseFishAudioTTSOptions = {}): UseFishAu
   const ttsQueueRef = useRef<string[]>([])
   const isProcessingQueueRef = useRef(false)
   const isStreamingRef = useRef(false)
+  
+  // Guard anti-recursión
+  const processQueueDepthRef = useRef(0)
+  const MAX_PROCESSING_DEPTH = 3
 
   const initAudioBuffer = useCallback(() => {
     if (audioBufferRef.current) return audioBufferRef.current
@@ -68,6 +72,15 @@ export function useFishAudioTTS(options: UseFishAudioTTSOptions = {}): UseFishAu
   }, [onPlaybackStart, onPlaybackEnd, onError])
 
   const processQueue = useCallback(async () => {
+    // Guard anti-recursión: prevenir procesamiento infinito
+    if (processQueueDepthRef.current >= MAX_PROCESSING_DEPTH) {
+      console.warn('[TTS] Maximum processing depth reached, stopping to prevent infinite recursion')
+      isProcessingQueueRef.current = false
+      setIsLoading(false)
+      setIsStreaming(false)
+      return
+    }
+
     if (isProcessingQueueRef.current) return
     if (ttsQueueRef.current.length === 0) {
       setIsLoading(false)
@@ -78,6 +91,7 @@ export function useFishAudioTTS(options: UseFishAudioTTSOptions = {}): UseFishAu
     }
 
     isProcessingQueueRef.current = true
+    processQueueDepthRef.current++
     const buffer = initAudioBuffer()
     buffer.setVolume(gainVolume)
 
@@ -128,9 +142,11 @@ export function useFishAudioTTS(options: UseFishAudioTTSOptions = {}): UseFishAu
     }
 
     isProcessingQueueRef.current = false
+    processQueueDepthRef.current--
 
-    if (ttsQueueRef.current.length > 0) {
-      processQueue()
+    if (ttsQueueRef.current.length > 0 && processQueueDepthRef.current < MAX_PROCESSING_DEPTH) {
+      // Usar setTimeout para evitar recursión síncrona inmediata
+      setTimeout(() => processQueue(), 10)
     } else if (!isStreamingRef.current) {
       setIsLoading(false)
       setIsStreaming(false)

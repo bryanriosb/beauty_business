@@ -34,6 +34,7 @@ interface UseAgentSSEOptions {
   onError?: (error: string) => void
   onSessionStart?: (session: AgentSession, welcomeMessage: string) => void
   onFeedback?: (feedback: FeedbackMessage) => void
+  onSessionEnd?: (message: string, reason?: string) => void
 }
 
 interface UseAgentSSEReturn {
@@ -63,6 +64,7 @@ export function useAgentSSE({
   onError,
   onSessionStart,
   onFeedback,
+  onSessionEnd,
 }: UseAgentSSEOptions): UseAgentSSEReturn {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -265,6 +267,33 @@ export function useAgentSSE({
 
   const handleSSEEvent = useCallback((eventType: string, data: Record<string, unknown>) => {
     switch (eventType) {
+      case 'session_end': {
+        console.log('[useAgentSSE] Session end received:', data)
+        const message = data.message as string || 'La sesión ha finalizado'
+        const reason = data.reason as string
+        
+        // Agregar mensaje de despedida
+        const goodbyeMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: message,
+        }
+        setMessages((prev) => [...prev, goodbyeMessage])
+        onMessage?.(goodbyeMessage)
+        
+        // Notificar fin de sesión
+        onStreamEnd?.()
+        onSessionEnd?.(message, reason)
+        
+        // Limpiar estado de procesamiento
+        setIsProcessing(false)
+        setAgentTyping(false)
+        setFeedback(null)
+        setCurrentTool(null)
+        
+        console.log('[useAgentSSE] Session ended due to:', reason)
+        return
+      }
       case 'message': {
         const chunk = data.chunk as string
         const isComplete = data.isComplete as boolean

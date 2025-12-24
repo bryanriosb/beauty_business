@@ -37,7 +37,11 @@ interface AgentChatWidgetProps {
   className?: string
 }
 
-export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetProps) {
+export function AgentChatWidget({
+  token,
+  onClose,
+  className,
+}: AgentChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -71,149 +75,163 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
     onError: (err) => console.error('TTS Error:', err),
   })
 
-  const sendMessageToAgent = useCallback(async (text: string) => {
-    if (!text.trim() || !session || isLoading) return
+  const sendMessageToAgent = useCallback(
+    async (text: string) => {
+      if (!text.trim() || !session || isLoading) return
 
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: text.trim(),
-    }
-
-    const assistantMessageId = crypto.randomUUID()
-
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue('')
-    setIsLoading(true)
-    setIsStreaming(true)
-
-    try {
-      const response = await fetch('/api/agent/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text.trim(),
-          session,
-          token,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        if (errorData.expired) {
-          setError('La sesión ha expirado')
-          return
-        }
-        throw new Error(errorData.error || 'Error al enviar mensaje')
+      const userMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: text.trim(),
       }
 
-      // Add empty assistant message that will be updated with streaming content
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantMessageId,
-          role: 'assistant',
-          content: '',
-        },
-      ])
+      const assistantMessageId = crypto.randomUUID()
 
-      const reader = response.body?.getReader()
-      const decoder = new TextDecoder()
-      let accumulatedContent = ''
+      setMessages((prev) => [...prev, userMessage])
+      setInputValue('')
+      setIsLoading(true)
+      setIsStreaming(true)
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
+      try {
+        const response = await fetch('/api/agent/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text.trim(),
+            session,
+            token,
+          }),
+        })
 
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n')
+        if (!response.ok) {
+          const errorData = await response.json()
+          if (errorData.expired) {
+            setError('La sesión ha expirado')
+            return
+          }
+          throw new Error(errorData.error || 'Error al enviar mensaje')
+        }
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6))
+        // Add empty assistant message that will be updated with streaming content
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: assistantMessageId,
+            role: 'assistant',
+            content: '',
+          },
+        ])
 
-                if (data.error) {
-                  throw new Error(data.error)
-                }
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+        let accumulatedContent = ''
 
-                if (data.chunk !== undefined) {
-                  if (data.chunk) {
-                    accumulatedContent += data.chunk
-                    setMessages((prev) =>
-                      prev.map((msg) =>
-                        msg.id === assistantMessageId
-                          ? { ...msg, content: accumulatedContent }
-                          : msg
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            const chunk = decoder.decode(value, { stream: true })
+            const lines = chunk.split('\n')
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6))
+
+                  if (data.error) {
+                    throw new Error(data.error)
+                  }
+
+                  if (data.chunk !== undefined) {
+                    if (data.chunk) {
+                      accumulatedContent += data.chunk
+                      setMessages((prev) =>
+                        prev.map((msg) =>
+                          msg.id === assistantMessageId
+                            ? { ...msg, content: accumulatedContent }
+                            : msg
+                        )
                       )
-                    )
+                    }
                   }
-                }
 
-                // Manejar chunks optimizados para TTS
-                if (data.tts_chunk) {
-                  if (voiceModeRef.current && ttsEnabledRef.current) {
-                    streamText(data.tts_chunk.text)
+                  // Manejar chunks optimizados para TTS
+                  if (data.tts_chunk) {
+                    if (voiceModeRef.current && ttsEnabledRef.current) {
+                      streamText(data.tts_chunk.text)
+                      // Si es el chunk final, finalizar el stream
+                      if (data.tts_chunk.isFinal) {
+                        finishStream()
+                      }
+                    }
                   }
-                }
 
-                if (data.isComplete) {
-                  setIsStreaming(false)
-                  if (voiceModeRef.current && ttsEnabledRef.current) {
-                    finishStream()
+                  if (data.isComplete) {
+                    setIsStreaming(false)
+                    if (voiceModeRef.current && ttsEnabledRef.current) {
+                      finishStream()
+                    }
                   }
-                }
 
-                // Manejar errores del servidor
-                if (data.type === 'error') {
-                  throw new Error(data.error || 'Error del servidor')
-                }
+                  // Manejar errores del servidor
+                  if (data.type === 'error') {
+                    throw new Error(data.error || 'Error del servidor')
+                  }
 
-                // Manejar mensajes de retroalimentación
-                if (data.type === 'feedback' && data.message) {
-                  console.log('[Feedback]', data.message)
+                  // Manejar mensajes de retroalimentación
+                  if (data.type === 'feedback' && data.message) {
+                    console.log('[Feedback]', data.message)
+                  }
+                } catch {
+                  // Ignore JSON parse errors for incomplete chunks
                 }
-              } catch {
-                // Ignore JSON parse errors for incomplete chunks
               }
             }
           }
         }
-      }
-    } catch (err) {
-      console.error('Error sending message:', err)
-      
-      // Remover mensaje vacío si existe
-      setMessages((prev) => 
-        prev.filter(msg => !(msg.id === assistantMessageId && !msg.content.trim()))
-      )
-      
-      // Agregar mensaje de error
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      const userMessage = errorMessage.includes('tiempo') || errorMessage.includes('timeout') 
-        ? 'Lo siento, estoy tardando mucho en responder. Por favor, intenta con una pregunta más breve.'
-        : 'Lo siento, tuve un problema al procesar tu mensaje. Por favor, intenta de nuevo.'
-        
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: userMessage,
-        },
-      ])
-    } finally {
-      setIsLoading(false)
-      setIsStreaming(false)
-    }
-  }, [session, isLoading, token, speak])
+      } catch (err) {
+        console.error('Error sending message:', err)
 
-  const handleUtteranceEnd = useCallback(async (text: string) => {
-    if (!text.trim() || !session) return
-    setInputValue('')
-    await sendMessageToAgent(text.trim())
-  }, [session, sendMessageToAgent])
+        // Remover mensaje vacío si existe
+        setMessages((prev) =>
+          prev.filter(
+            (msg) => !(msg.id === assistantMessageId && !msg.content.trim())
+          )
+        )
+
+        // Agregar mensaje de error
+        const errorMessage =
+          err instanceof Error ? err.message : 'Error desconocido'
+        const userMessage =
+          errorMessage.includes('tiempo') || errorMessage.includes('timeout')
+            ? 'Lo siento, estoy tardando mucho en responder. Por favor, intenta con una pregunta más breve.'
+            : 'Lo siento, tuve un problema al procesar tu mensaje. Por favor, intenta de nuevo.'
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: userMessage,
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+        setIsStreaming(false)
+      }
+    },
+    [session, isLoading, token, speak]
+  )
+
+  const handleUtteranceEnd = useCallback(
+    async (text: string) => {
+      if (!text.trim() || !session) return
+      setInputValue('')
+      await sendMessageToAgent(text.trim())
+    },
+    [session, sendMessageToAgent]
+  )
 
   const {
     isListening,
@@ -316,7 +334,9 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
       <div className={cn('flex h-full items-center justify-center', className)}>
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Conectando con el asistente...</p>
+          <p className="text-sm text-muted-foreground">
+            Conectando con el asistente...
+          </p>
         </div>
       </div>
     )
@@ -353,10 +373,7 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
               variant="ghost"
               size="icon"
               onClick={toggleTTS}
-              className={cn(
-                'h-8 w-8',
-                !ttsEnabled && 'text-muted-foreground'
-              )}
+              className={cn('h-8 w-8', !ttsEnabled && 'text-muted-foreground')}
               title={ttsEnabled ? 'Desactivar voz' : 'Activar voz'}
             >
               {ttsEnabled ? (

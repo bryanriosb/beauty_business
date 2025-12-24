@@ -1,7 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Loader2, X, Bot, Square, Volume2, VolumeX, AlertCircle } from 'lucide-react'
+import {
+  Loader2,
+  X,
+  Bot,
+  Square,
+  Volume2,
+  VolumeX,
+  AlertCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
@@ -51,11 +59,14 @@ export function AgentChatSocketWidget({
     onError: (err) => console.error('TTS Error:', err),
   })
 
-  const handleTTSChunk = useCallback((chunk: string) => {
-    if (voiceModeRef.current && ttsEnabledRef.current) {
-      streamText(chunk)
-    }
-  }, [streamText])
+  const handleTTSChunk = useCallback(
+    (chunk: string) => {
+      if (voiceModeRef.current && ttsEnabledRef.current) {
+        streamText(chunk)
+      }
+    },
+    [streamText]
+  )
 
   const handleTTSStreamEnd = useCallback(() => {
     if (voiceModeRef.current && ttsEnabledRef.current) {
@@ -67,11 +78,14 @@ export function AgentChatSocketWidget({
     // TTS del mensaje de bienvenida deshabilitado
   }, [])
 
-  const handleFallback = useCallback((message: string) => {
-    if (voiceModeRef.current && ttsEnabledRef.current && message) {
-      speak(message)
-    }
-  }, [speak])
+  const handleFallback = useCallback(
+    (message: string) => {
+      if (voiceModeRef.current && ttsEnabledRef.current && message) {
+        speak(message)
+      }
+    },
+    [speak]
+  )
 
   const {
     isProcessing,
@@ -111,6 +125,7 @@ export function AgentChatSocketWidget({
   } = useDeepgramSTT({
     onUtteranceEnd: handleUtteranceEnd,
     onError: (err) => console.error('STT Error:', err),
+    useHighPassFilter: true,
     language: 'es-419',
   })
 
@@ -199,7 +214,6 @@ export function AgentChatSocketWidget({
     }
     setTtsEnabled((prev) => !prev)
   }, [ttsEnabled, isTTSSpeaking, stopTTS])
-
 
   if (error) {
     return (

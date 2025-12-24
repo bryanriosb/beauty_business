@@ -35,6 +35,11 @@ export class CircularAudioBuffer {
   private volumeMonitorInterval?: ReturnType<typeof setInterval>
   private gainValue = 1
   private hasStartedPlaying = false
+  
+  // Anti-loop: Deduplicación de chunks
+  private lastChunkHash: string | null = null
+  private duplicateChunkCount = 0
+  private readonly MAX_DUPLICATE_COUNT = 2
 
   private boundHandlers: {
     onPlay?: () => void
@@ -247,8 +252,34 @@ export class CircularAudioBuffer {
     }
   }
 
+  private generateChunkHash(data: ArrayBuffer): string {
+    const view = new Uint8Array(data)
+    let hash = 0
+    for (let i = 0; i < Math.min(view.length, 100); i++) {
+      hash = ((hash << 5) - hash + view[i]) & 0xffffffff
+    }
+    return hash.toString(36)
+  }
+
   async addChunk(data: ArrayBuffer): Promise<void> {
     console.log('[AudioBuffer] addChunk called, size:', data.byteLength, 'isReady:', this.isReady(), 'fallback:', this.useFallbackMode)
+
+    // Anti-loop: Verificar duplicados
+    const chunkHash = this.generateChunkHash(data)
+    if (chunkHash === this.lastChunkHash) {
+      this.duplicateChunkCount++
+      console.warn(`[AudioBuffer] Duplicate chunk detected (${this.duplicateChunkCount}/${this.MAX_DUPLICATE_COUNT})`)
+      
+      // Ignorar si hay demasiados duplicados consecutivos (evita loops infinitos)
+      if (this.duplicateChunkCount >= this.MAX_DUPLICATE_COUNT) {
+        console.warn('[AudioBuffer] Too many duplicate chunks, ignoring to prevent loop')
+        return
+      }
+    } else {
+      // Reset contador cuando es un chunk diferente
+      this.lastChunkHash = chunkHash
+      this.duplicateChunkCount = 0
+    }
 
     if (!this.isReady() && this.queue.length === 0 && !this.useFallbackMode) {
       console.warn('[AudioBuffer] Buffer no está listo, inicializando...')
