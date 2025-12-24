@@ -7,6 +7,7 @@ export type Intent =
   | 'RESCHEDULE'
   | 'CANCEL'
   | 'GENERAL'
+  | 'SESSION_END'
 
 export interface RouterResult {
   intent: Intent
@@ -26,14 +27,17 @@ INTENTS:
 - AVAILABILITY: User checks available times without booking (disponibilidad, qué horarios)
 - RESCHEDULE: User wants to CHANGE an existing appointment (cambiar cita, reprogramar)
 - CANCEL: User wants to CANCEL an appointment (cancelar, anular)
-- GENERAL: Greetings, thanks, unclear (hola, gracias, adiós)
+- SESSION_END: User wants to END conversation (adiós, hasta luego, no quiero nada más, nada más, eso es todo, chao, ya está, me voy, listo, gracias adiós)
+- GENERAL: Greetings, thanks, unclear, or other general conversation (hola, gracias, buenos días)
 
 RULES:
 - Greetings alone → GENERAL
+- Saying goodbye, ending conversation → SESSION_END
 - Asking about prices/services → INQUIRY
 - Wants to book → BOOKING
 - Change existing appointment → RESCHEDULE
 - Cancel appointment → CANCEL
+- Phrases like "no quiero nada más", "nada más", "eso es todo" → SESSION_END
 
 OUTPUT: Return ONLY valid JSON, nothing else:
 {"intent":"INTENT_NAME","confidence":0.9}`
@@ -96,7 +100,7 @@ User message: "${userMessage}"`
 }
 
 function validateIntent(intent: string): Intent {
-  const validIntents: Intent[] = ['BOOKING', 'INQUIRY', 'AVAILABILITY', 'RESCHEDULE', 'CANCEL', 'GENERAL']
+  const validIntents: Intent[] = ['BOOKING', 'INQUIRY', 'AVAILABILITY', 'RESCHEDULE', 'CANCEL', 'GENERAL', 'SESSION_END']
   const normalized = intent?.toUpperCase() as Intent
   return validIntents.includes(normalized) ? normalized : 'GENERAL'
 }

@@ -11,9 +11,9 @@ const FEEDBACK_CONTEXTS: Record<string, string> = {
 }
 
 const DELAY_MESSAGES = [
-  { delay: 30000, type: 'working' },
-  { delay: 45000, type: 'patience' },
-  { delay: 60000, type: 'apology' },
+  { delay: 45000, type: 'working' },
+  { delay: 60000, type: 'patience' },
+  { delay: 90000, type: 'apology' },
 ]
 
 let feedbackModel: ChatOpenAI | null = null

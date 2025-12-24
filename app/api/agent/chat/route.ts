@@ -121,9 +121,8 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         let hasStartedResponse = false
         const businessName = session.settings?.assistant_name || 'el asistente'
-        const ttsBuffer = new TTSBuffer()
-        
-        // Buffer optimizado para ultra-baja latencia
+
+        // Buffer optimizado ULTRA-BAJA LATENCIA (único buffer para evitar duplicación)
         const optimizedTTSBuffer = new OptimizedTTSBuffer(
           // Callback principal: enviar chunks optimizados al cliente
           (text: string) => {
@@ -165,7 +164,8 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        const fallbackDelays = [5000, 15000]
+        // Fallback system: solo para respuesta inicial (sin conflicto con progress tracker)
+        const fallbackDelays = [35000, 45000] // Aumentados para no interferir con progress tracking
         fallbackDelays.forEach((delay) => {
           const timeout = setTimeout(async () => {
             if (
@@ -173,6 +173,9 @@ export async function POST(request: NextRequest) {
               !abortController.signal.aborted &&
               !isClosed
             ) {
+              console.log(
+                `[Fallback] Triggering fallback at ${delay}ms since no response started`
+              )
               const waitingMessage = await generateWaitingMessage(
                 delay / 1000,
                 businessName
@@ -210,18 +213,9 @@ export async function POST(request: NextRequest) {
                 }
                 fullResponse += event.content
 
-                // ESTRATEGIA DUAL: Buffer optimizado + Buffer tradicional como fallback
-                // 1. Buffer optimizado para ultra-baja latencia (3 tokens o 50ms)
+                // BUFFER ÚNICO OPTIMIZADO: Evita duplicación y loops
+                // Estrategia: 3 tokens o 50ms, lo que ocurra primero
                 optimizedTTSBuffer.pushText(event.content)
-
-                // 2. Buffer tradicional como fallback para oraciones completas
-                const sentences = ttsBuffer.push(event.content)
-                for (const sentence of sentences) {
-                  sendEvent('tts_chunk', {
-                    text: sentence,
-                    isFinal: false,
-                  })
-                }
 
                 // También enviar el chunk raw para UI
                 sendEvent('message', {
@@ -259,6 +253,15 @@ export async function POST(request: NextRequest) {
                 sendEvent('error', { error: event.error })
                 break
 
+              case 'feedback':
+                console.log('[Feedback]', event.event.type, event.event.message)
+                sendEvent('feedback', {
+                  type: event.event.type,
+                  message: event.event.message,
+                  toolName: event.event.toolName,
+                })
+                break
+
               case 'session_end':
                 sendEvent('session_end', {
                   message: event.message,
@@ -268,29 +271,21 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Flush buffers TTS (ambos)
-          const remainingText = ttsBuffer.flush()
-          
-          // Flush buffer optimizado
+          // Flush buffer optimizado (único)
           optimizedTTSBuffer.flush()
-          
-          // Destruir buffer optimizado
-          setTimeout(() => {
-            optimizedTTSBuffer.destroy()
-          }, 100)
-          
-          if (remainingText) {
-            sendEvent('tts_chunk', {
-              text: remainingText,
-              isFinal: true,
-            })
-          } else {
-            // Marcar fin del TTS aunque no haya texto restante
-            sendEvent('tts_chunk', { text: '', isFinal: true })
-          }
+
+          // Destruir buffer optimizado INMEDIATAMENTE (no más timeout)
+          optimizedTTSBuffer.destroy()
+
+          // Marcar fin del TTS
+          sendEvent('tts_chunk', { text: '', isFinal: true })
 
           // Si no hubo respuesta y no fue abortado, enviar un mensaje de fallback
-          if (!hasStartedResponse && !abortController.signal.aborted && !isClosed) {
+          if (
+            !hasStartedResponse &&
+            !abortController.signal.aborted &&
+            !isClosed
+          ) {
             const fallbackMessage = `Lo siento, no pude generar una respuesta. Por favor, intenta reformular tu pregunta.`
             fullResponse = fallbackMessage
             sendEvent('message', {
@@ -315,28 +310,35 @@ export async function POST(request: NextRequest) {
           try {
             optimizedTTSBuffer.destroy()
           } catch (cleanupError) {
-            console.error('[SSE] Error cleaning up optimized buffer:', cleanupError)
+            console.error(
+              '[SSE] Error cleaning up optimized buffer:',
+              cleanupError
+            )
           }
-          
+
           fallbackTimeouts.forEach(clearTimeout)
           const errorMessage =
             error instanceof Error ? error.message : 'Error desconocido'
           console.error('[SSE] Stream error:', errorMessage)
-          console.error('[SSE] Stack:', error instanceof Error ? error.stack : 'No stack')
-          
+          console.error(
+            '[SSE] Stack:',
+            error instanceof Error ? error.stack : 'No stack'
+          )
+
           // Enviar error al cliente
           sendEvent('error', { error: errorMessage })
-          
+
           // Si no hay contenido acumulado, enviar mensaje de error amigable
           if (!fullResponse.trim()) {
-            const userFriendlyMessage = 'Lo siento, estoy teniendo dificultades para responder. Por favor, intenta de nuevo en unos momentos.'
+            const userFriendlyMessage =
+              'Lo siento, estoy teniendo dificultades para responder. Por favor, intenta de nuevo en unos momentos.'
             fullResponse = userFriendlyMessage
             sendEvent('message', {
               chunk: userFriendlyMessage,
               isComplete: false,
             })
           }
-          
+
           closeStream()
         }
       },
