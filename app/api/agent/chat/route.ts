@@ -8,6 +8,7 @@ import {
 } from '@/lib/actions/ai-agent'
 import { generateWaitingMessage } from '@/lib/ai/graph/feedback-generator'
 import type { AgentMessage } from '@/lib/models/ai-conversation'
+import { OptimizedTTSBuffer } from '@/lib/services/tts/optimized-buffer'
 
 export const maxDuration = 60
 
@@ -121,6 +122,24 @@ export async function POST(request: NextRequest) {
         let hasStartedResponse = false
         const businessName = session.settings?.assistant_name || 'el asistente'
         const ttsBuffer = new TTSBuffer()
+        
+        // Buffer optimizado para ultra-baja latencia
+        const optimizedTTSBuffer = new OptimizedTTSBuffer(
+          // Callback principal: enviar chunks optimizados al cliente
+          (text: string) => {
+            if (!isClosed && !abortController.signal.aborted) {
+              console.log('[Optimized TTS] Sending chunk:', text)
+              sendEvent('tts_chunk', {
+                text,
+                isFinal: false,
+              })
+            }
+          },
+          // Callback inmediato para flush forzado
+          (text: string) => {
+            console.log('[Optimized TTS] Forced flush:', text)
+          }
+        )
 
         const sendEvent = (event: string, data: unknown) => {
           if (isClosed || abortController.signal.aborted) return
@@ -191,7 +210,11 @@ export async function POST(request: NextRequest) {
                 }
                 fullResponse += event.content
 
-                // Enviar chunks optimizados para TTS (oraciones completas)
+                // ESTRATEGIA DUAL: Buffer optimizado + Buffer tradicional como fallback
+                // 1. Buffer optimizado para ultra-baja latencia (3 tokens o 50ms)
+                optimizedTTSBuffer.pushText(event.content)
+
+                // 2. Buffer tradicional como fallback para oraciones completas
                 const sentences = ttsBuffer.push(event.content)
                 for (const sentence of sentences) {
                   sendEvent('tts_chunk', {
@@ -245,8 +268,17 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Flush cualquier texto restante en el buffer TTS
+          // Flush buffers TTS (ambos)
           const remainingText = ttsBuffer.flush()
+          
+          // Flush buffer optimizado
+          optimizedTTSBuffer.flush()
+          
+          // Destruir buffer optimizado
+          setTimeout(() => {
+            optimizedTTSBuffer.destroy()
+          }, 100)
+          
           if (remainingText) {
             sendEvent('tts_chunk', {
               text: remainingText,
@@ -279,6 +311,13 @@ export async function POST(request: NextRequest) {
           sendEvent('typing', { isTyping: false })
           closeStream()
         } catch (error) {
+          // Limpiar buffer optimizado en caso de error
+          try {
+            optimizedTTSBuffer.destroy()
+          } catch (cleanupError) {
+            console.error('[SSE] Error cleaning up optimized buffer:', cleanupError)
+          }
+          
           fallbackTimeouts.forEach(clearTimeout)
           const errorMessage =
             error instanceof Error ? error.message : 'Error desconocido'

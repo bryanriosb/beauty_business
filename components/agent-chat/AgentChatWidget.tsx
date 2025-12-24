@@ -154,7 +154,11 @@ export function AgentChatWidget({ token, onClose, className }: AgentChatWidgetPr
                 // Manejar chunks optimizados para TTS
                 if (data.tts_chunk) {
                   if (voiceModeRef.current && ttsEnabledRef.current) {
-                    streamText(data.tts_chunk.text, data.tts_chunk.isFinal)
+                    streamText(data.tts_chunk.text)
+                    // Si es el chunk final, finalizar el stream
+                    if (data.tts_chunk.isFinal) {
+                      finishStream()
+                    }
                   }
                 }
 

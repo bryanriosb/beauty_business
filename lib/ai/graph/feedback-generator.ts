@@ -11,9 +11,9 @@ const FEEDBACK_CONTEXTS: Record<string, string> = {
 }
 
 const DELAY_MESSAGES = [
-  { delay: 15000, type: 'working' },
-  { delay: 30000, type: 'patience' },
-  { delay: 45000, type: 'apology' },
+  { delay: 30000, type: 'working' },
+  { delay: 45000, type: 'patience' },
+  { delay: 60000, type: 'apology' },
 ]
 
 let feedbackModel: ChatOpenAI | null = null
@@ -27,7 +27,7 @@ function getFeedbackModel(): ChatOpenAI {
 
     feedbackModel = new ChatOpenAI({
       model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
-      temperature: 0.7,
+      temperature: 0.5,
       maxTokens: 60,
       apiKey: apiKey,
       configuration: {
