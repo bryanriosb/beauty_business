@@ -27,7 +27,7 @@ const footerLinks = {
     { name: 'Comunidad', href: '#' },
   ],
   legal: [
-    { name: 'Terminos de uso', href: '/terminos' },
+    { name: 'Términos de uso', href: '/terminos' },
     { name: 'Privacidad', href: '/privacidad' },
     { name: 'Cookies', href: '/cookies' },
     // { name: 'Licencias', href: '#' },
@@ -56,9 +56,9 @@ export function Footer() {
               <Image src="/logo.png" alt="Beluvio" width={140} height={40} />
             </Link>
             <p className="text-muted-foreground text-sm mb-6 max-w-xs">
-              La plataforma todo-en-uno para empresas el sector de la belleza y
-              salud, spas, clinicas, centros de estetica, salones de belleza,
-              entre otros.
+      La plataforma todo-en-uno para empresas en el sector de la belleza y
+      salud, spas, clínicas, centros de estética, salones de belleza,
+      entre otros.
             </p>
 
             {/* Contact info */}
@@ -211,7 +211,7 @@ export function Footer() {
             >
               ♥
             </motion.span>
-            <span>en Latinoamerica</span>
+            <span>en Latinoamérica</span>
           </div>
         </div>
       </div>

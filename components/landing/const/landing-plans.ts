@@ -1,4 +1,4 @@
-// Constants de planes para el landing basados en datos reales de la DB
+// Constantes de planes para el landing basados en datos reales de la DB
 // Sin fetching para mantener performance del landing
 
 export interface LandingPlan {

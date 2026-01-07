@@ -29,7 +29,7 @@ const services = [
     name: 'Manicure y pedicure',
     gradient: 'from-pink-400 to-pink-600',
   },
-  { icon: Palette, name: 'Colorimetria', gradient: 'from-accent to-secondary' },
+    { icon: Palette, name: 'Colorimetría', gradient: 'from-accent to-secondary' },
   { icon: Brush, name: 'Maquillaje', gradient: 'from-rose-400 to-rose-600' },
   {
     icon: Eye,
@@ -44,7 +44,7 @@ const benefits = [
   'Define duraciones flexibles',
   'Gestión de abonos y cartera',
   'Precios diferenciados por profesional',
-  'Comisiones automaticas',
+  'Comisiones automáticas',
 ]
 
 export function Services() {
@@ -97,7 +97,7 @@ export function Services() {
                   <div className="relative">
                     <p className="text-5xl font-bold">98%</p>
                     <p className="text-white/80 text-sm mt-1">
-                      Satisfaccion de clientes
+                      Satisfacción de clientes
                     </p>
                     <div className="flex items-center gap-1 mt-2">
                       {[1, 2, 3, 4, 5].map((i) => (
@@ -220,7 +220,7 @@ export function Services() {
             <div className="p-6 rounded-2xl bg-card border border-border/50">
               <p className="font-semibold mb-4 flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-secondary" />
-                Personalizacion total
+                 Personalización total
               </p>
               <div className="grid sm:grid-cols-2 gap-3">
                 {benefits.map((benefit, index) => (

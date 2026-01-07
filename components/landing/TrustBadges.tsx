@@ -7,7 +7,7 @@ const badges = [
   {
     icon: Shield,
     title: 'Datos seguros',
-    description: 'Encriptacion SSL de grado bancario',
+    description: 'Encriptación SSL de grado bancario',
   },
   {
     icon: Clock,
@@ -29,8 +29,8 @@ const badges = [
 const stats = [
   { value: '500+', label: 'Salones activos' },
   { value: '50k+', label: 'Citas gestionadas' },
-  { value: '98%', label: 'Satisfaccion' },
-  { value: '4.9', label: 'Calificacion' },
+  { value: '98%', label: 'Satisfacción' },
+  { value: '4.9', label: 'Calificación' },
 ]
 
 export function TrustBadges() {

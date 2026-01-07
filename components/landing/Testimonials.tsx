@@ -7,14 +7,14 @@ const testimonials = [
   {
     name: 'Maria Garcia',
     role: 'Dueña de Salon Elegance',
-    content: 'Desde que uso Beluvio, mis cancelaciones bajaron un 40%. Los recordatorios automaticos por WhatsApp son increibles.',
+    content: 'Desde que uso Beluvio, mis cancelaciones bajaron un 40%. Los recordatorios automáticos por WhatsApp son increíbles.',
     rating: 5,
     highlight: 'Reduce cancelaciones',
   },
   {
     name: 'Carlos Rodriguez',
     role: 'Barberia Urban Style',
-    content: 'El control de inventario me ahorra horas cada semana. Ahora se exactamente cuando necesito pedir productos.',
+    content: 'El control de inventario me ahorra horas cada semana. Ahora sé exactamente cuando necesito pedir productos.',
     rating: 5,
     highlight: 'Ahorra tiempo',
   },
@@ -28,14 +28,14 @@ const testimonials = [
   {
     name: 'Laura Fernandez',
     role: 'Studio Lash & Brow',
-    content: 'Mis clientas aman poder agendar online 24/7. La plataforma es super intuitiva y profesional.',
+    content: 'Mis clientas aman poder agendar online 24/7. La plataforma es súper intuitiva y profesional.',
     rating: 5,
     highlight: 'Agenda 24/7',
   },
   {
     name: 'Roberto Sanchez',
     role: 'Barberia Premium',
-    content: 'El soporte es excelente. Siempre responden rapido y me ayudan con cualquier duda.',
+    content: 'El soporte es excelente. Siempre responden rápido y me ayudan con cualquier duda.',
     rating: 5,
     highlight: 'Soporte excelente',
   },
@@ -80,7 +80,7 @@ export function Testimonials() {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Mas de 500 negocios de belleza confian en nosotros para gestionar su operacion
+            Más de 500 negocios de belleza confían en nosotros para gestionar su operación
           </p>
         </motion.div>
 
@@ -106,15 +106,15 @@ export function Testimonials() {
                 <Star key={i} className="h-4 w-4 fill-primary text-primary" />
               ))}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">Calificacion promedio</p>
+            <p className="text-sm text-muted-foreground mt-1">Calificación promedio</p>
           </div>
           <div className="text-center">
             <p className="text-4xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">500+</p>
-            <p className="text-sm text-muted-foreground mt-1">Resenas positivas</p>
+            <p className="text-sm text-muted-foreground mt-1">Reseñas positivas</p>
           </div>
           <div className="text-center">
             <p className="text-4xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">98%</p>
-            <p className="text-sm text-muted-foreground mt-1">Recomendarian Beluvio</p>
+            <p className="text-sm text-muted-foreground mt-1">Recomendarían Beluvio</p>
           </div>
         </motion.div>
       </div>

@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react'
 
 const benefits = [
-  'Sin tarjeta de credito',
-  'Configuracion en 15 minutos',
+  'Sin tarjeta de crédito',
+  'Configuración en 15 minutos',
   'Soporte 24/7 incluido',
 ]
 
@@ -63,9 +63,9 @@ export function CTA() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-lg text-white/80 max-w-2xl mx-auto mb-8"
               >
-                Unete y optimiza su gestion con Beluvio una herramienta pensada
+                Únete y optimiza su gestión con Beluvio una herramienta pensada
                 para tu negocio de belleza. Comienza gratis y ve los resultados
-                desde el primer dia.
+                desde el primer día.
               </motion.p>
 
               {/* Benefits */}

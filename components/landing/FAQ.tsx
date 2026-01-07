@@ -7,28 +7,28 @@ import { Button } from '@/components/ui/button'
 
 const faqs = [
   {
-    question: '¿Cuanto tiempo toma configurar Beluvio?',
-    answer: 'La configuracion inicial toma menos de 15 minutos. Nuestro asistente de configuracion te guia paso a paso para agregar tus servicios, profesionales y horarios. Ademas, ofrecemos onboarding personalizado para planes Business.',
+    question: '¿Cuánto tiempo toma configurar Beluvio?',
+    answer: 'La configuración inicial toma menos de 15 minutos. Nuestro asistente de configuración te guía paso a paso para agregar tus servicios, profesionales y horarios. Además, ofrecemos onboarding personalizado para planes Business.',
   },
   {
     question: '¿Puedo importar mis clientes existentes?',
-    answer: 'Si, puedes importar tu base de datos de clientes desde Excel, CSV o directamente desde otras plataformas. Te ayudamos en el proceso para que no pierdas ninguna informacion.',
+    answer: 'Sí, puedes importar tu base de datos de clientes desde Excel, CSV o directamente desde otras plataformas. Te ayudamos en el proceso para que no pierdas ninguna información.',
   },
   {
-    question: '¿Como funciona la integracion con WhatsApp?',
-    answer: 'Conectamos tu cuenta de WhatsApp Business para enviar recordatorios automaticos de citas, confirmaciones y mensajes de seguimiento. Todo configurado en minutos sin conocimientos tecnicos.',
+    question: '¿Cómo funciona la integración con WhatsApp?',
+    answer: 'Conectamos tu cuenta de WhatsApp Business para enviar recordatorios automáticos de citas, confirmaciones y mensajes de seguimiento. Todo configurado en minutos sin conocimientos técnicos.',
   },
   {
     question: '¿Puedo usar Beluvio en multiples dispositivos?',
-    answer: 'Si, Beluvio funciona en cualquier dispositivo con navegador web: computadora, tablet o celular. Tu equipo puede acceder simultaneamente desde diferentes ubicaciones.',
+    answer: 'Sí, Beluvio funciona en cualquier dispositivo con navegador web: computadora, tablet o celular. Tu equipo puede acceder simultáneamente desde diferentes ubicaciones.',
   },
   {
-    question: '¿Que pasa si necesito cancelar mi suscripcion?',
+    question: '¿Qué pasa si necesito cancelar mi suscripción?',
     answer: 'Puedes cancelar en cualquier momento sin penalidades. No hay contratos de permanencia. Tus datos se mantienen seguros y puedes exportarlos cuando lo necesites.',
   },
   {
-    question: '¿Ofrecen soporte en espanol?',
-    answer: 'Si, nuestro equipo de soporte es 100% en espanol. Estamos disponibles por chat, email y WhatsApp para ayudarte con cualquier duda o problema.',
+    question: '¿Ofrecen soporte en español?',
+    answer: 'Sí, nuestro equipo de soporte es 100% en español. Estamos disponibles por chat, email y WhatsApp para ayudarte con cualquier duda o problema.',
   },
 ]
 
@@ -67,7 +67,7 @@ export function FAQ() {
             ?
           </h2>
           <p className="text-lg text-muted-foreground">
-            Aqui respondemos las preguntas mas comunes sobre Beluvio
+            Aquí respondemos las preguntas más comunes sobre Beluvio
           </p>
         </motion.div>
 
@@ -98,7 +98,7 @@ export function FAQ() {
             </div>
             <div className="text-center sm:text-left">
               <p className="font-semibold">¿No encontraste tu respuesta?</p>
-              <p className="text-sm text-muted-foreground">Nuestro equipo esta listo para ayudarte</p>
+              <p className="text-sm text-muted-foreground">Nuestro equipo está listo para ayudarte</p>
             </div>
             <a
               href="https://wa.me/573217278684?text=Hola%2C%20necesito%20ayuda%20con%20la%20plataforma"

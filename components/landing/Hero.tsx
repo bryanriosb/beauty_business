@@ -88,11 +88,11 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg text-muted-foreground max-w-lg leading-relaxed"
           >
-            La plataforma todo-en-uno para esteticas, spas, clinicas y centros
+            La plataforma todo-en-uno para estéticas, spas, clínicas y centros
             de belleza.
             <span className="text-foreground font-medium">
               {' '}
-              Automatiza tu operacion y enfocate en lo que amas.
+              Automatiza tu operación y enfócate en lo que amas.
             </span>
           </motion.p>
 
@@ -311,7 +311,7 @@ export function Hero() {
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium">Crear Cita confirmada</p>
+                    <p className="text-xs font-medium">Cita confirmada</p>
                     <p className="text-xs text-muted-foreground">
                       Maria G. - 3:00 PM
                     </p>
@@ -335,7 +335,7 @@ export function Hero() {
           transition={{ duration: 1.5, repeat: Infinity }}
           className="flex flex-col items-center gap-2 text-muted-foreground"
         >
-          <span className="text-xs">Descubre mas</span>
+            <span className="text-xs">Descubre más</span>
           <svg
             className="h-5 w-5"
             fill="none"

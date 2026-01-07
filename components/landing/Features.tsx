@@ -22,16 +22,16 @@ const features = [
     icon: Calendar,
     title: 'Agenda inteligente',
     description:
-      'Gestiona citas con calendario visual, recordatorios automaticos y evita solapamientos. Sincroniza con Google Calendar.',
+      'Gestiona citas con calendario visual, recordatorios automáticos y evita solapamientos. Sincroniza con Google Calendar.',
     gradient: 'from-primary/80 to-primary/40',
     iconBg: 'from-primary to-primary/60',
-    highlight: 'Mas popular',
+    highlight: 'Más popular',
   },
   {
     icon: Users,
-    title: 'Clientes y fidelizacion',
+    title: 'Clientes y fidelización',
     description:
-      'Base de datos completa con historial, preferencias y programas de lealtad que aumentan la retencion.',
+      'Base de datos completa con historial, preferencias y programas de lealtad que aumentan la retención.',
     gradient: 'from-secondary/60 to-accent/40',
     iconBg: 'from-secondary to-accent',
   },
@@ -47,7 +47,7 @@ const features = [
     icon: TrendingUp,
     title: 'Reportes avanzados',
     description:
-      'Dashboard interactivo con metricas de ventas, servicios populares y rendimiento del equipo.',
+      'Dashboard interactivo con métricas de ventas, servicios populares y rendimiento del equipo.',
     gradient: 'from-primary/60 to-secondary/40',
     iconBg: 'from-primary/80 to-secondary',
   },
@@ -55,7 +55,7 @@ const features = [
     icon: MessageCircle,
     title: 'WhatsApp integrado',
     description:
-      'Envia confirmaciones y recordatorios automaticos directo al WhatsApp. Reduce cancelaciones un 40%.',
+      'Envía confirmaciones y recordatorios automáticos directo al WhatsApp. Reduce cancelaciones un 40%.',
     gradient: 'from-green-500/40 to-secondary/40',
     iconBg: 'from-green-500 to-green-600',
   },
@@ -63,14 +63,14 @@ const features = [
     icon: CreditCard,
     title: 'Facturacion electronica',
     description:
-      'Genera facturas profesionales, controla pagos pendientes y gestiona cuentas por cobrar facilmente.',
+      'Genera facturas profesionales, controla pagos pendientes y gestiona cuentas por cobrar fácilmente.',
     gradient: 'from-secondary/60 to-primary/40',
     iconBg: 'from-secondary to-primary/80',
   },
 ]
 
 const aiCapabilities = [
-  'Agenda citas automaticamente 24/7',
+  'Agenda citas automáticamente 24/7',
   'Responde consultas de disponibilidad',
   'Reagenda o cancela citas por chat',
   'Informa sobre servicios y precios',
@@ -114,8 +114,8 @@ export function Features() {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Herramientas profesionales disenadas para esteticas, spas, clinicas
-            de cirugia plastica, barberias y centros de belleza.
+            Herramientas profesionales diseñadas para estéticas, spas, clínicas
+            de cirugía plástica, barberías y centros de belleza.
           </p>
         </motion.div>
 
@@ -130,7 +130,10 @@ export function Features() {
           <div className="relative rounded-3xl overflow-hidden">
             {/* Background gradient */}
             <div className="absolute inset-0 bg-gradient-to-r from-secondary via-accent to-secondary opacity-90" />
-            <div className="absolute inset-0 bg-cover bg-center opacity-5" style={{backgroundImage: `url(${LANDING_IMAGES.features})`}} />
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-5"
+              style={{ backgroundImage: `url(${LANDING_IMAGES.features})` }}
+            />
 
             {/* Animated blobs - subtle */}
             <div className="absolute -top-20 -right-20 w-[350px] h-[350px] bg-primary/25 rounded-full blur-[80px] animate-blob" />
@@ -147,14 +150,14 @@ export function Features() {
                   </div>
 
                   <h3 className="text-3xl md:text-4xl font-bold text-white">
-                    Asistente IA con gestion telefónica
+                    Asistente IA con gestión telefónica
                   </h3>
 
                   <p className="text-white/80 text-lg leading-relaxed">
                     Tu asistente virtual trabaja 24/7 gestionando
-                    automaticamente tu negocio. Los clientes pueden agendar,
+                    automáticamente tu negocio. Los clientes pueden agendar,
                     reagendar o cancelar citas por WhatsApp, chat web o
-                    telefono, mientras el sistema verifica disponibilidad en
+                    teléfono, mientras el sistema verifica disponibilidad en
                     tiempo real y realiza llamadas de confirmación.
                   </p>
 
@@ -218,7 +221,7 @@ export function Features() {
                           </p>
                           <p className="text-white/60 text-xs flex items-center gap-1">
                             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            En linea
+                             En línea
                           </p>
                         </div>
                       </div>
@@ -234,7 +237,7 @@ export function Features() {
                         >
                           <div className="bg-primary/30 rounded-2xl rounded-tr-sm px-4 py-2 max-w-[80%]">
                             <p className="text-white text-sm">
-                              Hola! Quiero agendar un corte para manana
+                               ¡Hola! Quiero agendar un corte para mañana
                             </p>
                           </div>
                         </motion.div>
@@ -248,8 +251,8 @@ export function Features() {
                         >
                           <div className="bg-white/20 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[80%]">
                             <p className="text-white text-sm">
-                              Perfecto! Tengo disponibilidad manana a las 10:00,
-                              14:00 y 16:30. ¿Cual prefieres?
+                               ¡Perfecto! Tengo disponibilidad mañana a las 10:00,
+                               14:00 y 16:30. ¿Cuál prefieres?
                             </p>
                           </div>
                         </motion.div>
@@ -277,8 +280,8 @@ export function Features() {
                         >
                           <div className="bg-white/20 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[80%]">
                             <p className="text-white text-sm">
-                              ¡Listo! Tu cita quedo agendada para manana a las
-                              10:00. Te envio confirmacion por WhatsApp
+                               ¡Listo! Tu cita quedó agendada para mañana a las
+                               10:00. Te envío confirmación por WhatsApp
                             </p>
                           </div>
                         </motion.div>
@@ -323,7 +326,7 @@ export function Features() {
           className="mt-16 text-center"
         >
           <p className="text-muted-foreground mb-4">
-            Y muchas mas funcionalidades que te ayudaran a crecer
+            Y muchas más funcionalidades que te ayudarán a crecer
           </p>
           <a
             href="#services"
@@ -395,7 +398,7 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
 
           {/* Arrow indicator */}
           <div className="mt-4 flex items-center gap-2 text-secondary opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
-            <span className="text-sm font-medium">Saber mas</span>
+            <span className="text-sm font-medium">Saber más</span>
             <ArrowRight className="h-4 w-4" />
           </div>
         </div>
