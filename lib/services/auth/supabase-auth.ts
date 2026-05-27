@@ -93,9 +93,17 @@ export async function authenticateWithSupabase(
 
     console.log('Attempting authentication for:', email)
 
-    // Sign in with Supabase Auth
+    const supabaseUrl = process.env.SUPABASE_URL!
+    const supabasePublicKey = process.env.SUPABASE_PUBLIC_KEY!
+    
+    // Create a fresh client specifically for authentication to avoid mutating the singleton admin client
+    const supabaseAuth = (await import('@supabase/supabase-js')).createClient(supabaseUrl, supabasePublicKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    })
+
+    // Sign in with Supabase Auth using the auth client
     const { data: authData, error: authError } =
-      await supabase.auth.signInWithPassword({
+      await supabaseAuth.auth.signInWithPassword({
         email,
         password,
       })
@@ -107,8 +115,11 @@ export async function authenticateWithSupabase(
 
     console.log('Auth successful, user ID:', authData.user.id)
 
+    // Use the admin client to fetch profile data to bypass RLS if necessary
+    const supabaseAdmin = await getSupabaseAdminClient()
+
     // Primero obtener el user_profile básico usando user_id de Supabase Auth
-    const { data: userProfile, error: profileError } = await supabase
+    const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('users_profile')
       .select('id, user_id, role')
       .eq('user_id', authData.user.id)
@@ -129,7 +140,7 @@ export async function authenticateWithSupabase(
     }
 
     // Luego intentar obtener las membresías (puede que no tenga ninguna)
-    const { data: memberships } = await supabase
+    const { data: memberships } = await supabaseAdmin
       .from('business_account_members')
       .select('business_account_id, role, status')
       .eq('user_profile_id', userProfile.id)
@@ -154,7 +165,7 @@ export async function authenticateWithSupabase(
 
       // Obtener el tipo de negocio del primer negocio y el plan de la cuenta
       if (businesses && businesses.length > 0) {
-        const { data: firstBusiness } = await supabase
+        const { data: firstBusiness } = await supabaseAdmin
           .from('businesses')
           .select('type')
           .eq('id', businesses[0].id)
@@ -166,7 +177,7 @@ export async function authenticateWithSupabase(
       }
 
       // Obtener el plan de suscripción de la cuenta
-      const { data: account } = await supabase
+      const { data: account } = await supabaseAdmin
         .from('business_accounts')
         .select('subscription_plan')
         .eq('id', membership.business_account_id)
@@ -189,7 +200,7 @@ export async function authenticateWithSupabase(
 
         // Obtener el business para el profesional
         if (businessId) {
-          const { data: business } = await supabase
+          const { data: business } = await supabaseAdmin
             .from('businesses')
             .select('id, name, business_account_id, type')
             .eq('id', businessId)
@@ -200,7 +211,7 @@ export async function authenticateWithSupabase(
             businessType = business.type
 
             // Obtener el plan de suscripción de la cuenta
-            const { data: account } = await supabase
+            const { data: account } = await supabaseAdmin
               .from('business_accounts')
               .select('subscription_plan')
               .eq('id', business.business_account_id)
