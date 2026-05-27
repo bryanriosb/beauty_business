@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.SUPABASE_URL!
-const supabaseAnonKey = process.env.SUPABASE_ANON_PUBLIC_KEY!
+const supabaseAnonKey = process.env.SUPABASE_PUBLIC_KEY!
 
 // Cliente específico para operaciones de auth (no singleton)
 function getAuthClient() {

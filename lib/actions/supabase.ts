@@ -3,8 +3,8 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.SUPABASE_URL!
-const supabaseAnonKey = process.env.SUPABASE_ANON_PUBLIC_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseAnonKey = process.env.SUPABASE_PUBLIC_KEY!
+const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY!
 
 // Define a generic database type
 type Database = any
